@@ -1,5 +1,5 @@
 ############## Load custom functions
-source("./functions.R")
+source("../customFunctions.R")
 ############## Set up environment
 set.seed(123)
 library(grid)
@@ -21,7 +21,7 @@ if(!exists("randomWalk")){
 ############## 
 state  <- randomWalk$state
 finalT <- randomWalk$RT
-choices <- cddm.getFinalState(state)
+choices <- getFinalState(state)
 #!!!!!!!Defensive coding !!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 trials <- length(finalT)
 polar <- rectToPolar(choices[1,1],choices[1,2])
@@ -83,9 +83,9 @@ for(i in 1:show.trials){
   points(choices[i,1],choices[i,2], type = "p", pch =16, cex=2,
          col=rgb(0.65,0.5,0.15,0.2))
 }
-text(choices[show.rw,1]+1,choices[show.rw,2]-0.05,"Responses",
+text(2.5,-2.5,"Responses",
      cex=cex.text, col=text.color, f=f)
-text(choices[show.rw,1]+1,choices[show.rw,2]-0.25,"observed",
+text(2.5,-2.7,"observed",
      cex=cex.text, col=text.color, f=f)
 ########################################
 # Boundary radius
