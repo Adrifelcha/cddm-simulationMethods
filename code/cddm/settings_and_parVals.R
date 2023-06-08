@@ -1,4 +1,4 @@
-source("./functions.R")
+source("../customFunctions.R")
 
 trials = 500
 boundary = 3
