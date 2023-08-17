@@ -34,4 +34,13 @@ accuracy.test <- function(data.vector){
   legend("topleft", c("Theoretical CDF", "Empirical CDF"),
          col=c(tCDF.color,eCDF.color), lwd=2, cex=0.65,
          lty=c(1,3))
+  
+  difference <- tCDF - eCDF
+  difference.sum <- sum(difference)
+  abs.difference <- sum(abs(difference))
+  sq.difference <- sum((difference)^2)
+  
+  output <- cbind(difference.sum,abs.difference,sq.difference)
+  colnames(output) <- c("sumDiff","absDiff","SSDiff")
+  return(output)
 }
