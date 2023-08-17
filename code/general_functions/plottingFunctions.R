@@ -8,7 +8,7 @@ source("../general_functions/customFunctions.R")
 
 
 ###############################################################################
-###################   Plotting whole random walk
+###################   Part 1: Plotting whole random walk
 ###############################################################################
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function specific to CDDM
@@ -70,8 +70,48 @@ plotRW.CDDM <- function(randomWalk.output){
 # Function specific to DDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+randomWalk.output = ddm_sim.randomWalk(trials,boundary,beta,mu)
+
+plotRW.DDM <- function(randomWalk.output){
+  state  <- randomWalk.output$random.walk
+  
+  bivariate.data <- randomWalk.output$bivariate.data
+  finalT <- bivariate.data$RT
+  choice <- bivariate.data$Choice
+  
+  trials <- length(finalT)
+  boundary <- max(choice)
+  
+  no.steps = NA
+  for(i in 1:trials){
+    no.steps[i] = sum(!is.na(state[,i]))
+  }
+  
+  # Formatting and plot settings
+  cex.text <- 1
+  par(pty="m")             # Maximal plotting region
+  par(mfrow=c(1,1),        # A single plot
+      mar = c(1, 1, 1, )) # outer margins
+  pm <- 0.05                # Set outter margin +/- boundaries
+  max.steps <- max(no.steps)
+  # Create blank plotting space
+  plot(0.5,0.5,type="n", ann = FALSE, axes = FALSE,
+       xlim=c(0,max.steps),ylim=c(-pm,boundary+pm))      
+  # Draw base decision space
+  lines(c(0,max.steps),c(0,0), lwd=2, col="gray0")  # Upper boundary
+  lines(c(0,max.steps),c(boundary,boundary), lwd=2, col="gray0")  # Upper boundary
+  lines(c(0,0),c(0,boundary), lwd=2, col="gray0")  # Upper boundary
+  # Draw RW
+  color <- "#EEDB1C"
+  for(i in 1:trials){
+    z = 1:no.steps[i]
+    points(z-1,state[z,i], type = "l", col=rgb(0.2,0.9,0.2,0.1), lwd=3)
+    points(max(z)-1,choice[i], pch=16, col=rgb(0.1,0.85,0.4,0.25), cex=2)
+  }
+}
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Overall plotting function
+# A Function to detect whether to use CDDM or DDM RW plotting function
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plotRW.output <- (randomWalk.output){
     bivariate.data <- randomWalk.output$bivariate.data
@@ -79,7 +119,7 @@ plotRW.output <- (randomWalk.output){
     binary <- length(table(choice))==2
     
     if(binary){
-      
+      randomWalk.output(randomWalk.output)
     }else{
       plotRW.CDDM(randomWalk.output)
     }
