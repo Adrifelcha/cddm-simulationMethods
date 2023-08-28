@@ -6,6 +6,44 @@
 ########################################################   by Adriana F. Ch?vez   
 source("../general_functions/customFunctions.R")
 
+
+###############################################################################
+# Transformation functions: ###################################################
+###############################################################################
+
+# Switch between Cardinal and Rectangular Coordinates 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+rectToPolar <- function(x,y){
+  n <- length(x)
+  driftAngle <- atan2(y,x)
+  driftLength <- sqrt((x^2)+(y^2))
+  output <- as.data.frame(cbind(driftAngle,driftLength))
+  colnames(output) <- c("dAngle","dLength")
+  return(output)
+}
+
+polarToRect <- function(vectorAngle,vectorLength){
+  x <- vectorLength*cos(vectorAngle)
+  y <- vectorLength*sin(vectorAngle)
+  X <-  as.data.frame(cbind(x,y))
+  colnames(X) <-  c("x","y")
+  return(X)
+}
+
+
+# Switch between degrees and radians
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+degToRad <- function(theta.deg){  
+  theta <-  theta.deg * pi /180  #Transform to radians
+  return(theta)
+}
+
+radToDeg <- function(theta.rad){
+  theta <- theta.rad * (180/pi)
+  return(theta)
+}
+
+
 ###############################################################################
 # Variable dictionary: ########################################################
 # mu1 and mu2 - Individual drift rates for the motion on the x and y axes
@@ -18,10 +56,11 @@ source("../general_functions/customFunctions.R")
 # state - rectangular coordinates recorded during the random walk
 ###############################################################################
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+###############################################################################
+# Main functions: #############################################################
 # Simulate the full random walk across many trials (for each trial, 
 # keeps the full chain of coordinates visited and response times)
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+###############################################################################
 
 # Base Function: Simulate the random walk
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
