@@ -68,7 +68,7 @@ my_ecdf.1D <- function(data.vector){
 
 n <- 10000
 A <- rnorm(n,5,1)
-B <- rexp(n,5)
+B <- rnorm(n,5,1)
 data.matrix.NxD <- cbind(A,B)
 
 my_ecdf.MD <- function(data.matrix.NxD){
