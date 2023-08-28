@@ -49,44 +49,47 @@ getFinalState <- function(randomWalk.states){
   return(output)
 }
 
+
 ###############################################################################
-###################   Functions related to the CDDM
+###################   General Functions related to the Accuracy tests
 ###############################################################################
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Switch between Cardinal and Rectangular Coordinates 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-rectToPolar <- function(x,y){
-  n <- length(x)
-  driftAngle <- atan2(y,x)
-  driftLength <- sqrt((x^2)+(y^2))
-  output <- as.data.frame(cbind(driftAngle,driftLength))
-  colnames(output) <- c("dAngle","dLength")
-  return(output)
+my_ecdf.1D <- function(data.vector){
+    repeated.values <- !length(data.vector)==length(unique(data.vector))
+    if(repeated.values){
+       data.vector <- unique(data.vector)
+    }
+    n <- length(data.vector)
+    assign.percentiles <- NA
+    for(i in 1:n){
+         cdf[i] <- mean(data.vector[i] > data.vector)
+    }
+    return(cdf)
 }
 
-polarToRect <- function(vectorAngle,vectorLength){
-  x <- vectorLength*cos(vectorAngle)
-  y <- vectorLength*sin(vectorAngle)
-  X <-  as.data.frame(cbind(x,y))
-  colnames(X) <-  c("x","y")
-  return(X)
+n <- 10000
+A <- rnorm(n,5,1)
+B <- rexp(n,5)
+data.matrix.NxD <- cbind(A,B)
+
+my_ecdf.MD <- function(data.matrix.NxD){
+  data <- data.matrix.NxD
+  no.Dim <- ncol(data.matrix.NxD)
+  n <- nrow(data.matrix.NxD)
+  count <- matrix(NA,nrow=n,ncol=no.Dim)
+  X <- rep(TRUE, n)
+  Z <- rep(NA,n)
+  for(i in 1:nrow(data.matrix.NxD)){
+      for(j in 1:no.Dim){
+        count[,j] <- data[i,j] > data[,j]
+      }
+      for(j in 2:no.Dim){
+        Y <- count[,j-1] & count[,j]
+        X <- X & Y
+      }
+    Z[i] <- mean(X)
+  }
+  
+  return(assign.percentiles)
 }
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Switch between degrees and radians
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-degToRad <- function(theta.deg){  
-  theta <-  theta.deg * pi /180  #Transform to radians
-  return(theta)
-}
-
-radToDeg <- function(theta.rad){
-  theta <- theta.rad * (180/pi)
-  return(theta)
-}
-
-
-
-
 
 
