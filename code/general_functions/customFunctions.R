@@ -101,3 +101,13 @@ my_ecdf.Plot <- function(data, color="forestgreen"){
     }
   }
 }
+
+getDifferences <- function(eCDF,tCDF){
+  difference <- tCDF - eCDF
+  difference.sum <- sum(difference)
+  Kldivergence <- max(abs(difference))
+  sq.difference <- sum((difference)^2)
+  
+  output <- cbind(difference.sum,Kldivergence,sq.difference)
+  colnames(output) <- c("sumDiff","Kldivergence","SSDiff") 
+}
