@@ -44,3 +44,17 @@ accuracyTest.mvnormal <- function(data, t.mean=c(0,0),
   output <- getDifferences(eCDF,tCDF)
   return(output)
 }
+
+#################
+# Test/Examples
+#################
+n <- 5000
+t.mean <- 10
+t.sd <- 1
+X <- rnorm(n,t.mean,t.sd)
+accuracyTest.normal(X,t.mean,t.sd)
+
+t.mean <- c(10,5)
+t.Sigma <- matrix(c(10,-5,2,4),nrow=2,byrow=TRUE)
+Y <- rmnorm(n,t.mean,t.Sigma)
+accuracyTest.mvnormal(Y,t.mean,t.Sigma)
