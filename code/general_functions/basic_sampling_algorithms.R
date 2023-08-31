@@ -221,82 +221,85 @@ n <- 5000
 
 # Write Trapezoid N.I. algorithm
 sample.MCMC.mvnormal <- function(n, par, plot=FALSE){
-  mean <- par$mean
-  Sigma <- par$Sigma
-  no.Dim <- length(mean)
-  
-  if(no.Dim>2 & plot==TRUE){
-    plot <- FALSE
-    print("Cannot make a plot with more than 2Dimensions")
-  }
-  
-  max.D <- dmnorm(mean,mean,Sigma)
-  height <- max.D*1.05
-  
-  if(plot){
-    nTics <- 10
-    nSupp <- 9999
-    x.low <- NA
-    x.top <- NA
-    support <- matrix(NA, nrow=no.Dim, ncol=nSupp)
-  }
-  
-  base.1 <- NA
-  base.2 <- NA
-  for(j in 1:no.Dim){
-    sd <- sqrt(Sigma[j,j])
-    width <- 3.5*sd
-    base.1[j] <- mean[j]-width
-    base.2[j] <- mean[j]+width
-    if(plot){
-      plot.width <- (4*sd)
-      x.low[j] <- mean[j]-plot.width
-      x.top[j] <- mean[j]+plot.width
-      support[j,] <- seq(x.low[j],x.top[j],length.out=nSupp)
-    }
-  }
-  
-  if(plot){
-    z <- dmnorm(t(support),mean,Sigma)
-    a <- scatterplot3d(support[1,],support[2,],z, xlim=c(x.low[1],x.top[1]),
-                       ylim=c(x.low[2],x.top[2]), color="blue",zlim=c(0,height),
-                       type="l", lwd=4)
-    a$points3d(c(base.1[1],base.2[1],base.2[1],base.1[1]), 
-               c(base.1[2],base.2[2],base.1[2],base.2[2]), rep(height,4),
-                 col = "skyblue", type = "h", pch = 16)
-    a$points3d(c(base.1[1],base.2[1],base.2[1],base.1[1],
-                 base.1[1],base.2[1],base.2[1],base.1[1]), 
-               c(base.1[2],base.1[2],base.2[2],base.2[2],
-                 base.1[2],base.1[2],base.2[2],base.2[2]), rep(height,8),
-               col = "skyblue", type = "l", pch = 16)
-  }
-
-  n.keep <- 0
-  n.try <- n
-  samples <- NA
-  
-
-  
-  while(n.keep < n){
-    cand <- runif(n.try,base.1,base.2)
-    eval <- dnorm(cand,mean,sd)
-    rej.crit <- runif(n.try,0,height)  
-    keep <- (eval >= rej.crit)
+      mean <- par$mean
+      Sigma <- par$Sigma
+      no.Dim <- length(mean)
+      
+      if(no.Dim>2 & plot==TRUE){
+            plot <- FALSE
+            print("Cannot make a plot with more than 2Dimensions")
+      }
+      
+      max.Density <- dmnorm(mean,mean,Sigma)
+      height <- max.Density*1.05
+      
+      if(plot){
+          nSupp <- 100
+          x.low <- NA
+          x.top <- NA
+          support <- matrix(NA, nrow=no.Dim, ncol=nSupp)
+      }
+      
+      base.1 <- NA
+      base.2 <- NA
+      for(j in 1:no.Dim){
+          sd <- sqrt(Sigma[j,j])
+          width <- 3.5*sd
+          base.1[j] <- mean[j]-width
+          base.2[j] <- mean[j]+width
+          if(plot){
+              plot.width <- (4*sd)
+              x.low[j] <- mean[j]-plot.width
+              x.top[j] <- mean[j]+plot.width
+              support[j,] <- seq(x.low[j],x.top[j],length.out=nSupp)
+          }
+      }
+      
+      if(plot){
+        z <- dmnorm(t(support),mean,Sigma)
+        a <- scatterplot3d(support[1,],support[2,],z, xlim=c(x.low[1],x.top[1]),
+                           ylim=c(x.low[2],x.top[2]), color="blue",zlim=c(0,height),
+                           type="l", lwd=2)
+        a$points3d(c(base.1[1],base.2[1],base.2[1],base.1[1]), 
+                   c(base.1[2],base.2[2],base.1[2],base.2[2]), rep(height,4),
+                     col = "skyblue", type = "h", pch = 16)
+        a$points3d(c(base.1[1],base.2[1],base.2[1],base.1[1],
+                     base.1[1],base.2[1],base.2[1],base.1[1]), 
+                   c(base.1[2],base.1[2],base.2[2],base.2[2],
+                     base.1[2],base.1[2],base.2[2],base.2[2]), rep(height,8),
+                   col = "skyblue", type = "l", pch = 16)
+      }
     
-    n.keep <- sum(keep)
-    n.try <- n.try-n.keep
-    
-    if(plot){
-      points(cand[!keep],rej.crit[!keep],col="red", pch=16, cex=0.3)
-      points(cand[keep],rej.crit[keep],col="blue3", pch=16, cex=0.3)
-    }
-    
-    samples <- c(samples, cand[keep])
-    n.keep <- length(samples)
-  }
-  
-  return(samples)
+      n.keep <- 0
+      n.try <- n
+      samples <- matrix(NA, nrow=1, ncol=no.Dim)
+      
+      while(n.keep < n){
+        cand <- matrix(NA, nrow=n.try, ncol=no.Dim)
+        for(j in 1:no.Dim){
+            cand[,j] <- runif(n.try,base.1[j],base.2[j])
+        }
+        eval <- dmnorm(cand,mean,Sigma)
+        rej.crit <- runif(n.try,0,height)  
+        keep <- (eval >= rej.crit)
+        
+        n.keep <- sum(keep)
+        n.try <- n.try-n.keep
+        
+         if(plot){
+           a$points3d(cand[!keep,1], cand[!keep,2], rej.crit[!keep],
+                      col = "red", pch = 16, cex = 0.2)
+           a$points3d(cand[keep,1], cand[keep,2], rej.crit[keep],
+                      col = "blue3", pch = 16, cex = 0.2)
+         }
+        
+        samples <- rbind(samples, cand[keep,])
+        n.keep <- nrow(samples)-1
+      }
+      
+      samples <- samples[-1,]
+      return(samples)
 }
 
 # Test function
-sample.MCMC.mvnormal(5000,par, plot=TRUE)
+sample.MCMC.mvnormal(1000,par, plot=TRUE)
