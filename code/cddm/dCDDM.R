@@ -38,7 +38,7 @@ j0_squared <- c(   5.783185962947,    30.471262343662,    74.887006790695,   139
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  Define a function to compute bivariate density under CDDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-dCDDM <- function(x, drift, theta, tzero, boundary){
+cddm.pdf <- function(x, drift, theta, tzero, boundary){
   c <- x[1]
   t <- x[2]
   
@@ -61,3 +61,27 @@ dCDDM <- function(x, drift, theta, tzero, boundary){
   return(PDF)
 }
 
+dCDDM <- function(data,drift, theta, tzero, boundary){
+  N <- nrow(data)
+  pdf <- rep(NA, N)
+  for(i in 1:N){
+    pdf[i] <- cddm.pdf(data[i,],drift,theta,tzero,boundary)
+  }
+  return(pdf)
+}
+
+#################
+# Test/Examples
+#################
+# Some data
+n <- 10
+A <- runif(n, 0, 2*pi)
+B <- rexp(n,2)
+data <- cbind(A,B)
+# Some parameter values
+drift = 1 
+theta = pi
+tzero = 0.1
+boundary = 7
+# Get densities
+dCDDM(data, drift, theta, tzero, boundary)
