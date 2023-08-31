@@ -62,7 +62,11 @@ cddm.pdf <- function(x, drift, theta, tzero, boundary){
 }
 
 dCDDM <- function(data,drift, theta, tzero, boundary){
-  N <- nrow(data)
+  if(is.vector(data)){
+      N <- 1
+  }else{
+      N <- nrow(data)
+  }
   pdf <- rep(NA, N)
   for(i in 1:N){
     pdf[i] <- cddm.pdf(data[i,],drift,theta,tzero,boundary)
