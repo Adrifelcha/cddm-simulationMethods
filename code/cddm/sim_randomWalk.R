@@ -10,7 +10,6 @@ source("../general_functions/customFunctions.R")
 ###############################################################################
 # Transformation functions: ###################################################
 ###############################################################################
-
 # Switch between Cardinal and Rectangular Coordinates 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 rectToPolar <- function(x,y){
@@ -151,15 +150,25 @@ cddm.randomWalk <- function(trials, mu1, mu2, boundary, ndt=0.1, drift.Coeff=1, 
 
 # Final function: Generate data for this method
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-cddm_sim.randomWalk <- function(trials, boundary, 
-                                 drift.Angle=NA, drift.Length=NA, 
-                                 mu1=NA,mu2=NA,
-                                 ndt=0.1, drift.Coeff=1, dt=0.0015){
+sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
+  trials <- n
+  par <- list("drift" = 1, 
+              "theta" = pi,
+              "tzero" = 0.1,
+              "boundary" = 7)
+  
+  boundary <- par$boundary
+  drift.Angle <- par$theta
+  drift.Length <- par$drift
+  ndt <- par$tzero
+  mu1 <- par$mu1
+  mu2 <- par$mu2
+  
   
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
   #               Defensive Coding                                         #
-        noPolar <- is.na(drift.Angle) & is.na(drift.Length)
-        noRect <- is.na(mu1) & is.na(mu2)
+        noPolar <- is.null(drift.Angle) & is.null(drift.Length)
+        noRect <- is.null(mu1) & is.null(mu2)
         if(noRect){
             if(noPolar){
                stop("Provide Cartesian or Polar coordinates", call. = FALSE)
@@ -193,3 +202,14 @@ cddm_sim.randomWalk <- function(trials, boundary,
                  "bivariate.data" = data)
   return(output)
 }
+
+
+# Test function
+if(!exists("test")){  test <- TRUE     }
+if(test){
+  par <- list("drift" = 1, 
+              "theta" = pi,
+              "tzero" = 0.1,
+              "boundary" = 7)
+  n <- 5000
+  sample.RW.cddm(1000,par)  }
