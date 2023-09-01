@@ -1,31 +1,31 @@
 ###############################################################################
 ###############################################################################
-#####   
+#####   Accuracy test for the CDDM:
+#####   A comparison between the bivariate empirical CDF and theoretical CDF
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-############## Load custom functions
+test <- FALSE # Turn-off built-in examples.
 source("../general_functions/customFunctions.R")
+source("../cddm/pCDDM.R")
 
-accuracy.test <- function(data.vector){
-  sorted.data <- sort(data.vector)
-  tCDF <- pnorm(sorted.data,10,1)
-  tCDF.color <- "darkblue"
-  eCDF <- my_ecdf(sorted.data)
-  eCDF.color <- "forestgreen"
-  
-  plot(sorted.data, tCDF, type="l", 
-       col=tCDF.color, lwd=2, ylim=c(0,1))
-  points(sorted.data,eCDF, cex=0.2, col=eCDF.color)
-  legend("topleft", c("Theoretical CDF", "Empirical CDF"),
-         col=c(tCDF.color,eCDF.color), lwd=2, cex=0.65,
-         lty=c(1,3))
-  
-  difference <- tCDF - eCDF
-  difference.sum <- sum(difference)
-  Kldivergence <- max(abs(difference))
-  sq.difference <- sum((difference)^2)
-  
-  output <- cbind(difference.sum,abs.difference,sq.difference)
-  colnames(output) <- c("sumDiff","Kldivergence","SSDiff")
-  return(output)
+accuracyTest.cddm <- function(data, par){
+      drift <- par$drift
+      theta <- par$theta
+      tzero <- par$tzero
+      boundary <- par$boundary
+      
+      tCDF <- pCDDM(data,par)
+      tCDF.color <- "darkblue"
+      eCDF <- my_ecdf.MD(data)
+      eCDF.color <- "forestgreen"
+      
+      a <- scatterplot3d(data[,1],data[,2],eCDF, pch=16,cex.symbols = 0.5,
+                         color = eCDF.color)
+      a$points3d(data[,1],data[,2],tCDF, pch=16, col=eCDF.color, cex=0.2)
+      legend("topleft", c("Theoretical CDF", "Empirical CDF"),
+             col=c(tCDF.color,eCDF.color), lwd=2, cex=0.65,
+             lty=c(1,3))
+      
+      output <- getDifferences(eCDF,tCDF)
+      return(output)
 }
