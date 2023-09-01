@@ -139,8 +139,8 @@ sample.MCMC.normal(5000,par, plot=TRUE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
 
-par <- list("mean.vector" = c(10,10),
-            "varcov.mat" = matrix(c(2, -1, -1, 2), nrow=2))
+par <- list("mean" = c(10,10),
+            "Sigma" = matrix(c(2, -1, -1, 2), nrow=2))
 lower.X    <- 1
 upper.X     <- 10
 lower.Y    <- 1
@@ -153,8 +153,8 @@ f <- function(x, y) dmnorm(cbind(x, y), Mean, Sigma)
 numInt.tpz.normal <- function(lower.X, upper.X,
                               lower.Y, upper.Y,
                               par, kappa=300, plot=FALSE){
-  Mean <- par$mean.vector
-  Sigma <- par$varcov.mat
+  Mean <- par$mean
+  Sigma <- par$Sigma
   
   if(plot){
     width <- NA
@@ -179,10 +179,12 @@ numInt.tpz.normal <- function(lower.X, upper.X,
   bin.Y <- seq(lower.Y,upper.Y,length.out=kappa)
   bin.area <- rep(NA,kappa-1)
   for(b in 2:kappa){
-    a <- bin.X[b-1]
-    b  <- bin.X[b]
-    c <- bin.Y[b-1]
-    d  <- bin.Y[b]
+    X.from <- bin.X[b-1]
+    X.to   <- bin.X[b]
+    Y.from <- bin.Y[b-1]
+    Y.to   <- bin.Y[b]
+    side.A <- X.from-X.to
+    side.B <- Y.from-Y.to
     low.y <- dnorm(low.x,par$mean,par$sd)
     up.y  <- dnorm(up.x,par$mean,par$sd)
     height <- (low.y+up.y)/2
