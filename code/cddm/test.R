@@ -8,7 +8,7 @@
 test <- FALSE   # Turn-off built-in tests
 source("./sim_MCMC.R")
 source("./sim_randomWalk.R")
-source("../general_functions/plottingFunctions.R")
+source("./plottingFunctions.R")
 
 # 2: Define some parameter values and sample size ~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -27,14 +27,18 @@ X.MCMC <- sample.MCMC.cddm(n,par,max.RT)
 
 # 4: Plot and compare the data sampled ~~~~~~~~~~~~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-hist(X.RW$bivariate.data[,1])
-hist(X.MCMC[,1])
-
-hist(X.RW$bivariate.data[,2])
-hist(X.MCMC[,2])
-
-plot.CDDM(X.MCMC, par)
-plot.CDDM(X.RW$bivariate.data, par)
+par(pty="m")          
+par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
+# Choices
+hist(X.RW$bivariate.data[,1], main="Choices on Random Walk",
+     xlim=c(0,2*pi), col="goldenrod4")
+hist(X.MCMC[,1], main= "Choices on MCMC", xlim=c(0,2*pi), col="cyan4")
+# Response Times
+hist(X.RW$bivariate.data[,2], main = "RT on Random Walk", col="goldenrod3")
+hist(X.MCMC[,2], main = "RT on MCMC", col="cyan4")
+# Decisions on a circle
+plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
+plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
 
 # 5: Run accuracy tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
