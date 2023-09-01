@@ -7,13 +7,6 @@
 source("./dCDDM.R")
 library(scatterplot3d) 
 
-# Some data
-par <- list("drift" = 1, 
-            "theta" = pi,
-            "tzero" = 0.1,
-            "boundary" = 7)
-n <- 5000
-
 # Write MCMC algorithm for the CDDM pdf
 sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   no.Dim <- 2
@@ -76,4 +69,10 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
 
 # Test function
 if(!exists("test")){    test <- TRUE                           }
-if(test){              sample.MCMC.cddm(1000,par, plot=TRUE)  }
+if(test){
+          par <- list("drift" = 1, 
+                      "theta" = pi,
+                      "tzero" = 0.1,
+                      "boundary" = 7)
+          n <- 5000
+          sample.MCMC.cddm(1000,par, plot=TRUE)  }
