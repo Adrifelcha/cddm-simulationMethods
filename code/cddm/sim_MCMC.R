@@ -75,4 +75,5 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
 }
 
 # Test function
-sample.MCMC.cddm(1000,par, plot=TRUE)
+if(!exists("test")){    test <- TRUE                           }
+if(test){              sample.MCMC.cddm(1000,par, plot=TRUE)  }
