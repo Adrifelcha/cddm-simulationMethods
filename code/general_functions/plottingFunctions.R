@@ -8,18 +8,23 @@ source("../general_functions/customFunctions.R")
 
 
 ###############################################################################
-###################   Part 1: Plotting whole random walk
+###################   Part 1:  Write a function per model 
 ###############################################################################
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function specific to CDDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-plotRW.CDDM <- function(randomWalk.output){
-  state  <- randomWalk.output$random.walk
+plot.CDDM <- function(data){
+  randomWalk <- is.null(dim(X.RW))
+  if(randomWalk){
+    state  <- data$random.walk
+    bivariate.data <- data$bivariate.data
+    finalT <- bivariate.data$RT
+  }else{
+    state  <- data[,1]
+    finalT <- data[,2]
+  }
+  
   finalState <- getFinalState(state)
-  
-  bivariate.data <- randomWalk.output$bivariate.data
-  finalT <- bivariate.data$RT
-  
   trials <- length(finalT)
   polar <- rectToPolar(finalState[1,1],finalState[1,2])
   boundary <- round(polar[,"dLength"],2)
@@ -70,9 +75,9 @@ plotRW.CDDM <- function(randomWalk.output){
 # Function specific to DDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-randomWalk.output = ddm_sim.randomWalk(trials,boundary,beta,mu)
+#randomWalk.output = ddm_sim.randomWalk(trials,boundary,beta,mu)
 
-plotRW.DDM <- function(randomWalk.output){
+plot.DDM <- function(randomWalk.output){
   state  <- randomWalk.output$random.walk
   
   bivariate.data <- randomWalk.output$bivariate.data
@@ -110,22 +115,20 @@ plotRW.DDM <- function(randomWalk.output){
   }
 }
 
+###############################################################################
+###################   Part 2:  Call in the required function
+###############################################################################
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # A Function to detect whether to use CDDM or DDM RW plotting function
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-plotRW.output <- (randomWalk.output){
-    bivariate.data <- randomWalk.output$bivariate.data
-    choice <- bivariate.data$Choice
-    binary <- length(table(choice))==2
-    
-    if(binary){
-      randomWalk.output(randomWalk.output)
-    }else{
-      plotRW.CDDM(randomWalk.output)
-    }
-}
-
-
-###############################################################################
-###################   Plotting whole random walk
-###############################################################################
+# plot.DiffModels <- function(randomWalk.output){
+#     bivariate.data <- randomWalk.output$bivariate.data
+#     choice <- bivariate.data$Choice
+#     binary <- length(table(choice))==2
+#     
+#     if(binary){
+#       plot.DDM(randomWalk.output)
+#     }else{
+#       plot.CDDM(randomWalk.output)
+#     }
+# }
