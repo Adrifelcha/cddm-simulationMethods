@@ -1,3 +1,9 @@
+###############################################################################
+###############################################################################
+#####   A script to make an illustrative figure of the CDDM model
+#####                                                and all its parameters
+###############################################################################
+########################################################   by Adriana F. Chavez   
 ############## Load custom functions
 source("../general_functions/customFunctions.R")
 source("../cddm/sim_randomWalk.R")
