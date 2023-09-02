@@ -138,14 +138,13 @@ sample.MCMC.normal(5000,par, plot=TRUE)
 # To approximate CDFs, we use a Trapezoid Numerical Integration algorithm
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
-
 par <- list("mean" = c(10,10),
             "Sigma" = matrix(c(2, -1, -1, 2), nrow=2))
-lower.X    <- 1
-upper.X     <- 10
-lower.Y    <- 1
-upper.Y     <- 10
-
+lower.X <- 1
+upper.X <- 10
+lower.Y <- 1
+upper.Y <- 10
+plot = TRUE
 # Support function
 f <- function(x, y) dmnorm(cbind(x, y), Mean, Sigma)
 
