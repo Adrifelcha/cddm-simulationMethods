@@ -61,7 +61,11 @@ cddm.pdf <- function(x, drift, theta, tzero, boundary){
   return(PDF)
 }
 
-dCDDM <- function(data,drift, theta, tzero, boundary){
+dCDDM <- function(data,par){
+  drift = par$drift 
+  theta = par$theta
+  tzero = par$tzero
+  boundary = par$boundary
       if(is.vector(data)){
           N <- 1
           pdf <- cddm.pdf(data,drift,theta,tzero,boundary)
@@ -72,21 +76,19 @@ dCDDM <- function(data,drift, theta, tzero, boundary){
             pdf[i] <- cddm.pdf(data[i,],drift,theta,tzero,boundary)
           }
       }
-      return(pdf)
+  return(pdf)
 }
 
 #################
 # Test/Examples
 #################
-# Some data
-n <- 10
-A <- runif(n, 0, 2*pi)
-B <- rexp(n,2)
-data <- cbind(A,B)
-# Some parameter values
-drift = 1 
-theta = pi
-tzero = 0.1
-boundary = 7
-# Get densities
-dCDDM(data, drift, theta, tzero, boundary)
+# Test function
+if(!exists("test")){  test <- TRUE     }
+if(test){
+  n <- 10
+  A <- runif(n, 0, 2*pi)
+  B <- rexp(n,2)
+  data <- cbind(A,B)
+  par <- list("drift" = 1,   "theta" = pi,
+              "tzero" = 0.1, "boundary" = 7)
+  dCDDM(data, drift, theta, tzero, boundary)}
