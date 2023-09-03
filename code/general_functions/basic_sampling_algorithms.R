@@ -24,9 +24,14 @@ upper.bound <- 10
 
 # Write Trapezoid N.I. algorithm
 numInt.tpz.normal <- function(lower.bound, upper.bound, par,
-                              kappa=300, plot=FALSE){
+                              kappa=NA, plot=FALSE){
     mean <- par$mean
     sd <- par$sd
+    
+    if(is.na(kappa)){
+          total.width <- upper.bound-lower.bound
+          kappa <- total.width*20
+    }
     
     if(plot){
       width <- (3*sd)
@@ -63,14 +68,15 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
 numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
 
 # Use Trapezoid Numeric integration to compute CDF
-normal.cdf <- function(x,par){
+normal.cdf <- function(x,par,plot=FALSE){
   lower.bound <- par$mean-(par$sd*100)
-  area <- numInt.tpz.normal(lower.bound,x,par)
+  area <- numInt.tpz.normal(lower.bound,x,par,plot=plot)
   return(area)
 }
 
 # Test function
-normal.cdf(10,par)
+normal.cdf(10,par,plot=TRUE)
+normal.cdf(500,par,plot=TRUE)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # To sample data, we use a MCMC basic algorithm
