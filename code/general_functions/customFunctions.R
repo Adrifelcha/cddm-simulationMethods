@@ -4,6 +4,7 @@
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez   
 library("scatterplot3d") 
+library("mnormt")
 
 ###############################################################################
 ###################   General Simulation Functions
@@ -110,4 +111,36 @@ getDifferences <- function(eCDF,tCDF){
   
   output <- cbind(difference.sum,Kldivergence,sq.difference)
   colnames(output) <- c("sumDiff","Kldivergence","SSDiff") 
+}
+
+
+###############################################################################
+###################   Auxiliary functions for Sampling algorithms
+###############################################################################
+testBins.mvnormal = function(bin.X,bin.Y,Mean,Sigma){
+  dimm = 1:2
+  n = min(length(bin.X),length(bin.Y))
+  bin.list = list(bin.X,bin.Y)
+  d <- dmnorm(cbind(bin.X[1:n],bin.Y[1:n]),Mean,Sigma)
+  b <- which(d>0)[1]
+
+  if(!is.na(b)){
+    if(b!=1){
+      for(i in dimm){
+      fix.this.bin = bin.list[[i]]
+      let.bin.vart = bin.list[[-i]]
+      a = b-1
+      unique.densities = 2
+          while(1 < unique.densities){
+            fix = rep(fix.this.bin[a],a)
+            d = dmnorm(cbind(fix.X,bin.Y[1:a]),Mean,Sigma)
+            unique.densities = length(unique(d))
+            a = a -1 
+          }
+      }
+    }
+  }
+  
+  output = list("bin.counter" = b)
+  return(output)
 }
