@@ -20,14 +20,13 @@ library(scatterplot3d)
 # Some data
 par <- list("mean" = 10, "sd" = 1)
 lower.bound <- 1
-upper.bound <- 10
+upper.bound <- 50000
 
 # Write Trapezoid N.I. algorithm
 numInt.tpz.normal <- function(lower.bound, upper.bound, par,
                               kappa=NA, plot=FALSE){
     mean <- par$mean
     sd <- par$sd
-    
     if(is.na(kappa)){
           total.width <- upper.bound-lower.bound
           kappa <- total.width*20
@@ -40,27 +39,30 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
       plot(support,dnorm(support,mean,sd),
            type="l", ann=F, axes=F, col=1)
       axis(1,ticks,ticks)
-      legend("topright", paste("No. bins =",kappa), 
-             cex = 0.75, bty ="n")
     }
     
     bins <- seq(lower.bound,upper.bound,length.out=kappa)
     bin.area <- rep(NA,kappa-1)
-    for(b in 2:kappa){
+    b <- 2
+    total.area <- 0
+    while((total.area<1&b<=kappa)==TRUE){
         low.x <- bins[b-1]
         up.x  <- bins[b]
         low.y <- dnorm(low.x,par$mean,par$sd)
         up.y  <- dnorm(up.x,par$mean,par$sd)
         height <- (low.y+up.y)/2
         bin.area[b-1] <- height*(up.x-low.x)
-        
         if(plot){
           polygon(x=c(low.x,up.x,up.x,low.x),
                   y=c(0,0,low.y,up.y),
                   col = (b %% 2)+1)
         }
+        total.area <- sum(bin.area,na.rm=TRUE)
+        b <- b+1
     }
-    total.area <- sum(bin.area)
+    b <- b-1
+    legend("topright", paste("No. bins =",b), 
+           cex = 0.75, bty ="n")
     return(total.area)
 }
 
@@ -76,7 +78,9 @@ normal.cdf <- function(x,par,plot=FALSE){
 
 # Test function
 normal.cdf(10,par,plot=TRUE)
+normal.cdf(50,par,plot=TRUE)
 normal.cdf(500,par,plot=TRUE)
+normal.cdf(50000,par,plot=TRUE)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # To sample data, we use a MCMC basic algorithm
