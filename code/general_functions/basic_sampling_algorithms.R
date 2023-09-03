@@ -182,7 +182,7 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   kappa <- c(width.X,width.Y)*20
   
   if(plot){
-    width <- c(Sigma[1,1],Sigma[2,2])*3
+    width <- c(Sigma[1,1],Sigma[2,2])*5
     nSupp <- 100
     nLines <- 30
     base.X <- c(Mean[1]-width[1],Mean[1]+width[1])
@@ -215,16 +215,11 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   
   bin.X <- seq(lower.bound.X,upper.bound.X,length.out=kappa[1])
   bin.Y <- seq(lower.bound.Y,upper.bound.Y,length.out=kappa[2])
-  d <- dmnorm(cbind(bin.X,bin.Y),Mean,Sigma)
-  b <- which(d>0)[1]
-  if(is.na(b)){
-        bin.area <- rep(NA,kappa^2)
-        b <- (kappa^2)+1
-  }else{
-        bin.area <- rep(NA,kappa-(b-1))
-  }
+  
+  test.bins = 
+  
   total.area = 0
-  while((total.area<1&b<=kappa)==TRUE){
+  while((total.area<1&b<=K)==TRUE){
     X.from <- bin.X[b-1]
     X.to   <- bin.X[b]
     Y.from <- bin.Y[b-1]
