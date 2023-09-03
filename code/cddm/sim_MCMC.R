@@ -27,13 +27,32 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   
   if(plot){
     nSupp <- 100
+    nLines <- 30
+    base.C <- c(0, 2*pi)
+    base.RT <- c(tzero, max.RT)
     support.C <- seq(base.C[1],base.C[2],length.out=nSupp)
-    support.RT <- seq(base.RT[1],base.RT[2],length.out=nSupp)
-    
-    z <- dCDDM(cbind(support.C,support.RT),drift, theta, tzero, boundary)
-    a <- scatterplot3d(support.C, support.RT, z, 
+    support.RT1 <- seq(base.RT[1],base.RT[2],length.out=nSupp)
+    support.RT2 <- rev(support.RT1)
+    support.theta <- rep(theta,nSupp)
+    z.diag1 <- dCDDM(cbind(support.C,support.RT1),drift, theta, tzero, boundary)
+    z.diag2 <- dCDDM(cbind(support.C,support.RT2),drift, theta, tzero, boundary)
+    z.RT_at_theta <- dCDDM(cbind(support.theta,support.RT1),drift, theta, tzero, boundary)
+    a <- scatterplot3d(support.C, support.RT1, z.diag1, 
                        xlim=base.C, ylim=base.RT, zlim=c(0,height),
-                       color="blue", type="l", lwd=2)
+                       xlab="Choices", ylab="RT", zlab="Density",
+                       color="blue", type="l", bg="green")
+    a$points3d(support.C, support.RT2, z.diag2, col = "blue", type="l")
+    a$points3d(support.theta, support.RT1, z.RT_at_theta, col = "red", type="l")
+    L <- round(nSupp/nLines,0)
+    for(i in 1:nLines){
+      choose.RT <- rep(support.RT1[i*L],nSupp)
+      choose.C  <- rep(support.C[i*L],nSupp)
+      z.overRT <- dCDDM(cbind(choose.C,support.RT1),drift, theta, tzero, boundary)
+      z.overC <-  dCDDM(cbind(support.C,choose.RT),drift, theta, tzero, boundary)
+      a$points3d(support.C, choose.RT, z.overC, col = "blue", type="l")
+      a$points3d(choose.C, support.RT1, z.overRT, col = "blue", type="l")
+    }
+    legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
   }
   
   n.keep <- 0
@@ -56,7 +75,7 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
       a$points3d(cand[!keep,1], cand[!keep,2], rej.crit[!keep],
                  col = "red", pch = 16, cex = 0.2)
       a$points3d(cand[keep,1], cand[keep,2], rej.crit[keep],
-                 col = "blue3", pch = 16, cex = 0.2)
+                 col = "green", pch = 16, cex = 0.2)
     }
     
     samples <- rbind(samples, cand[keep,])
