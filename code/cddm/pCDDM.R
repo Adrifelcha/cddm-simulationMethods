@@ -5,10 +5,10 @@ source("./dCDDM.R")
 par <- list("drift" = 1, 
             "theta" = pi,
             "tzero" = 0.1,
-            "boundary" = 3)
+            "boundary" = 7)
 lower.C <- 0
 upper.C <- 2*pi
-lower.RT <- tzero
+lower.RT <- par$tzero
 upper.RT <- 20
 plot = TRUE
 max.RT = 20
@@ -27,25 +27,40 @@ numInt.tpz.cddm <- function(lower.C, upper.C,
 
   if(plot){
     nSupp <- 100
+    nLines <- 30
     base.C <- c(0, 2*pi)
     base.RT <- c(tzero, max.RT)
     support.C <- seq(base.C[1],base.C[2],length.out=nSupp)
-    support.RT <- seq(base.RT[1],base.RT[2],length.out=nSupp)
-    z <- dCDDM(cbind(support.C,support.RT),drift, theta, tzero, boundary)
-    z.top <- max(z)
-    a <- scatterplot3d(support.C, support.RT, z, 
+    support.RT1 <- seq(base.RT[1],base.RT[2],length.out=nSupp)
+    support.RT2 <- rev(support.RT1)
+    support.theta <- rep(theta,nSupp)
+    z.diag1 <- dCDDM(cbind(support.C,support.RT1),drift, theta, tzero, boundary)
+    z.diag2 <- dCDDM(cbind(support.C,support.RT2),drift, theta, tzero, boundary)
+    z.RT_at_theta <- dCDDM(cbind(support.theta,support.RT1),drift, theta, tzero, boundary)
+    z.top <- max(c(z.diag1,z.diag2,z.RT_at_theta))
+    a <- scatterplot3d(support.C, support.RT1, z.diag1, 
                        xlim=base.C, ylim=base.RT, zlim=c(0,z.top),
                        xlab="Choices", ylab="RT", zlab="Density",
-                       color="blue", type="l", lwd=2)
-    legend("topright", paste("No. bins =",kappa), 
-           cex = 0.75)
+                       color="blue", type="l", bg="green")
+    a$points3d(support.C, support.RT2, z.diag2, col = "blue", type="l")
+    a$points3d(support.theta, support.RT1, z.RT_at_theta, col = "red", type="l")
+    L <- round(nSupp/nLines,0)
+    for(i in 1:nLines){
+      choose.RT <- rep(support.RT1[i*L],nSupp)
+      choose.C  <- rep(support.C[i*L],nSupp)
+      z.overRT <- dCDDM(cbind(choose.C,support.RT1),drift, theta, tzero, boundary)
+      z.overC <-  dCDDM(cbind(support.C,choose.RT),drift, theta, tzero, boundary)
+      a$points3d(support.C, choose.RT, z.overC, col = "blue", type="l")
+      a$points3d(choose.C, support.RT1, z.overRT, col = "blue", type="l")
+    }
+    legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
   }
   
   bin.C <- seq(lower.C,upper.C,length.out=kappa)
   sidesLength.C <- bin.C[2]-bin.C[1]
   bin.RT <- seq(lower.RT,upper.RT,length.out=kappa)
   sidesLength.RT <- bin.RT[2]-bin.RT[1]
-  base.area <- sidesLength.C*sidesLength.RT
+  binBase.area <- sidesLength.C*sidesLength.RT
   bin.area <- rep(NA,(kappa-1)^2)
   bin.count <- 1
   for(b.c in 2:kappa){
@@ -57,11 +72,17 @@ numInt.tpz.cddm <- function(lower.C, upper.C,
               for(c in 1:2){
               vertix <- c(C.space[c],RT.space[rt])
               v.density <- dCDDM(vertix,drift,theta,tzero,boundary)
-              v.height[c,rt] <- max(c(0,v.density))
+              store <- max(c(0,v.density))
+              v.height[c,rt] <- store
+                  if(plot){
+                    a$points3d(vertix[1],vertix[2],store,
+                               col="yellow",type="p")
+                  }
               }
           }
           height <- mean(v.height)
-          bin.area[bin.count] <- height*base.area
+          bin.area[bin.count] <- height*binBase.area
+          # Alternative formula, exactly same result
           # VA = (1/6)*base.area*sum(as.vector(v.height)[-1])
           # VB = (1/6)*base.area*sum(as.vector(v.height)[-2])
           # VC = (1/6)*base.area*sum(as.vector(v.height)[-3])
@@ -81,11 +102,13 @@ numInt.tpz.cddm(lower.C, upper.C,
                 kappa=300, plot=FALSE)
 
 # Use Trapezoid Numeric integration to compute CDF
-pCDDM <- function(data,par,plot=FALSE){
+pCDDM <- function(data,drift, theta, tzero, boundary, plot=FALSE){
   lower.C <- 0
-  lower.RT <- par$tzero
+  lower.RT <- tzero
   upper.C <- data[1]
   upper.RT <- data[2]
+  par <- list("drift" = drift, "theta" = theta, 
+              "tzero" = tzero, "boundary" = boundary)
   area <- numInt.tpz.cddm(lower.C, upper.C,
                           lower.RT, upper.RT,
                           par, max.RT = 20, 
@@ -96,13 +119,13 @@ pCDDM <- function(data,par,plot=FALSE){
 # Test function
 if(!exists("test")){    test <- TRUE                           }
 if(test){
-    par <- list("drift" = 1, 
-                "theta" = pi,
-                "tzero" = 0.1,
-                "boundary" = 7)
+    drift = 1
+    theta = pi
+    tzero = 0.1
+    boundary = 7
     n <- 500
     C <- runif(1,0,2*pi)
     RT <- runif(1,0,15)
     data <- c(C,RT)
-    pCDDM(data,par,plot=TRUE)
+    pCDDM(data,drift, theta, tzero, boundary, plot=TRUE)
 }
