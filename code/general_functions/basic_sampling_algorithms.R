@@ -18,9 +18,9 @@ library(scatterplot3d)
 # To approximate CDFs, we use a Trapezoid Numerical Integration algorithm
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
-par <- list("mean" = 5000, "sd" = 1)
+par <- list("mean" = 500, "sd" = 1)
 lower.bound <- 1
-upper.bound <- 50000
+upper.bound <- 5000
 kappa=NA
 plot=TRUE
 # Write Trapezoid N.I. algorithm
@@ -43,6 +43,7 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     }
     
     bins <- seq(lower.bound,upper.bound,length.out=kappa)
+    bin.base = bins[2] - bins[1]
     d <- dnorm(bins,par$mean,par$sd)
     b <- which(d>0)[1]
     if(is.na(b)){
@@ -52,15 +53,15 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
       bin.area <- rep(NA,kappa-(b-1))}
     total.area <- 0
     while((total.area<1&b<=kappa)==TRUE){
-        low.x <- bins[b-1]
-        up.x  <- bins[b]
-        low.y <- dnorm(low.x,par$mean,par$sd)
-        up.y  <- dnorm(up.x,par$mean,par$sd)
-        height <- (low.y+up.y)/2
-        bin.area[b-1] <- height*(up.x-low.x)
+        low.x = bins[b-1]
+        up.x  = bins[b]
+        density.x1 <- d[b-1]
+        density.x2 <- d[b]
+        height <- (density.x1+density.x2)/2
+        bin.area[b-1] <- height*bin.base
         if(plot){
           polygon(x=c(low.x,up.x,up.x,low.x),
-                  y=c(0,0,low.y,up.y),
+                  y=c(0,0,density.x1,density.x2),
                   col = (b %% 2)+1)
         }
         total.area <- sum(bin.area,na.rm=TRUE)
@@ -90,9 +91,8 @@ normal.cdf <- function(x,par,plot=FALSE){
 normal.cdf(10,par,plot=TRUE)
 normal.cdf(50,par,plot=TRUE)
 normal.cdf(500,par,plot=TRUE)
+normal.cdf(501,par,plot=TRUE)
 normal.cdf(5000,par,plot=TRUE)
-normal.cdf(5000.5,par,plot=TRUE)
-normal.cdf(50000,par,plot=TRUE)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # To sample data, we use a MCMC basic algorithm
@@ -161,7 +161,7 @@ sample.MCMC.normal(5000,par, plot=TRUE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
 par <- list("mean" = c(10,10),
-            "Sigma" = matrix(c(1, 1, 1, 1), nrow=2))
+            "Sigma" = matrix(c(1, 0.5, 0.5, 1), nrow=2))
 lower.bound.X <- 1
 upper.bound.X <- 10
 lower.bound.Y <- 1
@@ -171,39 +171,60 @@ plot = TRUE
 
 # Write Trapezoid N.I. algorithm
 numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
-                              lower.bound.Y, upper.bound.Y,
-                              par, plot=FALSE){
+                                lower.bound.Y, upper.bound.Y,
+                                par, plot=FALSE){
+  no.Dim <- 2
   Mean  <- par$mean
   Sigma <- par$Sigma
   
   width.X <- upper.bound.X-lower.bound.X
-  kappa.X <- width.X*20
   width.Y <- upper.bound.Y-lower.bound.Y
-  kappa.Y <- width.Y*20
+  kappa <- c(width.X,width.Y)*20
   
   if(plot){
-    width <- NA
-    ticks <- matrix(NA,nrow=2,ncol=10)
-    support.def <- 70
-    support <- matrix(NA,nrow=2,ncol=support.def)
-    for(i in 1:2){
-        width[i] <- (3*Sigma[i,i])
-        ticks[i,] <- seq(Mean[i]-width[i],
-                         Mean[i]+width[i],length.out=10)
-        support[i,] <- seq(Mean[i]-width[i],
-                           Mean[i]+width[i],length.out=support.def)
+    width <- c(Sigma[1,1],Sigma[2,2])*3
+    nSupp <- 100
+    nLines <- 30
+    base.X <- c(Mean[1]-width[1],Mean[1]+width[1])
+    base.Y <- c(Mean[2]-width[2],Mean[2]+width[2])
+    support.X <- seq(base.X[1],base.X[2],length.out=nSupp)
+    support.Y <- seq(base.Y[1],base.Y[2],length.out=nSupp)
+    support.muX <- rep(Mean[1],nSupp)
+    support.muY <- rep(Mean[2],nSupp)
+    z.diag1 <- dmnorm(cbind(support.X,support.Y),Mean,Sigma)
+    z.diag2 <- dmnorm(cbind(support.X,rev(support.Y)),Mean,Sigma)
+    z.Y_at_muX <- dmnorm(cbind(support.muX,support.Y),Mean,Sigma)
+    z.X_at_muY <- dmnorm(cbind(support.X,support.muY),Mean,Sigma)
+    z.top <- max(c(z.diag1,z.diag2,z.Y_at_muX,z.X_at_muY))
+    a <- scatterplot3d(support.X, support.Y, z.diag1, 
+                       xlim=base.X, ylim=base.Y, zlim=c(0,z.top),
+                       color="blue", type="l", zlab="")
+    a$points3d(support.X, rev(support.Y), z.diag2, col = "blue", type="l")
+    a$points3d(support.X, support.muY, z.X_at_muY, col = "red", type="l")
+    a$points3d(support.muX, support.Y, z.Y_at_muX, col = "red", type="l")
+    L <- round(nSupp/nLines,0)
+    for(i in 1:nLines){
+      choose.X <- rep(support.X[i*L],nSupp)
+      choose.Y <- rep(support.Y[i*L],nSupp)
+      z.overX <- dmnorm(cbind(support.X,choose.Y),Mean,Sigma)
+      z.overY <- dmnorm(cbind(choose.X,support.Y),Mean,Sigma)
+      a$points3d(support.X, choose.Y, z.overX, col = "blue", type="l")
+      a$points3d(choose.X, support.Y, z.overY, col = "blue", type="l")
     }
-    z <- outer(support[1,],support[2,], f)
-    persp(support[1,], support[2,], z, col="gray99",
-          theta=-30, phi=25, expand=0.6, ticktype='detailed')
-    legend("topright", paste("No. bins =",kappa), 
-           cex = 0.75, bty ="n")
   }
   
-  bin.X <- seq(lower.X,upper.X,length.out=kappa)
-  bin.Y <- seq(lower.Y,upper.Y,length.out=kappa)
-  bin.area <- rep(NA,kappa-1)
-  for(b in 2:kappa){
+  bin.X <- seq(lower.bound.X,upper.bound.X,length.out=kappa[1])
+  bin.Y <- seq(lower.bound.Y,upper.bound.Y,length.out=kappa[2])
+  d <- dmnorm(cbind(bin.X,bin.Y),Mean,Sigma)
+  b <- which(d>0)[1]
+  if(is.na(b)){
+        bin.area <- rep(NA,kappa^2)
+        b <- (kappa^2)+1
+  }else{
+        bin.area <- rep(NA,kappa-(b-1))
+  }
+  total.area = 0
+  while((total.area<1&b<=kappa)==TRUE){
     X.from <- bin.X[b-1]
     X.to   <- bin.X[b]
     Y.from <- bin.Y[b-1]
