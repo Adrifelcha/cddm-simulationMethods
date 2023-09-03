@@ -12,18 +12,20 @@ lower.RT <- par$tzero
 upper.RT <- 20
 plot = TRUE
 max.RT = 20
-kappa = 200
 
 # Write Trapezoid N.I. algorithm
-numInt.tpz.cddm <- function(lower.C, upper.C,
-                            lower.RT, upper.RT,
-                            par, max.RT = 20, 
-                            kappa=300, plot=FALSE){
+numInt.tpz.cddm <- function(lower.C, upper.C, lower.RT, upper.RT,
+                            par, max.RT = 20, plot=FALSE){
   no.Dim <- 2
   drift <- par$drift
   theta <- par$theta
   tzero <- par$tzero
   boundary <- par$boundary
+  
+  width.C  <-  upper.C - lower.C
+  width.RT <- upper.RT - lower.RT
+  kappa <- c(width.C,width.RT)*20
+  
 
   if(plot){
     nSupp <- 100
@@ -41,7 +43,7 @@ numInt.tpz.cddm <- function(lower.C, upper.C,
     a <- scatterplot3d(support.C, support.RT1, z.diag1, 
                        xlim=base.C, ylim=base.RT, zlim=c(0,z.top),
                        xlab="Choices", ylab="RT", zlab="Density",
-                       color="blue", type="l", bg="green")
+                       color="blue", type="l")
     a$points3d(support.C, support.RT2, z.diag2, col = "blue", type="l")
     a$points3d(support.theta, support.RT1, z.RT_at_theta, col = "red", type="l")
     L <- round(nSupp/nLines,0)
