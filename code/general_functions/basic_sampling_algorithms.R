@@ -18,10 +18,11 @@ library(scatterplot3d)
 # To approximate CDFs, we use a Trapezoid Numerical Integration algorithm
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
-par <- list("mean" = 10, "sd" = 1)
+par <- list("mean" = 5000, "sd" = 1)
 lower.bound <- 1
-upper.bound <- 50000
-
+upper.bound <- 10
+kappa=NA
+plot=TRUE
 # Write Trapezoid N.I. algorithm
 numInt.tpz.normal <- function(lower.bound, upper.bound, par,
                               kappa=NA, plot=FALSE){
@@ -42,8 +43,13 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     }
     
     bins <- seq(lower.bound,upper.bound,length.out=kappa)
-    bin.area <- rep(NA,kappa-1)
-    b <- 2
+    d <- dnorm(bins,par$mean,par$sd)
+    b <- which(d>0)[1]
+    if(is.na(b)){
+      bin.area <- rep(NA,kappa)
+      b <- kappa+1
+    }else{
+      bin.area <- rep(NA,kappa-(b-1))}
     total.area <- 0
     while((total.area<1&b<=kappa)==TRUE){
         low.x <- bins[b-1]
@@ -71,7 +77,7 @@ numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
 
 # Use Trapezoid Numeric integration to compute CDF
 normal.cdf <- function(x,par,plot=FALSE){
-  lower.bound <- par$mean-(par$sd*100)
+  lower.bound <- x-(par$mean-(par$sd*100))
   area <- numInt.tpz.normal(lower.bound,x,par,plot=plot)
   return(area)
 }
@@ -149,21 +155,25 @@ sample.MCMC.normal(5000,par, plot=TRUE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Some data
 par <- list("mean" = c(10,10),
-            "Sigma" = matrix(c(2, -1, -1, 2), nrow=2))
-lower.X <- 1
-upper.X <- 10
-lower.Y <- 1
-upper.Y <- 10
+            "Sigma" = matrix(c(1, 1, 1, 1), nrow=2))
+lower.bound.X <- 1
+upper.bound.X <- 10
+lower.bound.Y <- 1
+upper.bound.Y <- 10
 plot = TRUE
-# Support function
-f <- function(x, y) dmnorm(cbind(x, y), Mean, Sigma)
+
 
 # Write Trapezoid N.I. algorithm
-numInt.tpz.normal <- function(lower.X, upper.X,
-                              lower.Y, upper.Y,
-                              par, kappa=300, plot=FALSE){
-  Mean <- par$mean
+numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
+                              lower.bound.Y, upper.bound.Y,
+                              par, plot=FALSE){
+  Mean  <- par$mean
   Sigma <- par$Sigma
+  
+  width.X <- upper.bound.X-lower.bound.X
+  kappa.X <- width.X*20
+  width.Y <- upper.bound.Y-lower.bound.Y
+  kappa.Y <- width.Y*20
   
   if(plot){
     width <- NA
@@ -213,14 +223,14 @@ numInt.tpz.normal <- function(lower.X, upper.X,
 numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
 
 # Use Trapezoid Numeric integration to compute CDF
-normal.cdf <- function(x,par){
+mvnormal.cdf <- function(x,par){
   lower.bound <- par$mean-(par$sd*100)
   area <- numInt.tpz.normal(lower.bound,x,par)
   return(area)
 }
 
 # Test function
-normal.cdf(10,par)
+mvnormal.cdf(10,par)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # To sample data, we use a MCMC basic algorithm
