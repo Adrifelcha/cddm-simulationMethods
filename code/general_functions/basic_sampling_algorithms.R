@@ -20,7 +20,7 @@ library(scatterplot3d)
 # Some data
 par <- list("mean" = 5000, "sd" = 1)
 lower.bound <- 1
-upper.bound <- 10
+upper.bound <- 50000
 kappa=NA
 plot=TRUE
 # Write Trapezoid N.I. algorithm
@@ -35,7 +35,7 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     
     if(plot){
       width <- (3*sd)
-      ticks <- seq(mean-width,mean+width,length.out=10)
+      ticks <- round(seq(mean-width,mean+width,length.out=10),2)
       support <- seq(mean-width,mean+width,length.out=9999)
       plot(support,dnorm(support,mean,sd),
            type="l", ann=F, axes=F, col=1)
@@ -67,7 +67,8 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
         b <- b+1
     }
     b <- b-1
-    legend("topright", paste("No. bins =",b), 
+    no.bins = sum(!is.na(bin.area))
+    legend("topright", paste("No. bins =",no.bins), 
            cex = 0.75, bty ="n")
     return(total.area)
 }
@@ -77,7 +78,10 @@ numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
 
 # Use Trapezoid Numeric integration to compute CDF
 normal.cdf <- function(x,par,plot=FALSE){
-  lower.bound <- x-(par$mean-(par$sd*100))
+  lower.bound <- (par$mean-(par$sd*100))
+  if(x<lower.bound){
+   lower.bound  = x-lower.bound
+  }
   area <- numInt.tpz.normal(lower.bound,x,par,plot=plot)
   return(area)
 }
@@ -86,6 +90,8 @@ normal.cdf <- function(x,par,plot=FALSE){
 normal.cdf(10,par,plot=TRUE)
 normal.cdf(50,par,plot=TRUE)
 normal.cdf(500,par,plot=TRUE)
+normal.cdf(5000,par,plot=TRUE)
+normal.cdf(5000.5,par,plot=TRUE)
 normal.cdf(50000,par,plot=TRUE)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
