@@ -24,6 +24,7 @@ n <- 5000 # No. samples
 X.RW <- sample.RW.cddm(n,par)
 max.RT <- max(X.RW$bivariate.data[,2])
 X.MCMC <- sample.MCMC.cddm(n,par,max.RT)
+X.invCDF <- sample.invCDF.cddm(n,par,max.RT)
 
 # 4: Plot and compare the data sampled ~~~~~~~~~~~~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
