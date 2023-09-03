@@ -42,7 +42,7 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
                        xlab="Choices", ylab="RT", zlab="Density",
                        color="blue", type="l", bg="green")
     a$points3d(support.C, support.RT2, z.diag2, col = "blue", type="l")
-    a$points3d(support.theta, support.RT1, z.RT_at_theta, col = "red", type="l")
+    a$points3d(support.theta, support.RT1, z.RT_at_theta, col = "blue", type="l")
     L <- round(nSupp/nLines,0)
     for(i in 1:nLines){
       choose.RT <- rep(support.RT1[i*L],nSupp)
@@ -52,7 +52,6 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
       a$points3d(support.C, choose.RT, z.overC, col = "blue", type="l")
       a$points3d(choose.C, support.RT1, z.overRT, col = "blue", type="l")
     }
-    legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
   }
   
   n.keep <- 0
