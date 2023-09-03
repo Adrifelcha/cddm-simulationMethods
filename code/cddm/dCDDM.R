@@ -61,11 +61,7 @@ cddm.pdf <- function(x, drift, theta, tzero, boundary){
   return(PDF)
 }
 
-dCDDM <- function(data,par){
-  drift = par$drift 
-  theta = par$theta
-  tzero = par$tzero
-  boundary = par$boundary
+dCDDM <- function(data,drift,theta,tzero,boundary){
       if(is.vector(data)){
           N <- 1
           pdf <- cddm.pdf(data,drift,theta,tzero,boundary)
@@ -89,6 +85,9 @@ if(test){
   A <- runif(n, 0, 2*pi)
   B <- rexp(n,2)
   data <- cbind(A,B)
-  par <- list("drift" = 1,   "theta" = pi,
-              "tzero" = 0.1, "boundary" = 7)
-  dCDDM(data, drift, theta, tzero, boundary)}
+  drift <- 1
+  theta <- pi
+  tzero <- 0.1
+  boundary <- 7
+  dCDDM(data, drift, theta, tzero, boundary)
+  dCDDM(data[1,], drift, theta, tzero, boundary)}
