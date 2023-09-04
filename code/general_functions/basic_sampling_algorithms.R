@@ -47,10 +47,9 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     d <- dnorm(bins,par$mean,par$sd)
     b <- which(d>0)[1]
     if(is.na(b)){
-      bin.area <- rep(NA,kappa)
       b <- kappa+1
-    }else{
-      bin.area <- rep(NA,kappa-(b-1))}
+    }
+    bin.area <- rep(NA,kappa)
     total.area <- 0
     while((total.area<1&b<=kappa)==TRUE){
         low.x = bins[b-1]
@@ -216,7 +215,23 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   bin.X <- seq(lower.bound.X,upper.bound.X,length.out=kappa[1])
   bin.Y <- seq(lower.bound.Y,upper.bound.Y,length.out=kappa[2])
   
-  test.bins = 
+  test.bins = testBins.bvnormal(bin.X,bin.Y,Mean,Sigma)
+  bin.X <- test.bins$bin.X
+  bin.Y <- test.bins$bin.Y
+  
+  if(!unique(is.na(bin.X))){
+      test.bins = testBins.bvnormal(rev(bin.X),rev(bin.Y),Mean,Sigma)
+      bin.X <- sort(test.bins$bin.X)
+      bin.Y <- sort(test.bins$bin.Y)
+      b <- 2
+  }
+  
+  side.X <- bin.X[2]-bin.X[1]
+  side.Y <- bin.Y[2]-bin.Y[1]
+  K <- length(bin.X)*length(bin.Y)
+  bin.area <- rep(NA,K)
+  if(unique(is.na(bin.X))){   
+    b <- K+1}
   
   total.area = 0
   while((total.area<1&b<=K)==TRUE){
@@ -224,8 +239,6 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
     X.to   <- bin.X[b]
     Y.from <- bin.Y[b-1]
     Y.to   <- bin.Y[b]
-    side.A <- X.from-X.to
-    side.B <- Y.from-Y.to
     low.y <- dnorm(low.x,par$mean,par$sd)
     up.y  <- dnorm(up.x,par$mean,par$sd)
     height <- (low.y+up.y)/2
@@ -242,12 +255,12 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
 }
 
 # Test function
-numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
+numInt.tpz.bvnormal(lower.bound,upper.bound,par, plot=TRUE)
 
 # Use Trapezoid Numeric integration to compute CDF
 mvnormal.cdf <- function(x,par){
   lower.bound <- par$mean-(par$sd*100)
-  area <- numInt.tpz.normal(lower.bound,x,par)
+  area <- numInt.tpz.bvnormal(lower.bound,x,par)
   return(area)
 }
 
