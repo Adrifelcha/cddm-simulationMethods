@@ -225,30 +225,38 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
       bin.Y <- sort(test.bins$bin.Y)
       b <- 2
   }
-  
+  nY <- length(bin.Y)
+  y <- 1
+  y.up <- nY
+  nX <- length(bin.X)
   side.X <- bin.X[2]-bin.X[1]
   side.Y <- bin.Y[2]-bin.Y[1]
+  base.area <- side.X*side.Y
   K <- length(bin.X)*length(bin.Y)
   bin.area <- rep(NA,K)
-  if(unique(is.na(bin.X))){   
-    b <- K+1}
+  if(unique(is.na(bin.X))){ b <- K+1 }
   
   total.area = 0
-  while((total.area<1&b<=K)==TRUE){
-    X.from <- bin.X[b-1]
-    X.to   <- bin.X[b]
-    Y.from <- bin.Y[b-1]
-    Y.to   <- bin.Y[b]
-    low.y <- dnorm(low.x,par$mean,par$sd)
-    up.y  <- dnorm(up.x,par$mean,par$sd)
-    height <- (low.y+up.y)/2
-    bin.area[b-1] <- height*(up.x-low.x)
-    
-    if(plot){
-      polygon(x=c(low.x,up.x,up.x,low.x),
-              y=c(0,0,low.y,up.y),
-              col = (b %% 2)+1)
+  every.combination <- expand.grid(bin.X,bin.Y)
+  while((total.area<1&b<=nX)==TRUE){
+    X.from <- rep(bin.X[b-1],nY)
+    X.to   <- rep( bin.X[b] ,nY)
+    d.from <- dmnorm(cbind(X.from,bin.Y),Mean,Sigma)
+    d.to   <- dmnorm(cbind(X.to,bin.Y),Mean,Sigma)
+    height <- NA
+    for(i in 2:nY){
+    height[i] <- sum(d.from[i-1],d.from[i],d.to[i-1],d.to[i])/4
     }
+    bin.area[y:y.up] <- height*base.area
+    y <- y.up+y
+    y.up <- y.up+y.up
+    total.area <- sum(bin.area,na.rm = TRUE)
+    # if(plot){
+    #   polygon(x=c(low.x,up.x,up.x,low.x),
+    #           y=c(0,0,low.y,up.y),
+    #           col = (b %% 2)+1)
+    # }
+    b <- b+1
   }
   total.area <- sum(bin.area)
   return(total.area)
