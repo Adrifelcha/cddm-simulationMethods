@@ -4,6 +4,8 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
 
+# The following code implements the density function described in Smiths (2016)
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Part 1: To reduce computation expenses, we define some relevant constants
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,31 +38,38 @@ j0_squared <- c(   5.783185962947,    30.471262343662,    74.887006790695,   139
                23455.981703247398, 24428.137737002071)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#  Define a function to compute bivariate density under CDDM
+# Part 2: Define functions to compute bivariate density described by CDDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Get the density of a single choice-RT pairing
 cddm.pdf <- function(x, drift, theta, tzero, boundary){
+  # Identify bivariate data
   c <- x[1]
   t <- x[2]
-  
+  # Relevant transformations / variable definitions
   inva2 = 1 / (boundary*boundary)
   mu1 = drift*cos(theta)
   mu2 = drift*sin(theta)
   sum = 0
-  
   # Equation 22 on Smith (2016)
-  for (i in 1:length(j0_squared)) {
-    exponand = j0_squared[i] * (t-tzero) * inva2 * -0.5
-    sum = sum + exp(exponand) * j0_over_J1_of_j0[i]
-  }
-  PDF.1 = sum * inva2
+      for (i in 1:length(j0_squared)) {
+        exponand = j0_squared[i] * (t-tzero) * inva2 * -0.5
+        sum = sum + exp(exponand) * j0_over_J1_of_j0[i]
+      }
+      PDF.1 = sum * inva2
   # Equation 23 on Smith (2016)
-  PDF.2 = boundary*(mu1*cos(c)+mu2*sin(c));
-  PDF.3 = (drift*drift*(t-tzero))*0.5;
-  PDF = exp(PDF.2 - PDF.3)*PDF.1
-  
+      PDF.2 = boundary*(mu1*cos(c)+mu2*sin(c));
+      PDF.3 = (drift*drift*(t-tzero))*0.5;
+      PDF = exp(PDF.2 - PDF.3)*PDF.1
+  # Return bivariate density
   return(PDF)
 }
 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 3: Final function
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Compute the bivariate density and produce a suiting output for the data
 dCDDM <- function(data,drift,theta,tzero,boundary){
       if(is.vector(data)){
           N <- 1
