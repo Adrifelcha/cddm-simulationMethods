@@ -1,18 +1,26 @@
 ###############################################################################
 ###############################################################################
-#####   A script to make an illustrative figure of the CDDM model
-#####                                                and all its parameters
+#####   A script to make an illustrative figure of the CDDM model and the
+#####       role of the drift vector (cardinal or polar) and the bound
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-############## Load custom functions
-source("../general_functions/customFunctions.R")
-source("../cddm/sim_randomWalk.R")
-############## Set up environment
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 1: Environment set-up and preparation
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 set.seed(123)
+## Load custom functions
+source("../general_functions/customFunctions.R")
+source("./sim_randomWalk.R")
+## Load necessary libraries 
 library(grid)
 library(shape)
 library(geostats)
-############## Specify par. values to generate data
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 2: Define parameters to portray
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#### Specify parameter values to generate data
 trials = 500
 boundary = 3
 mu1 = 2.5      #   Specify drift vector
@@ -21,35 +29,42 @@ polar.coordinates = rectToPolar(mu1,mu2)  # Derive polar
 dangle <- polar.coordinates[1]  # Drift angle
 if(dangle<=0){ dangle <- (2*pi)+dangle }  # Counterclockwise
 dlength <- polar.coordinates[2] # Drift length
-############## Generate data if necessary
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 3: Get random walk data ready for the plot
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+####   Generate data using random walk algorithm, so we can plot paths
+####   this takes some time, so it's only executed the first time that
+####   the script is run.
 if(!exists("randomWalk")){
    randomWalk = cddm.randomWalk(trials,mu1,mu2,boundary)
 }
-############## 
+#### Load relevant variables from the randomWalk output
 state  <- randomWalk$state
 finalT <- randomWalk$RT
 choices <- getFinalState(state)
 #!!!!!!!Defensive coding !!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
-trials <- length(finalT)
+# Make sure 'trials' and 'boundary' match the data set
+trials <- length(finalT)  
 polar <- rectToPolar(choices[1,1],choices[1,2])
 boundary <- round(polar[,"dLength"],2)
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
 
-# #############################################################
-# Figure 1: Showing parameters in CDDM (single RW)
-# #############################################################
-# Set up format details
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 4: Illustrative figure for the CDDM random walk and parameters
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Formatting details
 ########################################
-cex.text <- 1
-cex.greek <- 1.8
-f = 1
-# Set up margins
+cex.text <- 1       # Size of text
+cex.greek <- 1.8    # Size of greek letters
+f = 1 
+# Plot margins
 ########################################
 par(pty="s")             # Square canvas
 par(mfrow=c(1,1),        # A single plot
     mar = c(0, 0, 0, 0)) # outer margins
-pm <- boundary + 0.2     # Set x/y lims
+pm <- boundary + 0.2     # Set x/y lims.
 ########################################
 # Draw base circle
 ########################################
@@ -70,19 +85,19 @@ text(3.25,-0.15,expression(2*pi), cex=cex.text+0.1, f=1, col="black")
 text(-3.15,0.15,expression(pi), cex=cex.text+0.1, f=1, col="black")
 text(-0.25,3.15,expression(pi/2), cex=cex.text+0.1, f=1, col="black")
 text(-0.27,-3.15,expression(3*pi/2), cex=cex.text+0.1, f=1, col="black")
-########################################
-# Draw RW
-########################################
-# Select arbitrary number of RW to show
+#############################################
+# Draw Random Walk (multiple paths)
+#############################################
+# Select arbitrary number of paths to show
 show.trials <- 50
-# Draw RW
 color <- "#EEDB1C"
 for(i in 1:show.trials){
+  # Plot 75 states per path, for a better resolution
   z = seq(1,sum(!is.na(state[,,i])),length.out=75)
   points(state[z,,i], type = "l", col=rgb(0.6,0.5,0.1,0.09), lwd=2)
 }
 ########################################
-# Mark response observed
+# Identify response observed
 ########################################
 dot.color <- "#D5B31A"
 text.color <- "#9B8D0D"
@@ -90,13 +105,14 @@ for(i in 1:show.trials){
   points(choices[i,1],choices[i,2], type = "p", pch =16, cex=2,
          col=rgb(0.65,0.5,0.15,0.2))
 }
+# Include a "Responses observed" label next to an arbitrary choice
 show.rw = 50
 text(choices[show.rw,1]+1,choices[show.rw,2]-0.05,"Responses",
      cex=cex.text, col=text.color, f=f)
 text(choices[show.rw,1]+1,choices[show.rw,2]-0.25,"observed",
      cex=cex.text, col=text.color, f=f)
 ########################################
-# Boundary radius
+# Plot / signal the boundary parameter
 ########################################
 arrow.color = "#C3DDC1"
 text.color = "#739070"
@@ -109,9 +125,9 @@ Arrows(-2.65, 1.3, -0.05, 0.05, code = 2, arr.length = 0.2, arr.width = 0.2,
        col = arrow.color, lcol = arrow.color, lty = 2,
        arr.col = arrow.color, lwd = 1, arr.lwd = 2)
 text(-1.8,1.15,expression(eta), cex=cex.greek, col=text.color, f=f)
-########################################
-# Drift vector
-########################################
+############################################
+# Plot / signal the drift vector parameters
+############################################
 # Identify path prescribed by drift vector
 rect <- as.numeric(polarToRect(dangle,boundary))
 X <- c(0,rect[1])
