@@ -6,24 +6,20 @@ par <- list("drift" = 1,
             "theta" = pi,
             "tzero" = 0.1,
             "boundary" = 7)
-lower.C <- 0
-upper.C <- 2*pi
-lower.RT <- par$tzero
-upper.RT <- 20
+range.C <- c(0,2*pi)
+range.RT <- c(par$tzero, 20)
 plot = TRUE
-max.RT = 20
 
 # Write Trapezoid N.I. algorithm
-numInt.tpz.cddm <- function(lower.C, upper.C, lower.RT, upper.RT,
-                            par, max.RT = 20, plot=FALSE){
+numInt.tpz.cddm <- function(range.C, range.RT, par, plot=FALSE){
   no.Dim <- 2
   drift <- par$drift
   theta <- par$theta
   tzero <- par$tzero
   boundary <- par$boundary
   
-  width.C  <-  upper.C - lower.C
-  width.RT <- upper.RT - lower.RT
+  width.C  <-  range.C[2] - range.C[1]
+  width.RT <-  range.RT[2] - range.RT[1]
   kappa <- c(width.C,width.RT)*20
   
 
