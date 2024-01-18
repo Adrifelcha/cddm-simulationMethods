@@ -1,0 +1,33 @@
+---
+title: "Simulation algorithms for the CDDM in R"
+author: "Adriana F. Chávez De la Peña"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::material:
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: true
+    cards: false
+    highlight: tango
+    fig_width: 12 
+    fig_height: 8 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rmdformats)
+```
+
+# The Circular Drift Diffusion Model
+
+```{r, echo=FALSE, message=FALSE, fig.align='center'}
+setwd("./code/cddm/")
+source("./illustrateModel_Fig1.R")
+```
+
+# Algorithm 1: Random walk emulator
+
+# Algorithm 2: Metropolis-Hasting MCMC
+
+# Algorithm 3: Inverse cdf
