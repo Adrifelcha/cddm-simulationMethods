@@ -1,5 +1,6 @@
 test = FALSE
 source("./dCDDM.R")
+library("scatterplot3d")
 
 # Some data
 par <- list("drift" = 1, 
@@ -20,6 +21,7 @@ numInt.tpz.cddm <- function(range.C, range.RT, par, plot=FALSE){
   
   width.C  <-  range.C[2] - range.C[1]
   width.RT <-  range.RT[2] - range.RT[1]
+  max.RT <- range.RT[2]
   kappa <- c(width.C,width.RT)*20
   
 
