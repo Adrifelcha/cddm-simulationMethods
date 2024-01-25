@@ -148,6 +148,46 @@ cddm.randomWalk <- function(trials, mu1, mu2, boundary, ndt=0.1, drift.Coeff=1, 
   return(output)
 }
 
+# Auxiliary Function: Extract final state
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+getFinalState <- function(randomWalk.states){
+  randomWalk <- randomWalk.states
+  dimensions <- dim(randomWalk)
+  K <- nrow(randomWalk)
+  
+  if(length(dimensions)>2){
+    I <- dimensions[3]
+    coord <- matrix(NA, ncol=2,nrow=I)
+    for(i in 1:I){
+      for(k in 1:K){
+        if(!is.na(randomWalk[k,1,i])){
+          a <- k
+        }else{
+          break
+        }
+      }
+      coord[i,] <- randomWalk[a,,i]
+    }
+    output <- coord
+  }else{
+    I <- dimensions[2]
+    choice <- rep(NA, I)
+    for(i in 1:I){
+      for(k in 1:K){
+        if(!is.na(randomWalk[k,i])){
+          a <- k
+        }else{
+          break
+        }
+      }
+      choice[i] <- randomWalk[a,i]
+    }
+    output <- choice
+  }
+  return(output)
+}
+
+
 # Final function: Generate data for this method
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
