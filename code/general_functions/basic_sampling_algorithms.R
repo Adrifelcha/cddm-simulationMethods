@@ -161,7 +161,7 @@ sample.MCMC.normal(5000,par, plot=TRUE)
 # Some data
 par <- list("mean" = c(10,10),
             "Sigma" = matrix(c(1, 0.5, 0.5, 1), nrow=2))
-lower.bound.X <- 1
+lower.bound.X <- -3
 upper.bound.X <- 10
 lower.bound.Y <- 1
 upper.bound.Y <- 10
@@ -178,7 +178,7 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   
   width.X <- upper.bound.X-lower.bound.X
   width.Y <- upper.bound.Y-lower.bound.Y
-  kappa <- c(width.X,width.Y)*20
+  kappa <- c(width.X,width.Y)*10
   
   if(plot){
     width <- c(Sigma[1,1],Sigma[2,2])*5
@@ -225,10 +225,10 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
       bin.Y <- sort(test.bins$bin.Y)
       b <- 2
   }
+  nX <- length(bin.X)
   nY <- length(bin.Y)
   y <- 1
-  y.up <- nY
-  nX <- length(bin.X)
+  y.up <- nY-1
   side.X <- bin.X[2]-bin.X[1]
   side.Y <- bin.Y[2]-bin.Y[1]
   base.area <- side.X*side.Y
@@ -236,17 +236,17 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   bin.area <- rep(NA,K)
   if(unique(is.na(bin.X))){ b <- K+1 }
   
+  X.megavector <- rep(bin.X,each=nY)
+  Y.megavector <- rep(bin.Y, nX)
+  d.megavector <- dmnorm(cbind(X.megavector,Y.megavector),Mean,Sigma)
+  
   total.area = 0
-  every.combination <- expand.grid(bin.X,bin.Y)
+  p <- c(1,rep(2:(nY-1),each=2),nY)
   while((total.area<1&b<=nX)==TRUE){
-    X.from <- rep(bin.X[b-1],nY)
-    X.to   <- rep( bin.X[b] ,nY)
-    d.from <- dmnorm(cbind(X.from,bin.Y),Mean,Sigma)
-    d.to   <- dmnorm(cbind(X.to,bin.Y),Mean,Sigma)
-    height <- NA
-    for(i in 2:nY){
-    height[i] <- sum(d.from[i-1],d.from[i],d.to[i-1],d.to[i])/4
-    }
+    D.from <- matrix(d.from[p],ncol=2,byrow=TRUE)
+    D.to <- matrix(d.to[p],ncol=2,byrow=TRUE)
+    D <- cbind(D.from,D.to)
+    height <- apply(D,1,mean)
     bin.area[y:y.up] <- height*base.area
     y <- y.up+y
     y.up <- y.up+y.up
@@ -263,7 +263,12 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
 }
 
 # Test function
-numInt.tpz.bvnormal(lower.bound,upper.bound,par, plot=TRUE)
+numInt.tpz.bvnormal <- function(lower.bound.X = lower.bound.X, 
+                                upper.bound.X = upper.bound.X,
+                                lower.bound.Y = lower.bound.Y,
+                                upper.bound.Y = upper.bound.Y,
+                                par, plot=FALSE)
+
 
 # Use Trapezoid Numeric integration to compute CDF
 mvnormal.cdf <- function(x,par){
