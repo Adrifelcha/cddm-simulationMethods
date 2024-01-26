@@ -1,105 +1,118 @@
 ###############################################################################
 ###############################################################################
-#####   A set of simplified NORMAL EXAMPLES for the sampling algorithms 
-#####     we use as...
+#####   A set of simplified sampling algorithms for:
 #####     1) Numeric integration of the cdf of both the DDM and CDDM models
 #####     2) Rejection algorithms to sample observations for DDM and CDDM
+#####   Functions for both Normal and Bivariate normal data are presented
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-############## Load custom functions
-source("./customFunctions.R")
 library(mnormt)
 library(scatterplot3d) 
 
 ###############################################################################
-#####   Unidimensional Normal data
+#####   1.1  Unidimensional Normal data: CDF approximation
 ###############################################################################
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# To approximate CDFs, we use a Trapezoid Numerical Integration algorithm
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Some data
-par <- list("mean" = 500, "sd" = 1)
-lower.bound <- 1
-upper.bound <- 5000
-kappa=NA
-plot=TRUE
-# Write Trapezoid N.I. algorithm
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 1.1.a Trapezoid Numerical Integration for the Normal distribution
+#       Calculate the area under the curve between two points
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 numInt.tpz.normal <- function(lower.bound, upper.bound, par,
                               kappa=NA, plot=FALSE){
+    # Load variables
     mean <- par$mean
     sd <- par$sd
-    if(is.na(kappa)){
-          total.width <- upper.bound-lower.bound
-          kappa <- total.width*20
+    if(is.na(kappa)){     total.width <- upper.bound-lower.bound
+                          kappa <- total.width*20                      
+    }
+    # If plot is requested, draw the base Normal distribution
+    if(plot){   width <- (3*sd)
+                ticks <- round(seq(mean-width,mean+width,length.out=10),2)
+                support <- seq(mean-width,mean+width,length.out=9999)
+                plot(support,dnorm(support,mean,sd),
+                     type="l", ann=F, axes=F, col=1)
+                axis(1,ticks,ticks)
     }
     
-    if(plot){
-      width <- (3*sd)
-      ticks <- round(seq(mean-width,mean+width,length.out=10),2)
-      support <- seq(mean-width,mean+width,length.out=9999)
-      plot(support,dnorm(support,mean,sd),
-           type="l", ann=F, axes=F, col=1)
-      axis(1,ticks,ticks)
-    }
-    
+    # Define bins between the lower and upper bounds specified
     bins <- seq(lower.bound,upper.bound,length.out=kappa)
-    bin.base = bins[2] - bins[1]
+    bin.base = bins[2] - bins[1]   # Bin length
+    # Compute the height of the normal distribution at each bin endpoint
     d <- dnorm(bins,par$mean,par$sd)
+    # We want to locate the first bin d>0. (Discard really low bins where d=0)
     b <- which(d>0)[1]
-    if(is.na(b)){
-      b <- kappa+1
-    }
-    bin.area <- rep(NA,kappa)
+    # Set up an initial value for the total area
     total.area <- 0
-    while((total.area<1&b<=kappa)==TRUE){
-        low.x = bins[b-1]
-        up.x  = bins[b]
-        density.x1 <- d[b-1]
-        density.x2 <- d[b]
-        height <- (density.x1+density.x2)/2
-        bin.area[b-1] <- height*bin.base
-        if(plot){
-          polygon(x=c(low.x,up.x,up.x,low.x),
-                  y=c(0,0,density.x1,density.x2),
-                  col = (b %% 2)+1)
-        }
-        total.area <- sum(bin.area,na.rm=TRUE)
-        b <- b+1
+    # Update the total.area, only if the density is > 0 in the interval 
+    if(!is.na(b)){   
+                      bin.area <- rep(NA,kappa)  # Empty vector to store bin areas
+                      # Add up the areas of each bin, until we reach a total.area of 1
+                      while((total.area<1)==TRUE){
+                            # Get lower and upper bound of any bin
+                            low.x = bins[b-1]; up.x  = bins[b]
+                            # Get densities at each point
+                            density.x1 <- d[b-1]; density.x2 <- d[b]
+                            # Compute trapezoid area
+                            height <- (density.x1+density.x2)/2
+                            bin.area[b-1] <- height*bin.base
+                            # Draw the trapezoid
+                            if(plot){           polygon(x=c(low.x,up.x,up.x,low.x),
+                                                        y=c(0,0,density.x1,density.x2),
+                                                        col = (b %% 2)+1)
+                            }
+                            # Update total.area
+                            total.area <- sum(bin.area,na.rm=TRUE)
+                            b <- b+1   # Move to next bin
+                      }
     }
-    b <- b-1
-    no.bins = sum(!is.na(bin.area))
-    legend("topright", paste("No. bins =",no.bins), 
-           cex = 0.75, bty ="n")
-    return(total.area)
+    # Add legends to the plot
+    if(plot){ 
+                no.bins = sum(!is.na(bin.area))
+                legend("topright", paste("No. bins =",no.bins), 
+                       cex = 0.75, bty ="n")
+    }
+return(total.area)
 }
 
-# Test function
-numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
 
-# Use Trapezoid Numeric integration to compute CDF
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 1.1.b  User friendly cdf funciton
+#        Compute the approximate normal cdf for a single value of x
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 normal.cdf <- function(x,par,plot=FALSE){
+  # Get a sufficiently low lower.bound
   lower.bound <- (par$mean-(par$sd*100))
   if(x<lower.bound){
    lower.bound  = x-lower.bound
   }
+  # Compute the area using our trapezoid algorithm
   area <- numInt.tpz.normal(lower.bound,x,par,plot=plot)
   return(area)
 }
 
-# Test function
-normal.cdf(10,par,plot=TRUE)
-normal.cdf(50,par,plot=TRUE)
-normal.cdf(500,par,plot=TRUE)
-normal.cdf(501,par,plot=TRUE)
-normal.cdf(5000,par,plot=TRUE)
+#~~~~~~~~~~~~~~~#
+# Test/Examples #
+#~~~~~~~~~~~~~~~#
+if(!exists("test")){  test <- TRUE     }
+if(test){
+          par <- list("mean" = 500, "sd" = 1)
+          lower.bound <- 1
+          upper.bound <- 5000
+          kappa=NA
+          plot=TRUE
+          # Trapezoid Numerical Integration of whole support
+          numInt.tpz.normal(lower.bound,upper.bound,par, plot=TRUE)
+          # Compute various approximate cdf
+          normal.cdf(10,par,plot=TRUE)
+          normal.cdf(50,par,plot=TRUE)
+          normal.cdf(500,par,plot=TRUE)
+          normal.cdf(501,par,plot=TRUE)
+          normal.cdf(5000,par,plot=TRUE)
+}
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# To sample data, we use a MCMC basic algorithm
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Some data
-par <- list("mean" = 10, "sd" = 1)
-n <- 1000
-# Write Trapezoid N.I. algorithm
+
+###############################################################################
+#####   1.2  Unidimensional Normal data: MH-MCMC sampling algorithm
+###############################################################################
 sample.MCMC.normal <- function(n, par, plot=FALSE){
   mean <- par$mean
   sd <- par$sd
@@ -134,41 +147,87 @@ sample.MCMC.normal <- function(n, par, plot=FALSE){
         
         n.keep <- sum(keep)
         n.try <- n.try-n.keep
-        
         if(plot){
                   points(cand[!keep],rej.crit[!keep],col="red", pch=16, cex=0.3)
                   points(cand[keep],rej.crit[keep],col="blue3", pch=16, cex=0.3)
         }
-        
         samples <- c(samples, cand[keep])
         n.keep <- length(samples)
   }
-  
   return(samples)
 }
 
-# Test function
-sample.MCMC.normal(5000,par, plot=TRUE)
+#~~~~~~~~~~~~~~~#
+# Test/Examples #
+#~~~~~~~~~~~~~~~#
+if(!exists("test")){  test <- TRUE     }
+if(test){
+  par <- list("mean" = 10, "sd" = 1)
+  n <- 5000
+  sample.MCMC.normal(n,par, plot=TRUE)
+}
+
 
 
 ###############################################################################
-#####   Bivariate Normal data
-#####   This section is merely illustrative, it requires R packages
+#####   2.1  Bivariate Normal data: CDF approximation
 ###############################################################################
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# To approximate CDFs, we use a Trapezoid Numerical Integration algorithm
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Some data
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 2.1.a Auxiliary function
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
 par <- list("mean" = c(10,10),
             "Sigma" = matrix(c(1, 0.5, 0.5, 1), nrow=2))
 lower.bound.X <- -3
 upper.bound.X <- 10
 lower.bound.Y <- 1
 upper.bound.Y <- 10
-plot = TRUE
+width.X <- upper.bound.X-lower.bound.X
+width.Y <- upper.bound.Y-lower.bound.Y
+#kappa <- max(width.X,width.Y)*10
+kappa <- c(width.X,width.Y)*10
+
+bin.X <- seq(lower.bound.X,upper.bound.X,length.out=kappa[1])
+bin.Y <- seq(lower.bound.Y,upper.bound.Y,length.out=kappa[2])
+
+testBins.bvnormal = function(bin.X,bin.Y,Mean,Sigma){
+  n = min(length(bin.X),length(bin.Y))
+  bin.vertices <- cbind(bin.X[1:n],bin.Y[1:n])
+  d <- dmnorm(bin.vertices,Mean,Sigma)
+  b <- which(d>0)[1]
+  if(!is.na(b)){
+    if(b==1){
+      start.at <- NA
+      for(i in 1:2){
+        fix.this.bin <- bin.vertices[,i]
+        let.bin.vary <- bin.vertices[,-i]
+        unique.densities <- 2
+        a <- b
+        while(unique.densities>1|a>0){
+          fix = rep(fix.this.bin[a],a)
+          bin.vertices <- matrix(NA,ncol=2,nrow=a)
+          bin.vertices[,i] <- fix
+          bin.vertices[,-i] <- let.bin.vary[a:1]
+          d.try = dmnorm(bin.vertices,Mean,Sigma)
+          unique.densities = length(unique(d.try))
+          a = a-1 
+        }
+        start.at[i] <- a+1
+      }
+      bin.X <- bin.X[start.at[1]:n]
+      bin.Y <- bin.Y[start.at[2]:n]
+    }
+  }else{
+    bin.X <- NA
+    bin.Y <- NA
+  }
+  output = list("bin.X" = bin.X, "bin.Y" = bin.Y)
+  return(output)
+}
 
 
-# Write Trapezoid N.I. algorithm
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# 2.1.b Bivariate Trapezoid Numerical algorithm
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
                                 lower.bound.Y, upper.bound.Y,
                                 par, plot=FALSE){
@@ -262,12 +321,20 @@ numInt.tpz.bvnormal <- function(lower.bound.X, upper.bound.X,
   return(total.area)
 }
 
-# Test function
-numInt.tpz.bvnormal <- function(lower.bound.X = lower.bound.X, 
-                                upper.bound.X = upper.bound.X,
-                                lower.bound.Y = lower.bound.Y,
-                                upper.bound.Y = upper.bound.Y,
-                                par, plot=FALSE)
+#~~~~~~~~~~~~~~~#
+# Test/Examples #
+#~~~~~~~~~~~~~~~#
+if(!exists("test")){  test <- TRUE     }
+if(test){
+  par <- list("mean" = c(10,10),
+              "Sigma" = matrix(c(1, 0.5, 0.5, 1), nrow=2))
+  lower.bound.X <- -3
+  upper.bound.X <- 10
+  lower.bound.Y <- 1
+  upper.bound.Y <- 10
+  plot = TRUE
+  numInt.tpz.bvnormal(lower.bound.X, upper.bound.X, lower.bound.Y, upper.bound.Y, par)
+}
 
 
 # Use Trapezoid Numeric integration to compute CDF
