@@ -4,8 +4,6 @@
 #####                   RANDOM-WALK EMULATION METHOD 
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez   
-source("../general_functions/customFunctions.R")
-
 
 ###############################################################################
 # Transformation functions: ###################################################
@@ -148,7 +146,7 @@ cddm.randomWalk <- function(trials, mu1, mu2, boundary, ndt=0.1, drift.Coeff=1, 
   return(output)
 }
 
-# Auxiliary Function: Extract final state
+# Auxiliary Function: Extract final states
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 getFinalState <- function(randomWalk.states){
   randomWalk <- randomWalk.states
@@ -188,8 +186,8 @@ getFinalState <- function(randomWalk.states){
 }
 
 
-# Final function: Generate data for this method
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# Final function: Generate bivariate data + random walk trace
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
   trials <- n
   par <- list("drift" = 1, 
@@ -252,4 +250,6 @@ if(test){
               "tzero" = 0.1,
               "boundary" = 7)
   n <- 5000
+  x <- cddm.randomWalk(trials, mu1, mu2, boundary)
+    
   sample.RW.cddm(1000,par)  }
