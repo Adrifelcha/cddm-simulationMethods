@@ -28,8 +28,7 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     if(plot){   width <- (3*sd)
                 ticks <- round(seq(mean-width,mean+width,length.out=10),2)
                 support <- seq(mean-width,mean+width,length.out=9999)
-                plot(support,dnorm(support,mean,sd),
-                     type="l", ann=F, axes=F, col=1)
+                plot(support,dnorm(support,mean,sd), type="l", ann=F, axes=F, col=1)
                 axis(1,ticks,ticks)
     }
     
@@ -45,8 +44,9 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
     # Update the total.area, only if the density is > 0 in the interval 
     if(!is.na(b)){   
                       bin.area <- rep(NA,kappa)  # Empty vector to store bin areas
-                      # Add up the areas of each bin, until we reach a total.area of 1
-                      while((total.area<1)==TRUE){
+                      # Add up the areas of each bin
+                      # Stop at upper.bound or whenever area >= 1
+                      while((total.area<1&b<=kappa)==TRUE){
                             # Get lower and upper bound of any bin
                             low.x = bins[b-1]; up.x  = bins[b]
                             # Get densities at each point
@@ -63,13 +63,19 @@ numInt.tpz.normal <- function(lower.bound, upper.bound, par,
                             total.area <- sum(bin.area,na.rm=TRUE)
                             b <- b+1   # Move to next bin
                       }
+                      # Add legends to the plot
+                      if(plot){ 
+                        no.bins = sum(!is.na(bin.area))
+                        legend("topright", paste("No. bins =",no.bins), 
+                               cex = 0.75, bty ="n")
+                      }
+    }else{
+                      if(plot){ 
+                        legend("topright", "Region 'outside' of the curve", 
+                               cex = 0.75, bty ="n")
+                      }
     }
-    # Add legends to the plot
-    if(plot){ 
-                no.bins = sum(!is.na(bin.area))
-                legend("topright", paste("No. bins =",no.bins), 
-                       cex = 0.75, bty ="n")
-    }
+
 return(total.area)
 }
 
@@ -106,7 +112,7 @@ if(test){
           normal.cdf(50,par,plot=TRUE)
           normal.cdf(500,par,plot=TRUE)
           normal.cdf(501,par,plot=TRUE)
-          normal.cdf(5000,par,plot=TRUE)
+          normal.cdf(600,par,plot=TRUE)
 }
 
 
