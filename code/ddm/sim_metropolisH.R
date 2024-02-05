@@ -4,26 +4,68 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
 ############## Load custom functions
-source("../general_functions/customFunctions.R")
+library(RWiener)
+###############################################################################
+#####   1.2  Unidimensional Normal data: MH-MCMC sampling algorithm
+###############################################################################
+n <- 5000
+par <- list("drift" = 1,
+            "ndt" = 0.1,
+            "boundary" = 3,
+            "bias" = 0.5)
 
+ddm_sim.MCMC <- function(n, par, plot=FALSE){
+  # Load variables
+  drift <- par$drift
+  ndt <- par$ndt
+  boundary <- par$boundary
+  bias <- par$bias
+  max.RT <- 10
+  # Define maximum rejection value (RejVal) with respect to max. density point
+  test.RT <- seq(ndt, max.RT, length.out = 500)
+  test.responses <- c("upper", "lower")
+  test.densities <- dwiener(rep(test.RT, 2), boundary, ndt, bias, drift, 
+                            rep(test.responses, each=length(test.RT)))
+  max.D <- max(test.densities)  # Density at mean (highest density point)
+  height <- max.D*1.05          # RejVal ~ Uniform(0, 5% more than density at mean)
+  # Define the range o candidate values to generate
+  base.RT <- c(ndt,max.RT)
+  ############################# !!!! ! ! ! ! ! ! ! ! !!!!!!!! !!!!! !! ! ! ! !
+  # If plot is requested, draw the base Normal distribution
+  if(plot){
+  }
+  # Start MH-MCMC sampling algorithm
+  # This algorithm generates `n` samples from the specified Normal
+  n.keep <- 0       # Start with 0 candidates stored
+  samples <- NA     #   "    "  no     "        "
+  n.try <- n        # Start by generating 'n' candidates
+  while(n.keep < n){    # Until we reach a sample of size 'n'
+    ######### First: Sample random candidates and rejectio values
+    cand <- runif(n.try,base[1],base[2])    # We generate n.try candidate values
+    eval <- dnorm(cand,mean,sd)           #    and compute their pdf
+    rej.crit <- runif(n.try,0,height)     # We generate n.try Rej. Vals.
+    # Keep the candidates whose density is greater than the corresponding Rej Val.
+    keep <- (eval >= rej.crit)  
+    ######### Second: Update
+    n.pass <- sum(keep)      # Count number of accepted candidates in this run
+    n.try <- n.try-n.pass    # Update number of samples missing to reach 'n'
+    samples <- c(samples, cand[keep])   # Store candidate values approved
+    n.keep <- length(samples)           # Count total no. of samples to test while() 
+    ######### Third (Optional): Make plot
+    if(plot){
+      points(cand[!keep],rej.crit[!keep],col="red", pch=16, cex=0.3)
+      points(cand[keep],rej.crit[keep],col="blue3", pch=16, cex=0.3)
+    }
+  }
+  return(samples)
+}
 
-iter <- 100000 #Iterations
-
-x<-NULL     #Empty array to start sampling
-x[1] <- 0   #Initial value, arbitrary
-change.counter <- 0    
-for(i in 2:iter){
-  x.cand <- x[i-1]+rnorm(1,0,5)      #Extract candidate from wide normal
-  alpha <- dnorm(x.cand,0,1)/dnorm(x[i-1],0,1)   #Likelihood ratio
-  keep <- min(alpha,1)   #Use minimun to make decisions
-  if(keep==1){    #If ratio is greater than 1, keep candidate
-    x[i] <- x.cand
-    change.counter <- change.counter+1   #Update counter
-  }else{        #If ratio is not greater than 1...
-    update <- rbinom(1,1,alpha)     #Update x with probability alpha
-    if(update==0){
-      x[i] <- x[i-1]    #Either we keep the current value
-    }else{
-      x[i]<-x.cand      #Or we update to candidate
-      change.counter<-change.counter+1}}
+#~~~~~~~~~~~~~~~#
+# Test/Example  #
+#~~~~~~~~~~~~~~~#
+if(!exists("test")){  test <- TRUE     }
+if(test){
+  par <- list("mean" = 10, "sd" = 1)
+  n <- 5000
+  sample.MCMC.normal(n,par, plot=TRUE)
 }
