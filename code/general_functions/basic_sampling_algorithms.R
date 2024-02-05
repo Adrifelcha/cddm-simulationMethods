@@ -120,51 +120,56 @@ if(test){
 #####   1.2  Unidimensional Normal data: MH-MCMC sampling algorithm
 ###############################################################################
 sample.MCMC.normal <- function(n, par, plot=FALSE){
-  mean <- par$mean
-  sd <- par$sd
-  
-  max.D <- dnorm(mean,mean,sd)
-  height <- max.D*1.05
-  width <- (3.5*sd)
-  base.1 <- mean-width
-  base.2 <- mean+width
-  
-  if(plot){
-            plot.width <- (4*sd)
-            x.low <- mean-plot.width
-            x.top <- mean+plot.width
-            ticks <- round(seq(x.low,x.top,length.out=10),2)
-            support <- seq(x.low,x.top,length.out=9999)
-            plot(support,dnorm(support,mean,sd), xlim=c(x.low,x.top),
-                 type="l", ann=F, axes=F, col=1, ylim=c(0,height))
-            axis(1,ticks,ticks)
-            abline(h=height)
-            abline(v=c(base.1,base.2))
-  }
-  
-  n.keep <- 0
-  n.try <- n
-  samples <- NA
-  while(n.keep < n){
-        cand <- runif(n.try,base.1,base.2)
-        eval <- dnorm(cand,mean,sd)
-        rej.crit <- runif(n.try,0,height)  
-        keep <- (eval >= rej.crit)
-        
-        n.keep <- sum(keep)
-        n.try <- n.try-n.keep
-        if(plot){
-                  points(cand[!keep],rej.crit[!keep],col="red", pch=16, cex=0.3)
-                  points(cand[keep],rej.crit[keep],col="blue3", pch=16, cex=0.3)
-        }
-        samples <- c(samples, cand[keep])
-        n.keep <- length(samples)
-  }
+      # Load variables
+      mean <- par$mean
+      sd <- par$sd
+      # Define maximum rejection value (RejVal)
+      max.D <- dnorm(mean,mean,sd)  # Density at mean (highest density point)
+      height <- max.D*1.05          # RejVal ~ Uniform(0, 5% more than density at mean)
+      # Define the range o candidate values to generate
+      width <- (3.5*sd)
+      base <- c(mean-width,mean+width)
+      # If plot is requested, draw the base Normal distribution
+      if(plot){
+                plot.width <- (4*sd)    # Make plot slighly wider than candidate region
+                x.low <- mean-plot.width
+                x.top <- mean+plot.width
+                ticks <- round(seq(x.low,x.top,length.out=10),2)
+                support <- seq(x.low,x.top,length.out=9999)
+                plot(support,dnorm(support,mean,sd), xlim=c(x.low,x.top),
+                     type="l", ann=F, axes=F, col=1, ylim=c(0,height))
+                axis(1,ticks,ticks)
+                abline(h=height)
+                abline(v=base)
+      }
+      # Start MH-MCMC sampling algorithm
+      # This algorithm generates `n` samples from the specified Normal
+      n.keep <- 0       # Start with 0 candidates stored
+      samples <- NA     #   "    "  no     "        "
+      n.try <- n        # Start by generating 'n' candidates
+      while(n.keep < n){    # Until we reach a sample of size 'n'
+            ######### First: Sample random candidates and rejectio values
+            cand <- runif(n.try,base[1],base[2])    # We generate n.try candidate values
+            eval <- dnorm(cand,mean,sd)           #    and compute their pdf
+            rej.crit <- runif(n.try,0,height)     # We generate n.try Rej. Vals.
+            # Keep the candidates whose density is greater than the corresponding Rej Val.
+            keep <- (eval >= rej.crit)  
+            ######### Second: Update
+            n.pass <- sum(keep)      # Count number of accepted candidates in this run
+            n.try <- n.try-n.pass    # Update number of samples missing to reach 'n'
+            samples <- c(samples, cand[keep])   # Store candidate values approved
+            n.keep <- length(samples)           # Count total no. of samples to test while() 
+            ######### Third (Optional): Make plot
+            if(plot){
+                      points(cand[!keep],rej.crit[!keep],col="red", pch=16, cex=0.3)
+                      points(cand[keep],rej.crit[keep],col="blue3", pch=16, cex=0.3)
+            }
+      }
   return(samples)
 }
 
 #~~~~~~~~~~~~~~~#
-# Test/Examples #
+# Test/Example  #
 #~~~~~~~~~~~~~~~#
 if(!exists("test")){  test <- TRUE     }
 if(test){
@@ -179,7 +184,7 @@ if(test){
 #####   2.1  Bivariate Normal data: CDF approximation
 ###############################################################################
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 2.1.a Auxiliary function
+# 2.1.a Auxiliary function: 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\
 par <- list("mean" = c(10,10),
             "Sigma" = matrix(c(1, 0.5, 0.5, 1), nrow=2))
