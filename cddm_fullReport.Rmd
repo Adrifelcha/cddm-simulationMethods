@@ -21,9 +21,19 @@ library(rmdformats)
 
 # The Circular Drift Diffusion Model
 
+The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (i.e., a bounded continuum; Smith, 2016). 
+
+Like many other accumulator models, the assumes that information gets accumulated over time, moving from a starting point located at the origin of a circle representing the decision space, towards its circumference. Responses made by participants are expressed in radians.
+
+The CDDM considers four parameters. 
+1. The nondecision time 
+2. The response criterion (i.e., the radius of the circle). 
+3) A douplet of parameters related to the information provided by the stimulus and its effect on the decision process. These last two parameters describe the overall direction and speed of the random walk either in terms of cartesian or polar coordinates. If expressed as a cartesian coordinates, parameters μx and μy are used to denote the average step size that the random walk takes per unit of time along the X and Y axes, respectively. Whereas, if expressed as polar coordinates, parameters θ and δ are used to describe the angle that corresponds to the
+correct answer (i.e., drift angle) and the average speed at which the random walk approaches the
+circumference (i.e., drift magnitude), respectively (Smith, 2016; Kvam, 2019).
+
 ```{r, echo=FALSE, message=FALSE, fig.align='center'}
-setwd("./code/cddm/")
-source("./illustrateModel_Fig1.R")
+source("./code/cddm/illustrateModel_Fig1.R")
 ```
 
 # Algorithm 1: Random walk emulator
