@@ -10,7 +10,6 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 set.seed(123)
 ## Load custom functions
-source("../general_functions/customFunctions.R")
 source("./sim_randomWalk.R")
 ## Load necessary libraries 
 library(grid)
