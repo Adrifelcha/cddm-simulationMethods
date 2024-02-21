@@ -8,7 +8,7 @@
 test <- FALSE   # Turn-off built-in tests
 source("./sim_MCMC.R")
 source("./sim_randomWalk.R")
-source("./plottingFunctions.R")
+#source("./plottingFunctions.R")
 
 # 2: Define some parameter values and sample size ~ #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
