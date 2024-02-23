@@ -37,12 +37,16 @@ j0_squared <- c(   5.783185962947,    30.471262343662,    74.887006790695,   139
                19764.749656079162, 20657.948854696686, 21570.887262096137, 22503.564878279212,
                23455.981703247398, 24428.137737002071)
 
+inv2pi <- 0.159154943091895
+
+log2pi <- 1.837877066409345
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Part 2: Define functions to compute bivariate density described by CDDM
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # Get the density of a single choice-RT pairing
-cddm.logDensity <- function(x, drift, theta, tzero, boundary){
+cddm.pdf <- function(x, drift, theta, tzero, boundary){
   # Identify bivariate data
   c <- x[1]
   t <- x[2]
@@ -61,33 +65,6 @@ cddm.logDensity <- function(x, drift, theta, tzero, boundary){
       PDF.2 = boundary*(mu1*cos(c)+mu2*sin(c));
       PDF.3 = (drift*drift*(t-tzero))*0.5;
       PDF = exp(PDF.2 - PDF.3)*PDF.1
-  # Return bivariate density
-  return(PDF)
-}
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Part 2: Define functions to compute bivariate density described by CDDM
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Get the density of a single choice-RT pairing
-cddm.pdf <- function(x, drift, theta, tzero, boundary){
-  # Identify bivariate data
-  c <- x[1]
-  t <- x[2]
-  # Relevant transformations / variable definitions
-  inva2 = 1 / (boundary*boundary)
-  mu1 = drift*cos(theta)
-  mu2 = drift*sin(theta)
-  sum = 0
-  # Equation 22 on Smith (2016)
-  for (i in 1:length(j0_squared)) {
-    exponand = j0_squared[i] * (t-tzero) * inva2 * -0.5
-    sum = sum + exp(exponand) * j0_over_J1_of_j0[i]
-  }
-  PDF.1 = sum * inva2
-  # Equation 23 on Smith (2016)
-  PDF.2 = boundary*(mu1*cos(c)+mu2*sin(c));
-  PDF.3 = (drift*drift*(t-tzero))*0.5;
-  PDF = exp(PDF.2 - PDF.3)*PDF.1
   # Return bivariate density
   return(PDF)
 }
