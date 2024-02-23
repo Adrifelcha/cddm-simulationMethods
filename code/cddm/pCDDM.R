@@ -1,6 +1,7 @@
 test = FALSE
 source("./dCDDM.R")
 library("scatterplot3d")
+library("plot3D")
 
 # Some data
 cddm.par <- list("drift" = 1, 
@@ -114,7 +115,9 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
       }
   }
   total <- sum(bin.vol)
-  if(plot){     mtext(paste("total =", round(total,3)),3)       }
+  if(plot){     
+    mtext(paste("total =", round(total,3)),3, outer = TRUE, adj = 1)       
+    }
   return(total.area)
 }
 
