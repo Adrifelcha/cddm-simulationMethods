@@ -240,16 +240,3 @@ sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
                  "bivariate.data" = data)
   return(output)
 }
-
-
-# Test function
-if(!exists("test")){  test <- TRUE     }
-if(test){
-  par <- list("drift" = 1, 
-              "theta" = pi,
-              "tzero" = 0.1,
-              "boundary" = 7)
-  n <- 5000
-  x <- cddm.randomWalk(trials, mu1, mu2, boundary)
-    
-  sample.RW.cddm(1000,par)  }
