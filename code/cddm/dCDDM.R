@@ -147,8 +147,8 @@ dCDDM <- function(data,drift,theta,tzero,boundary){
 # Test/Examples
 #################
 # Test function
-if(!exists("test")){  test <- TRUE     }
-if(test){
+if(!exists("Test")){  Test <- TRUE     }
+if(Test){
   n <- 10
   A <- runif(n, 0, 2*pi)
   B <- rexp(n,2)
