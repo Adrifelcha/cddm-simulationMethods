@@ -3,8 +3,6 @@
 #####  A set of functions made to plot the CDDM data generated from simulations
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-############## Load custom functions
-source("../general_functions/customFunctions.R")
 
 plot.CDDM <- function(data, par=NA, 
                       choice.col.RGB = c(0.65,0.5,0.15)){
