@@ -16,7 +16,15 @@ output:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
 library(rmdformats)
+
+superCalled <- TRUE
+
+source("./code/cddm/sim_randomWalk.R")
+source("./code/cddm/dCDDM.R")
+
+test <- FALSE
 ```
 
 # The Circular Drift Diffusion Model
@@ -26,11 +34,18 @@ The circular drift-diffusion model (CDDM) is a stochastic sequential sampling mo
 Like many other accumulator models, the assumes that information gets accumulated over time, moving from a starting point located at the origin of a circle representing the decision space, towards its circumference. Responses made by participants are expressed in radians.
 
 The CDDM considers four parameters. 
-1. The nondecision time 
-2. The response criterion (i.e., the radius of the circle). 
-3) A douplet of parameters related to the information provided by the stimulus and its effect on the decision process. These last two parameters describe the overall direction and speed of the random walk either in terms of cartesian or polar coordinates. If expressed as a cartesian coordinates, parameters μx and μy are used to denote the average step size that the random walk takes per unit of time along the X and Y axes, respectively. Whereas, if expressed as polar coordinates, parameters θ and δ are used to describe the angle that corresponds to the
-correct answer (i.e., drift angle) and the average speed at which the random walk approaches the
-circumference (i.e., drift magnitude), respectively (Smith, 2016; Kvam, 2019).
+
+1. The nondecision time $\tau$
+
+2. The response criterion (i.e., the radius of the circle) $\eta$. 
+
+3. A douplet of parameters related to the information provided by the stimulus: $\mu_x$ and $\mu_y$ OR $\theta$ and $\delta$.
+
+<!-- 3. A douplet of parameters related to the information provided by the stimulus and its effect on the decision process. These last two parameters describe the overall direction and speed of the random walk either in terms of cartesian or polar coordinates. If expressed as a cartesian coordinates, parameters μx and μy are used to denote the average step size that the random walk takes per unit of time along the X and Y axes, respectively. Whereas, if expressed as polar coordinates, parameters θ and δ are used to describe the angle that corresponds to the -->
+<!-- correct answer (i.e., drift angle) and the average speed at which the random walk approaches the -->
+<!-- circumference (i.e., drift magnitude), respectively (Smith, 2016; Kvam, 2019). -->
+
+Below we have a graphical representation of the CDDM (non-decision time is not included)
 
 ```{r, echo=FALSE, message=FALSE, fig.align='center'}
 source("./code/cddm/illustrateModel_Fig1.R")
@@ -38,6 +53,93 @@ source("./code/cddm/illustrateModel_Fig1.R")
 
 # Algorithm 1: Random walk emulator
 
+```{r}
+# 2: Define some parameter values and sample size ~ #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# Some parameter values
+par <- list("drift" = 1, 
+            "theta" = pi,
+            "tzero" = 0.1,
+            "boundary" = 7)
+n <- 5000 # No. samples
+```
+
+```{r, echo=FALSE}
+start_time <- Sys.time()
+```
+
+```{r}
+source("./code/cddm/sim_randomWalk.R")
+X.RW <- sample.RW.cddm(n,par)
+```
+
+```{r, echo=FALSE}
+end_time <- Sys.time()
+RW.time <- end_time-start_time
+RW.time <- round(RW.time,4)
+```
+
+*The execution of this first algorithm took approximately `r RW.time` seconds.*
+
 # Algorithm 2: Metropolis-Hasting MCMC
 
-# Algorithm 3: Inverse cdf
+```{r}
+max.RT <- max(X.RW$bivariate.data[,2])
+```
+
+```{r, echo=FALSE}
+start_time <- Sys.time()
+```
+
+```{r}
+source("./code/cddm/sim_MCMC.R")
+X.MCMC <- sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
+```
+
+```{r, echo=FALSE}
+end_time <- Sys.time()
+MC.time <- end_time-start_time
+MC.time <- round(MC.time,4)
+```
+
+*The execution of this second algorithm took approximately `r RW.time` seconds.*
+
+# Comparison
+
+## Choices
+
+```{r}
+par(pty="m")          
+par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
+# Choices
+hist(X.RW$bivariate.data[,1], main="Choices on Random Walk",
+     xlim=c(0,2*pi), col="goldenrod4")
+hist(X.MCMC[,1], main= "Choices on MCMC", xlim=c(0,2*pi), col="cyan4")
+```
+
+## Response Times
+
+```{r}
+par(pty="m")          
+par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
+# Response Times
+hist(X.RW$bivariate.data[,2], main = "RT on Random Walk", col="goldenrod3")
+hist(X.MCMC[,2], main = "RT on MCMC", col="cyan4")
+```
+
+## Circular representation
+
+```{r}
+source("./code/cddm/plottingFunctions.R")
+
+par(pty="m")          
+par(mfrow=c(1,2),mar = c(3, 3, 3, 0)) 
+# Decisions on a circle
+plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
+plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
+```
+
+
+# Code
+
+```{r "././code/cddm/plottingFunctions.R", eval=FALSE}
