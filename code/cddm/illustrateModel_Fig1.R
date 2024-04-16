@@ -4,13 +4,14 @@
 #####       role of the drift vector (cardinal or polar) and the bound
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
+if(!exists("superCalled")){superCalled <- FALSE}
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Part 1: Environment set-up and preparation
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 set.seed(123)
 ## Load custom functions
-source("./sim_randomWalk.R")
+if(!superCalled){ source("./sim_randomWalk.R") }
 ## Load necessary libraries 
 library(grid)
 library(shape)
