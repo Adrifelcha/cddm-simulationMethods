@@ -4,7 +4,8 @@
 #####                   MCMC NUMERIC INTEGRATION ALGORITHM
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez 
-source("./dCDDM.R")
+if(!exists("superCalled")){superCalled <- FALSE}
+if(!superCalled){ source("./dCDDM.R") }
 library(scatterplot3d) 
 
 # Write MCMC algorithm for the CDDM pdf
