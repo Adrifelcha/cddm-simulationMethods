@@ -1,0 +1,1 @@
+dCDDM() function works fine, but returns negative densities for RTs close to the nondecisiontime
