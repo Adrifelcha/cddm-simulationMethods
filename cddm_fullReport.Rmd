@@ -141,5 +141,3 @@ plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
 
 
 # Code
-
-```{r "././code/cddm/plottingFunctions.R", eval=FALSE}
