@@ -5,7 +5,7 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
 ############## Load custom functions
-source("./customFunctions.R")
+source("./eCDF.R")
 library(mnormt)
 library("scatterplot3d") 
 
