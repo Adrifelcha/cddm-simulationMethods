@@ -37,7 +37,7 @@ The CDDM considers four parameters.
 
 1. The nondecision time $\tau$
 
-2. The response criterion (i.e., the radius of the circle) $\eta$. 
+2. The boundary radius (i.e., the response criterion) $\eta$. 
 
 3. A douplet of parameters related to the information provided by the stimulus: $\mu_x$ and $\mu_y$ OR $\theta$ and $\delta$.
 
@@ -68,7 +68,7 @@ n <- 5000 # No. samples
 start_time <- Sys.time()
 ```
 
-```{r}
+```{r, eval=FALSE}
 source("./code/cddm/sim_randomWalk.R")
 X.RW <- sample.RW.cddm(n,par)
 ```
@@ -77,6 +77,14 @@ X.RW <- sample.RW.cddm(n,par)
 end_time <- Sys.time()
 RW.time <- end_time-start_time
 RW.time <- round(RW.time,4)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+source("./code/cddm/sim_randomWalk.R")
+#save(X.RW, file = "./tmp/X.RW.RData")
+load("./tmp/X.RW.RData")
+#save(RW.time, file = "./tmp/RW.time.RData")
+load("./tmp/RW.time.RData")
 ```
 
 *The execution of this first algorithm took approximately `r RW.time` seconds.*
@@ -91,7 +99,7 @@ max.RT <- max(X.RW$bivariate.data[,2])
 start_time <- Sys.time()
 ```
 
-```{r}
+```{r, eval=FALSE}
 source("./code/cddm/sim_MCMC.R")
 X.MCMC <- sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
 ```
@@ -102,11 +110,21 @@ MC.time <- end_time-start_time
 MC.time <- round(MC.time,4)
 ```
 
-*The execution of this second algorithm took approximately `r RW.time` seconds.*
+```{r, eval=TRUE, echo=FALSE}
+source("./code/cddm/sim_MCMC.R")
+#save(X.MCMC, file = "./tmp/X.MCMC.RData")
+load("./tmp/X.MCMC.RData")
+#save(MC.time, file = "./tmp/MC.time.RData")
+load("./tmp/MC.time.RData")
+```
 
-# Comparison
+*The execution of this second algorithm took approximately `r MC.time` seconds.*
 
-## Choices
+# Comparison (Single run)
+
+## Visualize the output
+
+### Choices
 
 ```{r}
 par(pty="m")          
@@ -116,18 +134,6 @@ hist(X.RW$bivariate.data[,1], main="Choices on Random Walk",
      xlim=c(0,2*pi), col="goldenrod4")
 hist(X.MCMC[,1], main= "Choices on MCMC", xlim=c(0,2*pi), col="cyan4")
 ```
-
-## Response Times
-
-```{r}
-par(pty="m")          
-par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
-# Response Times
-hist(X.RW$bivariate.data[,2], main = "RT on Random Walk", col="goldenrod3")
-hist(X.MCMC[,2], main = "RT on MCMC", col="cyan4")
-```
-
-## Circular representation
 
 ```{r}
 source("./code/cddm/plottingFunctions.R")
@@ -139,5 +145,113 @@ plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
 plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
 ```
 
+### Response Times
 
-# Code
+```{r}
+par(pty="m")          
+par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
+# Response Times
+hist(X.RW$bivariate.data[,2], main = "RT on Random Walk", col="goldenrod3")
+hist(X.MCMC[,2], main = "RT on MCMC", col="cyan4")
+```
+
+## Accuracy test
+
+### Step 1: Obtain empirical CDF (eCDF)
+
+```{r}
+# Load file containing custom eCDF function
+source("./code/general_functions/eCDF.R")
+
+MCMC.eCDF <- myECDF(X.MCMC)
+RW.eCDF <- myECDF(X.RW$bivariate.data)
+
+# Plot the eCDFs obtained so far
+par(pty="s")          
+par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+myECDF.Plot(X.MCMC, color="goldenrod4")
+myECDF.Plot(X.RW$bivariate.data, color="cyan4")
+```
+
+## Step 2: Approximate the theoretical CDF  (tCDF)
+
+```{r, eval=TRUE, echo=FALSE}
+source("./code/cddm/pCDDM.R")
+#save(MCMC.tCDF, file = "./tmp/MCMC.tCDF.RData")
+load("./tmp/MCMC.tCDF.RData")
+#save(MC_tCDF.time, file = "./tmp/MC_tCDF.time.RData")
+load("./tmp/MC_tCDF.time.RData")
+#save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
+load("./tmp/RW.tCDF.RData")
+#save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
+load("./tmp/RW_tCDF.time.RData")
+```
+
+
+```{r, eval=FALSE}
+source("./code/cddm/pCDDM.R")
+
+# Approximate the theoretical CDF for the MCMC data
+start_time <- Sys.time()
+MCMC.tCDF <- pCDDM(X.MCMC, par$drift, par$theta, par$tzero, par$boundary)
+end_time <- Sys.time()
+MC_tCDF.time <- end_time-start_time
+MC_tCDF.time <- round(MC_tCDF.time,4)
+```
+
+*Obtaining the approximate CDF for the MCMC data with a trapezoid algorithm took `r MC_tCDF.time` **minutes**.*
+
+```{r, eval=FALSE}
+# Approximate the theoretical CDF for the Random Walk data
+start_time <- Sys.time()
+RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
+end_time <- Sys.time()
+RW_tCDF.time <- end_time-start_time
+RW_tCDF.time <- round(RW_tCDF.time,4)
+```
+
+*Obtaining the approximate CDF for the Random-Walk data with a trapezoid algorithm took `r RW_tCDF.time` **minutes**.*
+
+## Step 3: Compare eCDFs vs approximate tCDF
+
+```{r}
+# We build a simple function to compare these CDFs
+
+getDifferences <- function(eCDF,tCDF){
+  difference <- tCDF - eCDF
+  difference.sum <- sum(difference)
+  Kldivergence <- max(abs(difference))
+  sq.difference <- sum((difference)^2)
+  
+  output <- round(cbind(difference.sum,Kldivergence,sq.difference),4)
+  colnames(output) <- c("sumDiff","Kldivergence","SSDiff") 
+  return(output)
+}
+```
+
+
+```{r}
+getDifferences(MCMC.eCDF,MCMC.tCDF)
+getDifferences(RW.eCDF,RW.tCDF)
+```
+
+```{r, eval=FALSE, echo=FALSE}
+lab.x <- colnames(data)[1]
+      lab.y <- colnames(data)[2]
+      if(is.null(lab.x)){ lab.x <-"Dimension 1" }
+      if(is.null(lab.y)){ lab.y <-"Dimension 2" }
+      scatterplot3d(data[,1],data[,2],eCDF, pch=16,
+                    cex.symbols = 0.5, color = eCDF.color,
+                    xlab = lab.x, ylab = lab.y, zlab = "eCDF")
+    x.tCDF <- pnorm(x,true.mean,true.sd)
+    getDifferences(x.eCDF,x.tCDF)
+    # Data comes from bivariate normal
+    true.means <- c(10,10)
+    true.sds <- diag(length(true.means))
+    y <- mvtnorm::rmvnorm(1000,true.means,true.sds)
+    y.eCDF <- myECDF(y)
+    myECDF.Plot(y)
+    y.tCDF <- pnorm(y,true.mean,true.sd)
+
+```
+    
