@@ -4,7 +4,6 @@ library("plot3D")
 
 # Write Trapezoid N.I. algorithm
 numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
-    ################
     # ~~ Set up ~~ #
     ################
     # Load up CDDM parameters
@@ -22,7 +21,6 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     bin.C <- seq(0,rad,length.out=kappa)
     bin.RT <- seq(tzero,rt,length.out=kappa)
     
-    #########################################
     # ~~ If requested, plot base density ~~ #
     #########################################
     if(plot){
@@ -48,7 +46,6 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
             legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
     }
     
-    ##############################
     # ~~ Base area of any bin ~~ #
     ##############################
     # All bins have the same length on both direction
@@ -57,7 +54,6 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     # Compute the base area of all bins
     binBase.area <- sidesLength.C*sidesLength.RT
     
-    #############################################
     # ~~ Compute the density at every vertix ~~ #
     #############################################
     # Part 1: Start empty storing objects
@@ -74,10 +70,7 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     if(length(problem)!=0){
        bad.RT <- unique(problem[,2])
        density_matrix <- density_mat_raw[,-bad.RT]
-    }else{
-      density_matrix <- density_mat_raw
-    }
-    #         Update kappa upon removing the problematic RTs
+    }else{     density_matrix <- density_mat_raw       }
     kappa.RT <- ncol(density_matrix)
     # Part 4: Plot
     if(plot){
@@ -92,7 +85,6 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
         }
     }
     
-    ################################
     # ~~ Compute volume per bin ~~ #
     ################################
     # Part 1: Empty objects for storage
@@ -111,7 +103,7 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     }
     total <- sum(bin.vol)
     if(plot){ mtext(paste("Total =", round(total,4)),3, adj = 1, cex=0.8)  }
-  return(total)
+return(total)
 }
 
 # Test function
