@@ -121,12 +121,17 @@ if(test){
 
 # Use Trapezoid Numeric integration to compute CDF
 pCDDM <- function(data,drift, theta, tzero, boundary, plot=FALSE){
-  rad <- data[1]
-  rt <- data[2]
-  cddm.par <- list("drift" = drift, "theta" = theta, 
-                   "tzero" = tzero, "boundary" = boundary)
-  area <- numInt.tpz.cddm(rad,rt, cddm.par, plot)
-  return(area)
+      cddm.par <- list("drift" = drift, "theta" = theta, 
+                       "tzero" = tzero, "boundary" = boundary)
+      if(is.vector(data)){
+         volume <- numInt.tpz.cddm(rad = data[1], rt = data[2], cddm.par, plot)
+      }else{
+         volume <- rep(NA, nrow(data))
+         for(i in 1:nrow(data)){
+             volume[i] <- numInt.tpz.cddm(rad = data[i,1],rt = data[i,2], cddm.par, plot)
+         }
+      }
+  return(volume)
 } 
 
 # Test function
@@ -136,8 +141,15 @@ if(test){
     theta = pi
     tzero = 0.1
     boundary = 7
+    # Test pCDDM with a single pair of observations
     C <- runif(1,0,2*pi)
     RT <- runif(1,0,15)
     data <- c(C,RT)
     pCDDM(data,drift, theta, tzero, boundary, plot=TRUE)
+    # Test pCDDM with n pairs of observations
+    n <- 10
+    C <- runif(n,0,2*pi)
+    RT <- runif(n,0,15)
+    data <- cbind(C,RT)
+    pCDDM(data,drift, theta, tzero, boundary, plot=FALSE)
 }
