@@ -99,7 +99,7 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
             bin.count <- bin.count + 1
         }
     }
-    total <- sum(bin.vol)
+    total <- sum(bin.vol) / (2*pi)
     if(plot){ mtext(paste("Total =", round(total,4)),3, adj = 1, cex=0.8)  }
 return(total)
 }
