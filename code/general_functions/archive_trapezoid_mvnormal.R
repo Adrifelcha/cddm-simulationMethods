@@ -175,5 +175,6 @@ mvnormal.cdf <- function(x,par){
   return(area)
 }
 
+
 # Test function
-mvnormal.cdf(10,par)
+mvnormal.cdf(10,par=par)
