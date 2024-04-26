@@ -69,9 +69,6 @@ myECDF.Plot <- function(data, color="forestgreen"){
   }
 }
 
-myECDF.Plot(y)
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Part 3: Compare two CDF (ideally, an eCDF against a theoretical CDF)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
