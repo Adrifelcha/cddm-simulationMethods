@@ -135,31 +135,25 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
 }
 
 # Test function
-cddm.par <- list("drift" = 1, 
-                 "theta" = pi,
-                 "tzero" = 0.3,
-                 "boundary" = )
-
-numInt.tpz.cddm(rad=2*pi,rt=15, cddm.par, plot=TRUE)
-numInt.tpz.cddm(rad=2*pi,rt=7, cddm.par, plot=TRUE)
-numInt.tpz.cddm(rad=3*pi/2,rt=7, cddm.par, plot=TRUE)
-numInt.tpz.cddm(rad=pi,rt=7, cddm.par, plot=TRUE)
-
-
-
+if(!exists("test")){    test <- TRUE                           }
+if(test){
+    cddm.par <- list("drift" = 1, 
+                     "theta" = pi,
+                     "tzero" = 0.3,
+                     "boundary" = 5)
+    numInt.tpz.cddm(rad=2*pi,rt=15, cddm.par, plot=TRUE)
+    numInt.tpz.cddm(rad=2*pi,rt=7, cddm.par, plot=TRUE)
+    numInt.tpz.cddm(rad=3*pi/2,rt=7, cddm.par, plot=TRUE)
+    numInt.tpz.cddm(rad=pi,rt=7, cddm.par, plot=TRUE)
+}
 
 # Use Trapezoid Numeric integration to compute CDF
 pCDDM <- function(data,drift, theta, tzero, boundary, plot=FALSE){
-  lower.C <- 0
-  lower.RT <- tzero
-  upper.C <- data[1]
-  upper.RT <- data[2]
-  par <- list("drift" = drift, "theta" = theta, 
-              "tzero" = tzero, "boundary" = boundary)
-  area <- numInt.tpz.cddm(lower.C, upper.C,
-                          lower.RT, upper.RT,
-                          par, max.RT = 20, 
-                          kappa=300, plot=FALSE)
+  rad <- data[1]
+  rt <- data[2]
+  cddm.par <- list("drift" = drift, "theta" = theta, 
+                   "tzero" = tzero, "boundary" = boundary)
+  area <- numInt.tpz.cddm(rad,rt, cddm.par, plot)
   return(area)
 } 
 
@@ -170,7 +164,6 @@ if(test){
     theta = pi
     tzero = 0.1
     boundary = 7
-    n <- 500
     C <- runif(1,0,2*pi)
     RT <- runif(1,0,15)
     data <- c(C,RT)
