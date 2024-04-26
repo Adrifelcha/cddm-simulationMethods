@@ -7,10 +7,8 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     # ~~ Set up ~~ #
     ################
     # Load up CDDM parameters
-    drift <- cddm.par$drift
-    theta <- cddm.par$theta
-    tzero <- cddm.par$tzero
-    boundary <- cddm.par$boundary
+    drift <- cddm.par$drift;     theta <- cddm.par$theta
+    tzero <- cddm.par$tzero;     boundary <- cddm.par$boundary
     # Make sure radians are in 0-2pi scale
     rad <- rad %% (2*pi)
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
@@ -142,5 +140,3 @@ if(test){
     data <- c(C,RT)
     pCDDM(data,drift, theta, tzero, boundary, plot=TRUE)
 }
-
-
