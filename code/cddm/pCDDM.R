@@ -1,4 +1,5 @@
-source("./dCDDM.R")
+if(!exists("superCalled")){superCalled <- FALSE}
+if(!superCalled){ source("./dCDDM.R") }
 library("scatterplot3d")
 library("plot3D")
 
