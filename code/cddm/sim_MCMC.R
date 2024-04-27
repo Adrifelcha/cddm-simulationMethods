@@ -81,7 +81,7 @@ sample.MCMC.cddm <- function(n, par, max.RT = 10, plot=FALSE){
     samples <- rbind(samples, cand[keep,])
     n.keep <- nrow(samples)-1
   }
-  
+  colnames(samples) <- c("Choice","RT")
   samples <- samples[-1,]
   return(samples)
 }
