@@ -55,7 +55,7 @@ n <- 5000 # No. samples
 
 # Algorithm 1: Random walk emulator
 
-Each pair of observations is obtained by emulating the random walk process described by the CDDM and recording the point at which the circumference is crossed and the number of steps it took as our choice and response times.
+Each pair of observations is obtained by emulating the random walk process described by the CDDM and recording 1) the point at which the circumference is crossed and 2) the number of steps it took to get there.
 
 
 
@@ -120,7 +120,7 @@ if(forceRun|!file.exists("./tmp/X.MCMC.RData")){
      load("./tmp/X.MCMC.RData")
      load("./tmp/MC.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
+     z <- sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
 }
 ```
 
@@ -241,7 +241,7 @@ getDifferences(RW.eCDF,RW.tCDF)
 
 ```{r}
 N <- 1:5
-M <- 10
+M <- 20
 
 times.RW   <- matrix(NA, nrow=M, ncol=max(N))
 times.MCMC <- matrix(NA, nrow=M, ncol=max(N))
@@ -258,10 +258,30 @@ for(m in 1:M){
       times.MCMC[m,n] <- round(end_time-start_time, 4)
     }
 }
-
-range(times.RW, na.rm = TRUE)
-range(times.MCMC, na.rm = TRUE)
 ```
+
+```{r, echo=FALSE}
+x <- rep(N, each=M)
+x.RW <- (rep(N, each=M)+0.15)+(rnorm(max(N)*M,0,0.02))
+x.MCMC <- (rep(N, each=M)-0.15)+(rnorm(max(N)*M,0,0.015))
+t.RW <- c(times.RW)
+t.MCMC <- c(times.MCMC)
+
+max.CompTime <- max(times.RW)
+
+plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
+     col = rgb(0.4,0.9,0.3,0.5), ann=F, axes=F)
+points(x.MCMC,t.MCMC, pch=16, cex=0.8, col=rgb(0.15,.29,.80,0.5))
+axis(1, N, paste("n = ", N))
+mtext("Sample size", 1, line=2.5, f=2)
+axis(2, seq(0,max.CompTime,0.01), seq(0,max.CompTime,0.01), las=2, line=-1.1)
+mtext("Computation Time", 2, line=2.5, f=2)
+abline(lm(t.RW ~x), col = rgb(0.4,0.9,0.3,0.8), lwd=2)
+abline(lm(t.MCMC ~x), col=rgb(0.15,.29,.80,0.8), lwd=2)
+legend(0.5,max.CompTime, col= c(rgb(0.4,0.9,0.3,0.8),rgb(0.15,.29,.80,0.8)), c("RW", "MCMC"), lwd=2, bty = "n")
+```
+
+
 
 # References
 
