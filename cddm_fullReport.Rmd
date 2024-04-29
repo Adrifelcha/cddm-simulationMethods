@@ -1,5 +1,5 @@
 ---
-title: "Simulation algorithms for the CDDM in R"
+title: "A comparison between different simulation algorithms for the CDDM in R"
 author: "Adriana F. Chávez De la Peña"
 date: "`r Sys.Date()`"
 output:
@@ -15,48 +15,36 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+# Start Rmarkdown set up
 knitr::opts_chunk$set(echo = TRUE)
-
 library(rmdformats)
-
-superCalled <- TRUE
-
-source("./code/cddm/sim_randomWalk.R")
-source("./code/cddm/dCDDM.R")
-
-test <- FALSE
+# Declare higher variables
+superCalled <- TRUE # When calling external scripts, don't load nested scripts.
+test <- FALSE       # When calling external scripts, don't run tests
+forceRun <- FALSE   # Whether we re-run all chunks, ignoring past saved results
+# Call scripts containing auxiliary custom functions
+source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
+source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
+source("./code/cddm/sim_MCMC.R") # Needed for Algorithm 2
+source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
 ```
 
 # The Circular Drift Diffusion Model
 
 The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (i.e., a bounded continuum; Smith, 2016). 
 
-Like many other accumulator models, the assumes that information gets accumulated over time, moving from a starting point located at the origin of a circle representing the decision space, towards its circumference. Responses made by participants are expressed in radians.
+Like many other accumulator models, the CDDM assumes that participants accumulate information in favor of a given response option over time, until a response criteria is met. This information accumulation process is characterized by the model as a random walk that starts at the origin of the circle representing the decision space, and moves towards its circumference. The response observed corresponds to the point at which the random walk intersects the circumference, and its thus expressed in radians.
 
-The CDDM considers four parameters. 
+The CDDM considers four parameters, most of which are illustrated in Fig 1, with the one exception of the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
-1. The nondecision time $\tau$
-
-2. The boundary radius (i.e., the response criterion) $\eta$. 
-
-3. A douplet of parameters related to the information provided by the stimulus: $\mu_x$ and $\mu_y$ OR $\theta$ and $\delta$.
-
-<!-- 3. A douplet of parameters related to the information provided by the stimulus and its effect on the decision process. These last two parameters describe the overall direction and speed of the random walk either in terms of cartesian or polar coordinates. If expressed as a cartesian coordinates, parameters μx and μy are used to denote the average step size that the random walk takes per unit of time along the X and Y axes, respectively. Whereas, if expressed as polar coordinates, parameters θ and δ are used to describe the angle that corresponds to the -->
-<!-- correct answer (i.e., drift angle) and the average speed at which the random walk approaches the -->
-<!-- circumference (i.e., drift magnitude), respectively (Smith, 2016; Kvam, 2019). -->
-
-Below we have a graphical representation of the CDDM (non-decision time is not included)
-
-```{r, echo=FALSE, message=FALSE, fig.align='center'}
+```{r, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
 source("./code/cddm/illustrateModel_Fig1.R")
 ```
 
-# Algorithm 1: Random walk emulator
+In this document, we present a compare different sampling algorithms to generate data under the CDDM. We will illustrate how these algorithms work and discuss the comparison method by generating `n = 5000` bivariate observatios using the same set of arbitrary parameter values:
 
 ```{r}
-# 2: Define some parameter values and sample size ~ #
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# Some parameter values
+# Arbitrary set of parameter values
 par <- list("drift" = 1, 
             "theta" = pi,
             "tzero" = 0.1,
@@ -64,39 +52,51 @@ par <- list("drift" = 1,
 n <- 5000 # No. samples
 ```
 
-```{r, echo=FALSE}
-start_time <- Sys.time()
-```
+# Algorithm 1: Random walk emulator
+
+Each pair of observations is obtained by emulating the random walk process described by the CDDM and recording the point at which the circumference is crossed and the number of steps it took as our choice and response times.
+
+
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_randomWalk.R")
 X.RW <- sample.RW.cddm(n,par)
 ```
 
-```{r, echo=FALSE}
-end_time <- Sys.time()
-RW.time <- end_time-start_time
-RW.time <- round(RW.time,4)
+```{r,  echo=FALSE}
+# The r-chunk above is actually just for display. This is where the samples are actually
+# generated or loaded from previously-saved output files, as indicated in the opening chunk.
+if(forceRun|!file.exists("./tmp/X.RW.RData")){
+      start_time <- Sys.time()
+      X.RW <- sample.RW.cddm(n,par)
+      end_time <- Sys.time()
+      RW.time <- round(end_time-start_time,4)
+      save(X.RW, file = "./tmp/X.RW.RData")
+      save(RW.time, file = "./tmp/RW.time.RData")
+}else{
+     load("./tmp/X.RW.RData")    
+     load("./tmp/RW.time.RData")
+}
 ```
 
-```{r, eval=TRUE, echo=FALSE}
-source("./code/cddm/sim_randomWalk.R")
-#save(X.RW, file = "./tmp/X.RW.RData")
-load("./tmp/X.RW.RData")
-#save(RW.time, file = "./tmp/RW.time.RData")
-load("./tmp/RW.time.RData")
+```{r, fig.height=5}
+plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
+```
+
+
+```{r, fig.height=5}
+par(pty="m", mar = c(3, 3, 3, 0)) 
+hist(X.RW$bivariate.data[,2], main = "Response Times", col = rgb(0.4,0.9,0.3,0.7))
 ```
 
 *The execution of this first algorithm took approximately `r RW.time` seconds.*
 
 # Algorithm 2: Metropolis-Hasting MCMC
 
+The following MCMC rejection-sampler algorithm (Metropolis-Hasting) uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates), and an arbitrary value max.RT that indicates the maximum possible R.T we’d expect to observe under a realistic scenario.
+
 ```{r}
 max.RT <- max(X.RW$bivariate.data[,2])
-```
-
-```{r, echo=FALSE}
-start_time <- Sys.time()
 ```
 
 ```{r, eval=FALSE}
@@ -104,58 +104,37 @@ source("./code/cddm/sim_MCMC.R")
 X.MCMC <- sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
 ```
 
-```{r, echo=FALSE}
-end_time <- Sys.time()
-MC.time <- end_time-start_time
-MC.time <- round(MC.time,4)
-```
-
-```{r, eval=TRUE, echo=FALSE}
-source("./code/cddm/sim_MCMC.R")
-#save(X.MCMC, file = "./tmp/X.MCMC.RData")
-load("./tmp/X.MCMC.RData")
-#save(MC.time, file = "./tmp/MC.time.RData")
-load("./tmp/MC.time.RData")
+```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the MCMC-MH rejection algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
+# The r-chunk above is actually just for display. This is where the samples are actually
+# generated or loaded from previously-saved output files, as indicated in the opening chunk.
+if(forceRun|!file.exists("./tmp/X.MCMC.RData")){
+      start_time <- Sys.time()
+      X.MCMC <- sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
+      end_time <- Sys.time()
+      MC.time <- round(end_time-start_time, 4)
+      save(X.MCMC, file = "./tmp/X.MCMC.RData")
+      save(MC.time, file = "./tmp/MC.time.RData")
+}else{
+     # Load already existing output
+     load("./tmp/X.MCMC.RData")
+     load("./tmp/MC.time.RData")
+     # Run the sampling algorithm to show the illlustrative plot
+     sample.MCMC.cddm(n,par,max.RT,plot=TRUE)
+}
 ```
 
 *The execution of this second algorithm took approximately `r MC.time` seconds.*
 
-# Comparison (Single run)
-
-## Visualize the output
-
-### Choices
-
-```{r}
-par(pty="m")          
-par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
-# Choices
-hist(X.RW$bivariate.data[,1], main="Choices on Random Walk",
-     xlim=c(0,2*pi), col="goldenrod4")
-hist(X.MCMC[,1], main= "Choices on MCMC", xlim=c(0,2*pi), col="cyan4")
-```
-
-```{r}
-source("./code/cddm/plottingFunctions.R")
-
-par(pty="m")          
-par(mfrow=c(1,2),mar = c(3, 3, 3, 0)) 
-# Decisions on a circle
-plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
+```{r, fig.height=5}
 plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
 ```
 
-### Response Times
-
-```{r}
-par(pty="m")          
-par(mfrow=c(2,1),mar = c(3, 3, 3, 0)) 
-# Response Times
-hist(X.RW$bivariate.data[,2], main = "RT on Random Walk", col="goldenrod3")
-hist(X.MCMC[,2], main = "RT on MCMC", col="cyan4")
+```{r, fig.height=5}
+par(pty="m", mar = c(3, 3, 3, 0)) 
+hist(X.MCMC[,2], main = "Response Times", col=rgb(0.15,.29,.80,0.7))
 ```
 
-## Accuracy test
+# Accuracy testing
 
 ### Step 1: Obtain empirical CDF (eCDF)
 
@@ -215,8 +194,18 @@ RW_tCDF.time <- round(RW_tCDF.time,4)
 ## Step 3: Compare eCDFs vs approximate tCDF
 
 ```{r}
-# We build a simple function to compare these CDFs
+par(pty="s")          
+par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+scatterplot3d(X.MCMC[,1],X.MCMC[,2],MCMC.tCDF, pch=16,
+              cex.symbols = 0.5, color = "goldenrod4",
+              xlab = "Choices", ylab = "RT", zlab = "CDF (approximate)")
+scatterplot3d(X.RW$bivariate.data[,1],X.RW$bivariate.data[,2],RW.tCDF, pch=16,
+              cex.symbols = 0.5, color = "cyan4", xlab = "Choices", 
+              ylab = "RT", zlab = "CDF (approximate)")
+```
 
+```{r}
+# We build a simple function to compare these CDFs
 getDifferences <- function(eCDF,tCDF){
   difference <- tCDF - eCDF
   difference.sum <- sum(difference)
@@ -235,23 +224,32 @@ getDifferences(MCMC.eCDF,MCMC.tCDF)
 getDifferences(RW.eCDF,RW.tCDF)
 ```
 
-```{r, eval=FALSE, echo=FALSE}
-lab.x <- colnames(data)[1]
-      lab.y <- colnames(data)[2]
-      if(is.null(lab.x)){ lab.x <-"Dimension 1" }
-      if(is.null(lab.y)){ lab.y <-"Dimension 2" }
-      scatterplot3d(data[,1],data[,2],eCDF, pch=16,
-                    cex.symbols = 0.5, color = eCDF.color,
-                    xlab = lab.x, ylab = lab.y, zlab = "eCDF")
-    x.tCDF <- pnorm(x,true.mean,true.sd)
-    getDifferences(x.eCDF,x.tCDF)
-    # Data comes from bivariate normal
-    true.means <- c(10,10)
-    true.sds <- diag(length(true.means))
-    y <- mvtnorm::rmvnorm(1000,true.means,true.sds)
-    y.eCDF <- myECDF(y)
-    myECDF.Plot(y)
-    y.tCDF <- pnorm(y,true.mean,true.sd)
+# Comparing computation times
 
+```{r}
+N <- 1:5
+M <- 10
+
+times.RW   <- matrix(NA, nrow=M, ncol=max(N))
+times.MCMC <- matrix(NA, nrow=M, ncol=max(N))
+for(m in 1:M){
+    for(n in N){
+      start_time <- Sys.time()
+      sample.RW.cddm(n,par)
+      end_time <- Sys.time()
+      times.RW[m,n] <- round(end_time-start_time,4)
+      
+      start_time <- Sys.time()
+      sample.MCMC.cddm(n,par,max.RT,plot=FALSE)
+      end_time <- Sys.time()
+      times.MCMC[m,n] <- round(end_time-start_time, 4)
+    }
+}
+
+range(times.RW, na.rm = TRUE)
+range(times.MCMC, na.rm = TRUE)
 ```
-    
+
+# References
+
+- Smith, P. L. (2016). Diffusion theory of decision making in continuous report. Psychological Review, 123(4), 425.
