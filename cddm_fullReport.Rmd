@@ -28,6 +28,11 @@ source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
 source("./code/cddm/sim_MCMC.R") # Needed for Algorithm 2
 source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
+# Short custom functions for plotting
+rgb.RW <- c(0.4,.9,.3)
+rgb.MCMC <- c(0.15,.29,.80)
+col.RW <- function(opacity){rgb(rgb.RW[1],rgb.RW[2],rgb.RW[3],opacity)}
+col.MCMC <- function(opacity){rgb(rgb.MCMC[1],rgb.MCMC[2],rgb.MCMC[3],opacity)}
 ```
 
 # The Circular Drift Diffusion Model
@@ -81,13 +86,13 @@ if(forceRun|!file.exists("./tmp/X.RW.RData")){
 ```
 
 ```{r, fig.height=5}
-plot.CDDM(X.RW, par, choice.col.RGB = c(0.4,.9,.3))
+plot.CDDM(X.RW, par, choice.col.RGB = rgb.RW)
 ```
 
 
 ```{r, fig.height=5}
 par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.RW$bivariate.data[,2], main = "Response Times", col = rgb(0.4,0.9,0.3,0.7))
+hist(X.RW$bivariate.data[,2], main = "Response Times", col = col.RW(0.7))
 ```
 
 *The execution of this first algorithm took approximately `r RW.time` seconds.*
@@ -127,12 +132,12 @@ if(forceRun|!file.exists("./tmp/X.MCMC.RData")){
 *The execution of this second algorithm took approximately `r MC.time` seconds.*
 
 ```{r, fig.height=5}
-plot.CDDM(X.MCMC, par, choice.col.RGB = c(0.15,.29,.80))
+plot.CDDM(X.MCMC, par, choice.col.RGB = rgb.MCMC)
 ```
 
 ```{r, fig.height=5}
 par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.MCMC[,2], main = "Response Times", col=rgb(0.15,.29,.80,0.7))
+hist(X.MCMC[,2], main = "Response Times", col=col.MCMC(0.7))
 ```
 
 # Accuracy testing
