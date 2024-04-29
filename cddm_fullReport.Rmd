@@ -275,10 +275,18 @@ points(x.MCMC,t.MCMC, pch=16, cex=0.8, col=rgb(0.15,.29,.80,0.5))
 axis(1, N, paste("n = ", N))
 mtext("Sample size", 1, line=2.5, f=2)
 axis(2, seq(0,max.CompTime,0.01), seq(0,max.CompTime,0.01), las=2, line=-1.1)
-mtext("Computation Time", 2, line=2.5, f=2)
+mtext("Computation Time (in secs)", 2, line=2.5, f=2)
 abline(lm(t.RW ~x), col = rgb(0.4,0.9,0.3,0.8), lwd=2)
 abline(lm(t.MCMC ~x), col=rgb(0.15,.29,.80,0.8), lwd=2)
 legend(0.5,max.CompTime, col= c(rgb(0.4,0.9,0.3,0.8),rgb(0.15,.29,.80,0.8)), c("RW", "MCMC"), lwd=2, bty = "n")
+```
+
+```{r}
+lm(t.RW ~x)
+```
+
+```{r}
+lm(t.MCMC ~x)
 ```
 
 
