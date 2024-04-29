@@ -27,6 +27,7 @@ source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algori
 source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
 source("./code/cddm/sim_MCMC.R") # Needed for Algorithm 2
 source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
+source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 ```
 
 # The Circular Drift Diffusion Model
@@ -154,18 +155,30 @@ myECDF.Plot(X.RW$bivariate.data, color="cyan4")
 
 ## Step 2: Approximate the theoretical CDF  (tCDF)
 
-```{r, eval=TRUE, echo=FALSE}
-source("./code/cddm/pCDDM.R")
-#save(MCMC.tCDF, file = "./tmp/MCMC.tCDF.RData")
-load("./tmp/MCMC.tCDF.RData")
-#save(MC_tCDF.time, file = "./tmp/MC_tCDF.time.RData")
-load("./tmp/MC_tCDF.time.RData")
-#save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
-load("./tmp/RW.tCDF.RData")
-#save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
-load("./tmp/RW_tCDF.time.RData")
+```{r, echo=FALSE}
+# The two r-chunks below are actually just for display. This is where the CDFs are actually
+# approximated from previously-saved output files, as indicated in the opening chunk.
+if(forceRun|!file.exists("./tmp/MCMC.tCDF.RData")){
+      start_time <- Sys.time()
+      MCMC.tCDF <- pCDDM(X.MCMC, par$drift, par$theta, par$tzero, par$boundary)
+      end_time <- Sys.time()
+      MC_tCDF.time <- round(end_time-start_time,4)
+      save(MCMC.tCDF, file = "./tmp/MCMC.tCDF.RData")
+      save(MC_tCDF.time, file = "./tmp/MC_tCDF.time.RData")
+      start_time <- Sys.time()
+      RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
+      end_time <- Sys.time()
+      RW_tCDF.time <- round(end_time-start_time,4)
+      save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
+      save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
+}else{
+     # Load already existing output
+      load("./tmp/MCMC.tCDF.RData")
+      load("./tmp/MC_tCDF.time.RData")
+      load("./tmp/RW.tCDF.RData")
+      load("./tmp/RW_tCDF.time.RData")
+}
 ```
-
 
 ```{r, eval=FALSE}
 source("./code/cddm/pCDDM.R")
