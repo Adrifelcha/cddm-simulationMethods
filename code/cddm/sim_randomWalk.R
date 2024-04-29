@@ -190,11 +190,6 @@ getFinalState <- function(randomWalk.states){
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
   trials <- n
-  par <- list("drift" = 1, 
-              "theta" = pi,
-              "tzero" = 0.1,
-              "boundary" = 7)
-  
   boundary <- par$boundary
   drift.Angle <- par$theta
   drift.Length <- par$drift
