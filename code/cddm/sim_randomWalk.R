@@ -72,8 +72,8 @@ cddm.randomWalk <- function(trials, mu1, mu2, boundary, ndt=0.1, drift.Coeff=1, 
   # Arrays to be used in simulation
   random_deviations <- rnorm(trials*iter*2,0,1)*(drift.Coeff*sqDT)   # Deviations from step sizes mu1, mu2 (Noise)
   motion <- array(random_deviations,dim = c(iter,2,trials))          # Store deviations in array
-  steps_d1 <- motion[,1,]+(mu1*dt)
-  steps_d2 <- motion[,2,]+(mu2*dt)
+  steps_d1 <- matrix(motion[,1,]+(mu1*dt), nrow=iter, ncol=trials)
+  steps_d2 <- matrix(motion[,2,]+(mu2*dt), nrow=iter, ncol=trials)
   
   # Set initial state for every trial
   state[1,,] <- s.init # Set initial point for every random-walk on each trial
