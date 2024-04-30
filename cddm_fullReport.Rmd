@@ -57,9 +57,7 @@ The CDDM considers four parameters, most of which are illustrated in Fig 1. The 
 source("./code/cddm/illustrateModel_Fig1.R")
 ```
 
-In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and discuss the comparison method by generating `n = 5000` bivariate observations using the same set of arbitrary parameter values:
-
-```{r}
+```{r set-up, echo=FALSE}
 # Arbitrary set of parameter values
 par <- list("drift" = 1, 
             "theta" = pi,
@@ -68,10 +66,15 @@ par <- list("drift" = 1,
 n <- 5000 # No. samples
 ```
 
+
+In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` `r n` bivariate observations using the arbitrary set of parameter values shown below:
+
+```{r set-up, eval=FALSE}
+```
+
 # Algorithm 1: Random walk emulator
 
-Each pair of observations is obtained by emulating the random walk process described by the CDDM.
-
+Each pair of observations is obtained by emulating the random walk process described by the CDDM. We emulate the information accumulation process by iteratively sampling random movements on the X and Y direction using $\mu_x$ and $\mu_y$, until the 
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_randomWalk.R")
