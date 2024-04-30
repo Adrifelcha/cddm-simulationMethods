@@ -91,11 +91,10 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     bin.count <- 1
     for(b.c in 2:kappa){  # Move along radian dimension
         for(b.rt in 2:kappa.RT){  # Move along rt dimension
-            bin.heights <- c(density_matrix[b.c,b.rt],
-                             density_matrix[b.c-1,b.rt],
-                             density_matrix[b.c,b.rt-1],
-                             density_matrix[b.c-1,b.rt-1])
-            mean_height <- mean(bin.heights)
+            mean_height <- mean(c(density_matrix[b.c,b.rt],
+                                  density_matrix[b.c-1,b.rt],
+                                  density_matrix[b.c,b.rt-1],
+                                  density_matrix[b.c-1,b.rt-1]))
             bin.vol[bin.count] <- mean_height*binBase.area
             bin.count <- bin.count + 1
         }
