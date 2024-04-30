@@ -260,11 +260,11 @@ mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 getDifferences <- function(eCDF,tCDF){
   difference <- tCDF - eCDF
   difference.sum <- sum(difference)
-  Kldivergence <- max(abs(difference))
+  KS_statistic <- max(abs(difference)) # Kolmogorov–Smirnov statistic
   sq.difference <- sum((difference)^2)
   
-  output <- round(cbind(difference.sum,Kldivergence,sq.difference),4)
-  colnames(output) <- c("sumDiff","Kldivergence","SSDiff") 
+  output <- round(cbind(difference.sum,KS_statistic,sq.difference),4)
+  colnames(output) <- c("sumDiff","KS-statistic","SSDiff") 
   return(output)
 }
 ```
