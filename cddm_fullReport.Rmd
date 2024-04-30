@@ -29,25 +29,35 @@ source("./code/cddm/sim_MCMC.R") # Needed for Algorithm 2
 source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 # Short custom functions for plotting
-rgb.RW <- c(0.4,.9,.3)
-rgb.MCMC <- c(0.15,.29,.80)
+rgb.RW <- c(255/255,128/255,0)
+rgb.MCMC <- c(0.4,.9,.3)
 col.RW <- function(opacity){rgb(rgb.RW[1],rgb.RW[2],rgb.RW[3],opacity)}
 col.MCMC <- function(opacity){rgb(rgb.MCMC[1],rgb.MCMC[2],rgb.MCMC[3],opacity)}
 ```
 
+<!-- # Introduction -->
+
+<!-- The present document is included as support material for the project presented in: -->
+
+<!-- > Chávez De la Peña, A. F. & Vandekerckhove, J. (n.a.). Simulating circular decisions using the circular drift-diffusion model: A comparison across different simulation methods. *work in progress*. -->
+
+<!-- The main goal of the project was to develop different sampling algorithms that could be used to generate data under the CDDM, and compare their performance in terms of computation time and accuracy.  -->
+
+<!-- This document is a short report intended to provide an executive  -->
+
+
+
 # The Circular Drift Diffusion Model
 
-The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (i.e., a bounded continuum; Smith, 2016). 
+The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (Smith, 2016). Like many other accumulator models, the CDDM assumes that participants accumulate information in favor of a given response option over time, until a response criteria is met. This is characterized as a random walk that starts at the origin of a circle representing the decision space, and that moves towards its circumference. Once the circumference is reached, the radian corresponding to the point of intersection and the amount of steps it took to get there are indicative of the choice and response times observed.
 
-Like many other accumulator models, the CDDM assumes that participants accumulate information in favor of a given response option over time, until a response criteria is met. This information accumulation process is characterized by the model as a random walk that starts at the origin of the circle representing the decision space, and moves towards its circumference. The response observed corresponds to the point at which the random walk intersects the circumference, and its thus expressed in radians.
-
-The CDDM considers four parameters, most of which are illustrated in Fig 1, with the one exception of the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
+The CDDM considers four parameters, most of which are illustrated in Fig 1. The parameter not shown is the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
 ```{r, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
 source("./code/cddm/illustrateModel_Fig1.R")
 ```
 
-In this document, we present a compare different sampling algorithms to generate data under the CDDM. We will illustrate how these algorithms work and discuss the comparison method by generating `n = 5000` bivariate observatios using the same set of arbitrary parameter values:
+In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and discuss the comparison method by generating `n = 5000` bivariate observations using the same set of arbitrary parameter values:
 
 ```{r}
 # Arbitrary set of parameter values
@@ -60,8 +70,7 @@ n <- 5000 # No. samples
 
 # Algorithm 1: Random walk emulator
 
-Each pair of observations is obtained by emulating the random walk process described by the CDDM and recording 1) the point at which the circumference is crossed and 2) the number of steps it took to get there.
-
+Each pair of observations is obtained by emulating the random walk process described by the CDDM.
 
 
 ```{r, eval=FALSE}
@@ -150,12 +159,25 @@ source("./code/general_functions/eCDF.R")
 
 MCMC.eCDF <- myECDF(X.MCMC)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
+```
 
+```{r, echo=FALSE}
 # Plot the eCDFs obtained so far
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
-myECDF.Plot(X.MCMC, color="goldenrod4")
-myECDF.Plot(X.RW$bivariate.data, color="cyan4")
+scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
+              RW.eCDF,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
+              xlab = "", ylab = "", zlab = "")
+mtext("Random Walk algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.MCMC[,1],X.MCMC[,2],MCMC.eCDF, pch=16,
+              cex.symbols = 0.5, color = col.MCMC(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("MCMC-MH algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
 
 ## Step 2: Approximate the theoretical CDF  (tCDF)
@@ -209,18 +231,26 @@ RW_tCDF.time <- round(RW_tCDF.time,4)
 
 *Obtaining the approximate CDF for the Random-Walk data with a trapezoid algorithm took `r RW_tCDF.time` **minutes**.*
 
-## Step 3: Compare eCDFs vs approximate tCDF
-
-```{r}
+```{r, echo=FALSE}
+# Plot the eCDFs obtained so far
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
-scatterplot3d(X.MCMC[,1],X.MCMC[,2],MCMC.tCDF, pch=16,
-              cex.symbols = 0.5, color = "goldenrod4",
-              xlab = "Choices", ylab = "RT", zlab = "CDF (approximate)")
-scatterplot3d(X.RW$bivariate.data[,1],X.RW$bivariate.data[,2],RW.tCDF, pch=16,
-              cex.symbols = 0.5, color = "cyan4", xlab = "Choices", 
-              ylab = "RT", zlab = "CDF (approximate)")
+scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
+              RW.tCDF,  pch=3, cex.symbols = 0.5, color = col.RW(0.4),
+              xlab = "", ylab = "", zlab = "")
+mtext("Random Walk algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.MCMC[,1],X.MCMC[,2],MCMC.tCDF, pch=3,
+              cex.symbols = 0.5, color = col.MCMC(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("MCMC-MH algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
+
+## Step 3: Compare eCDFs vs approximate tCDF
 
 ```{r}
 # We build a simple function to compare these CDFs
@@ -240,6 +270,27 @@ getDifferences <- function(eCDF,tCDF){
 ```{r}
 getDifferences(MCMC.eCDF,MCMC.tCDF)
 getDifferences(RW.eCDF,RW.tCDF)
+```
+
+```{r, echo=FALSE}
+# Plot the eCDFs obtained so far
+par(pty="s")          
+par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+a <- scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
+                   RW.eCDF,  pch=16, cex.symbols = 0.8, color = col.RW(0.4),
+                  xlab = "", ylab = "", zlab = "")
+a$points3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2], RW.tCDF,
+           pch=3, cex = 0.1)
+mtext("Random Walk algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+a <- scatterplot3d(X.MCMC[,1],X.MCMC[,2],MCMC.eCDF, pch=16, cex.symbols = 0.8, 
+                   color = col.MCMC(0.4), xlab = "", ylab = "", zlab = "")
+a$points3d(X.MCMC[,1],X.MCMC[,2],MCMC.tCDF, pch=3, cex = 0.1)
+mtext("MCMC-MH algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
 
 # Comparing computation times
@@ -265,37 +316,41 @@ for(m in 1:M){
 }
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=6}
+#par(mar = c(1, 1, 1, 1))#, oma = c(0, 0, 0, 0))
+par(mar=c(4,4,0,1))
 x <- rep(N, each=M)
 x.RW <- (rep(N, each=M)+0.15)+(rnorm(max(N)*M,0,0.02))
 x.MCMC <- (rep(N, each=M)-0.15)+(rnorm(max(N)*M,0,0.015))
 t.RW <- c(times.RW)
 t.MCMC <- c(times.MCMC)
 
-max.CompTime <- max(times.RW)
+max.CompTime <- round(max(times.RW),2)
 
+RL.RW <- lm(t.RW ~x)
+B0.RW <- round(RL.RW$coefficients[1],5)
+B1.RW <- round(RL.RW$coefficients[2],5)
+RL.MCMC <- lm(t.MCMC ~x)
+B0.MCMC <- round(RL.MCMC$coefficients[1],5)
+B1.MCMC <- round(RL.MCMC$coefficients[2],5)
 plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
-     col = rgb(0.4,0.9,0.3,0.5), ann=F, axes=F)
-points(x.MCMC,t.MCMC, pch=16, cex=0.8, col=rgb(0.15,.29,.80,0.5))
+     col = col.RW(0.5), ann=F, axes=F)
+points(x.MCMC,t.MCMC, pch=16, cex=0.8, col=col.MCMC(0.5))
 axis(1, N, paste("n = ", N))
-mtext("Sample size", 1, line=2.5, f=2)
-axis(2, seq(0,max.CompTime,0.01), seq(0,max.CompTime,0.01), las=2, line=-1.1)
-mtext("Computation Time (in secs)", 2, line=2.5, f=2)
-abline(lm(t.RW ~x), col = rgb(0.4,0.9,0.3,0.8), lwd=2)
-abline(lm(t.MCMC ~x), col=rgb(0.15,.29,.80,0.8), lwd=2)
-legend(0.5,max.CompTime, col= c(rgb(0.4,0.9,0.3,0.8),rgb(0.15,.29,.80,0.8)), c("RW", "MCMC"), lwd=2, bty = "n")
+mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
+axis(2, seq(0,max.CompTime,0.005), seq(0,max.CompTime,0.005), las=2, line=-1.1)
+mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
+abline(RL.RW, col = col.RW(0.8), lwd=2)
+abline(RL.MCMC, col= col.MCMC(0.8), lwd=2)
+legend(0.5,max.CompTime, col= c(col.RW(0.8),col.MCMC(0.8)), lwd=2, bty = "n", 
+       c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
+         paste("MCMC : Y = ", B0.MCMC, " + ", B1.MCMC, "n", sep="")), cex=1.2)
 ```
 
-```{r}
-lm(t.RW ~x)
-```
-
-```{r}
-lm(t.MCMC ~x)
-```
 
 
 
 # References
 
-- Smith, P. L. (2016). Diffusion theory of decision making in continuous report. Psychological Review, 123(4), 425.
+- Smith, P. L. (2016). Diffusion theory of decision making in continuous report. *Psychological Review*, 123(4), 425.
+- Smith, P. L., Garrett, P. M., & Zhou, J. (2023). Obtaining stable predicted distributions of response times and decision outcomes for the circular diffusion model. *Computational Brain & Behavior*, 6(4), 543-555.
