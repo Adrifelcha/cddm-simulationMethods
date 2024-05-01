@@ -327,50 +327,54 @@ return(list("times.RW" = times.RW,
 }
 ```
 
+```{r, echo=FALSE}
+compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
+    M <- n.Datasets; N <- n.Samples
+    times.Reject <- test2$times.Reject
+    times.RW <- test2$times.RW
+    par(mar=c(4,4,0,1))
+    x <- rep(N, each=M)
+    x.RW <- (rep(N, each=M)+0.15)+(rnorm(length(N)*M,0,0.02))
+    x.Reject <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.015))
+    t.RW <- c(times.RW)
+    t.Reject <- c(times.Reject)
+    
+    max.CompTime <- round(max(times.RW),2)
+    
+    RL.RW <- lm(t.RW ~x)
+    B0.RW <- round(RL.RW$coefficients[1],5)
+    B1.RW <- round(RL.RW$coefficients[2],5)
+    RL.Reject <- lm(t.Reject ~x)
+    B0.Reject <- round(RL.Reject$coefficients[1],5)
+    B1.Reject <- round(RL.Reject$coefficients[2],5)
+    plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
+         col = col.RW(0.5), ann=F, axes=F)
+    points(x.Reject,t.Reject, pch=16, cex=0.8, col=col.Reject(0.5))
+    axis(1, N, paste("n = ", N))
+    mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
+    axis(2, seq(0,max.CompTime,0.005), seq(0,max.CompTime,0.005), las=2, line=-1.1)
+    mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
+    abline(RL.RW, col = col.RW(0.8), lwd=2)
+    abline(RL.Reject, col= col.Reject(0.8), lwd=2)
+    legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8)), lwd=2, bty = "n", 
+           c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
+             paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep="")), cex=1.2)
+}
+```
+
 
 ```{r, echo=FALSE, fig.height=6, eval=FALSE}
 n.Datasets <- 20
+
 n.Samples <- 1:5
-# 
-# N <- seq(1,200,10)
-# test1 <- compareTime(N,M)
-
-
-test2 <- compareTime(n.Samples,n.Datasets)
+test1 <- compareTime(n.Samples,n.Datasets)
+compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
 ```
 
-```{r, eval=FALSE}
-M <- n.Datasets
-N <- n.Samples
-times.Reject <- test2$times.Reject
-times.RW <- test2$times.RW
-par(mar=c(4,4,0,1))
-x <- rep(N, each=M)
-x.RW <- (rep(N, each=M)+0.15)+(rnorm(length(N)*M,0,0.02))
-x.Reject <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.015))
-t.RW <- c(times.RW)
-t.Reject <- c(times.Reject)
-
-max.CompTime <- round(max(times.RW),2)
-
-RL.RW <- lm(t.RW ~x)
-B0.RW <- round(RL.RW$coefficients[1],5)
-B1.RW <- round(RL.RW$coefficients[2],5)
-RL.Reject <- lm(t.Reject ~x)
-B0.Reject <- round(RL.Reject$coefficients[1],5)
-B1.Reject <- round(RL.Reject$coefficients[2],5)
-plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
-     col = col.RW(0.5), ann=F, axes=F)
-points(x.Reject,t.Reject, pch=16, cex=0.8, col=col.Reject(0.5))
-axis(1, N, paste("n = ", N))
-mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
-axis(2, seq(0,max.CompTime,0.005), seq(0,max.CompTime,0.005), las=2, line=-1.1)
-mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
-abline(RL.RW, col = col.RW(0.8), lwd=2)
-abline(RL.Reject, col= col.Reject(0.8), lwd=2)
-legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8)), lwd=2, bty = "n", 
-       c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
-         paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep="")), cex=1.2)
+```{r, echo=FALSE, fig.height=6, eval=FALSE}
+n.Samples <- seq(1,200,10)
+test2 <- compareTime(n.Samples,n.Datasets)
+compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
 ```
 
 # Specific results
