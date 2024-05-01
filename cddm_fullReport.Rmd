@@ -330,8 +330,6 @@ return(list("times.RW" = times.RW,
 ```{r, echo=FALSE}
 compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
     M <- n.Datasets; N <- n.Samples
-    times.Reject <- test2$times.Reject
-    times.RW <- test2$times.RW
     par(mar=c(4,4,0,1))
     x <- rep(N, each=M)
     x.RW <- (rep(N, each=M)+0.15)+(rnorm(length(N)*M,0,0.02))
