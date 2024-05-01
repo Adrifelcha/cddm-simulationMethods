@@ -370,7 +370,7 @@ compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
-n.Samples <- seq(1,200,10)
+n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
 test2 <- compareTime(n.Samples,n.Datasets)
 compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
 ```
