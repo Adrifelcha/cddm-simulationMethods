@@ -15,22 +15,19 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   theta <- par$theta
   tzero <- par$tzero
   boundary <- par$boundary
-
-  test.RT <- seq(tzero, max.RT, length.out=10)
-  test.densities <- NA
-  for(i in 1:length(test.RT)){
-      test.densities[i] <- dCDDM(c(theta,test.RT[i]),drift, theta, tzero, boundary)
-  }
-  max.Density <- max(test.densities)
-  height <- max.Density*1.2
-  base.C <- c(0, 2*pi)
-  base.RT <- c(0, max.RT)
   
+  nTry.RT <- 20
+  test.RT <- seq(tzero, max.RT, length.out=nTry.RT)
+  test.data <- cbind(rep(theta,nTry.RT),test.RT)
+  test.densities <- dCDDM(test.data,drift, theta, tzero, boundary)
+  max.Density <- max(test.densities)
+  height <- max.Density*1.1
+  base.C <- c(0, 2*pi)
+  base.RT <- c(tzero, max.RT)
+
   if(plot){
     nSupp <- 100
     nLines <- 30
-    base.C <- c(0, 2*pi)
-    base.RT <- c(tzero, max.RT)
     support.C <- seq(base.C[1],base.C[2],length.out=nSupp)
     support.RT1 <- seq(base.RT[1],base.RT[2],length.out=nSupp)
     support.RT2 <- rev(support.RT1)
@@ -56,33 +53,38 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   }
   
   n.keep <- 0
+  #if(n<100){n.try <- 100}else{n.try <- n}
   n.try <- n
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
   
   while(n.keep < n){
-    cand <- matrix(NA, nrow=n.try, ncol=no.Dim)
-    cand[,1] <- runif(n.try,base.C[1],base.C[2])
-    cand[,2] <- runif(n.try,base.RT[1],base.RT[2])
-    
-    eval <- dCDDM(cand,drift, theta, tzero, boundary)
-    rej.crit <- runif(n.try,0,height)  
-    keep <- (eval >= rej.crit)
-    
-    n.keep <- sum(keep)
-    n.try <- n.try-n.keep
-    
-    if(plot){
-      a$points3d(cand[!keep,1], cand[!keep,2], rej.crit[!keep],
-                 col = "red", pch = 16, cex = 0.2)
-      a$points3d(cand[keep,1], cand[keep,2], rej.crit[keep],
-                 col = "green", pch = 16, cex = 0.2)
-    }
-    
-    samples <- rbind(samples, cand[keep,])
-    n.keep <- nrow(samples)-1
+        cand <- matrix(NA, nrow=n.try, ncol=no.Dim)
+        cand[,1] <- runif(n.try,base.C[1],base.C[2])
+        cand[,2] <- runif(n.try,base.RT[1],base.RT[2])
+        
+        eval <- dCDDM(cand,drift, theta, tzero, boundary)
+        rej.crit <- runif(n.try,0,height)  
+        keep <- (eval >= rej.crit)
+        
+        n.keep <- sum(keep)
+        n.try <- n.try-n.keep
+        samples <- rbind(samples, cand[keep,])
+        n.keep <- nrow(samples)-1
+        
+        if(plot){
+          a$points3d(cand[!keep,1], cand[!keep,2], rej.crit[!keep],
+                     col = "red", pch = 16, cex = 0.2)
+          a$points3d(cand[keep,1], cand[keep,2], rej.crit[keep],
+                     col = "green", pch = 16, cex = 0.2)
+        }
   }
   colnames(samples) <- c("Choice","RT")
   samples <- samples[-1,]
+  # 
+  # if((n<100)&(!is.vector(samples))){ 
+  #    z <- sample(1:nrow(samples),n)
+  #    samples <- samples[z,]
+  # }
   return(samples)
 }
 
