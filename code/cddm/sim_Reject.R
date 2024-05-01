@@ -53,8 +53,10 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   }
   
   n.keep <- 0
-  if(n<500){n.try <- 500}else{n.try <- n}
-  #n.try <- n
+  if(n<500){   cut.down <- TRUE
+               n.try <- 500
+      }else{   n.try <- n}
+  n.try <- n
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
   
   while(n.keep < n){
@@ -81,7 +83,7 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   colnames(samples) <- c("Choice","RT")
   samples <- samples[-1,]
   
-  if((500)&(!is.vector(samples))){ 
+  if((exists("cut.down"))&(!is.vector(samples))){ 
       z <- sample(1:nrow(samples),n)
       samples <- samples[z,]
    }
