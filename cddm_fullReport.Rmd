@@ -363,7 +363,7 @@ compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
 ```
 
 
-```{r, echo=FALSE, fig.height=6, eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 20
 
 n.Samples <- 1:5
@@ -371,7 +371,7 @@ test1 <- compareTime(n.Samples,n.Datasets)
 compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
 ```
 
-```{r, echo=FALSE, fig.height=6, eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Samples <- seq(1,200,10)
 test2 <- compareTime(n.Samples,n.Datasets)
 compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
