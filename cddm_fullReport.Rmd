@@ -109,9 +109,7 @@ hist(X.RW$bivariate.data[,2], main = "Response Times", col = col.RW(0.7))
 
 *The execution of this first algorithm took approximately `r RW.time` seconds.*
 
-# Algorithm 2: Metropolis-Hasting MCMC
-
-The following MCMC rejection-sampler algorithm (Metropolis-Hasting) uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates), and an arbitrary value max.RT that indicates the maximum possible R.T we’d expect to observe under a realistic scenario.
+# Algorithm 2: Rejection sampling
 
 ```{r}
 max.RT <- max(X.RW$bivariate.data[,2])
@@ -151,6 +149,14 @@ plot.CDDM(X.MCMC, par, choice.col.RGB = rgb.MCMC)
 par(pty="m", mar = c(3, 3, 3, 0)) 
 hist(X.MCMC[,2], main = "Response Times", col=col.MCMC(0.7))
 ```
+
+# Algorithm 3: Metropolis algorithm
+
+The following MCMC rejection-sampler algorithm (Metropolis-Hasting) uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates), and an arbitrary value max.RT that indicates the maximum possible R.T we’d expect to observe under a realistic scenario.
+
+# Algorithm 4: Inverse CDF
+
+
 
 # Accuracy testing
 
