@@ -1,5 +1,5 @@
 ---
-title: "A comparison between different simulation algorithms for the CDDM in R"
+title: "A comparison between sampling algorithms for the CDDM in R"
 author: "Adriana F. Chávez De la Peña"
 date: "`r Sys.Date()`"
 output:
@@ -21,7 +21,7 @@ library(rmdformats)
 # Declare higher variables
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
-forceRun <- TRUE   # Whether we re-run all chunks, ignoring past saved results
+forceRun <- TRUE    # Whether we re-run all chunks, ignoring past saved results
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
