@@ -56,7 +56,7 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   if(n<500){   cut.down <- TRUE
                n.try <- 500
       }else{   n.try <- n}
-  n.try <- n
+  #n.try <- n
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
   
   while(n.keep < n){
