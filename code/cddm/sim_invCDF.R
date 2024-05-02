@@ -8,17 +8,6 @@ if(!exists("superCalled")){superCalled <- FALSE}
 if(!superCalled){ source("./pCDDM.R") }
 library(scatterplot3d) 
 
-par <- list("drift" = 1, 
-            "theta" = pi,
-            "tzero" = 0.1,
-            "boundary" = 7)
-# par <- list("drift" = 3.5, 
-#             "theta" = pi,
-#             "tzero" = 0.2,
-#             "boundary" = 2)
-
-n <- 200
-max.RT <- 20
 
 sample.invCDF.cddm <- function(n, par, max.RT=20, plot=FALSE){
   
