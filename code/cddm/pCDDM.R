@@ -54,8 +54,9 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     rad <- rad %% (2*pi)
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
     if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
-    # Define number of bins based on how away from 0 we are on C and RT
-    kappa <- ceiling(max(rad,(rt-tzero))*20)
+    # Partition the Choice and RT spaces into 200 vertices (for 199 bins) OR, 
+    #      if the rt
+    kappa <- ceiling(max(300, 20*(rt-tzero)))
     # Take largest Choice and RT and partition to form the bins
     bin.C <- seq(0,max(rad),length.out=kappa)
     bin.RT <- seq(tzero,max(rt),length.out=kappa)
