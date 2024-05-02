@@ -175,13 +175,13 @@ RW.eCDF <- myECDF(X.RW$bivariate.data)
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-              RW.eCDF,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
+              RW.eCDF,  pch=16, cex.symbols = 0.4, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
-              cex.symbols = 0.5, color = col.Reject(0.4), 
+              cex.symbols = 0.4, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
@@ -245,13 +245,13 @@ MC_tCDF.time <- round(MC_tCDF.time,4)
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-              RW.tCDF,  pch=3, cex.symbols = 0.5, color = col.RW(0.4),
+              RW.tCDF,  pch=3, cex.symbols = 0.3, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
-              cex.symbols = 0.5, color = col.Reject(0.4), 
+              cex.symbols = 0.3, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
@@ -395,14 +395,21 @@ X.RW <- sample.RW.cddm(n,par)
 max.RT <- max(X.RW$bivariate.data[,2])
 X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=FALSE)
 
-par(pty="m", mar = c(3, 3, 3, 0), mfrow=c(1,2)) 
-hist(X.RW$bivariate.data[,2], main = "Random Walk", col = col.RW(0.7))
-par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.Reject[,2], main = "Rejection algorithm", col=col.Reject(0.7))
-mtext("Response Times sampled", outer=TRUE, line=-1)
-
 Reject.eCDF <- myECDF(X.Reject)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
+
+RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
+Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
+```
+
+```{r echo=FALSE, fig.height=5}
+par(pty="m", mar = c(3, 3, 3, 0), mfrow=c(1,2)) 
+hist(X.RW$bivariate.data[,2], main = "", col = col.RW(0.7))
+mtext("Random walk algorithm", 3, f=2, cex=0.8)
+par(pty="m", mar = c(3, 3, 3, 0)) 
+hist(X.Reject[,2], main = "", col=col.Reject(0.7))
+mtext("Rejection algorithm", 3, f=2, cex=0.8)
+mtext("Response Times sampled", outer=TRUE, line=-1.5, f=2)
 ```
 
 ```{r, echo=FALSE}
@@ -425,9 +432,6 @@ mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
 
 ```{r, echo=FALSE}
-RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
-Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
-
 # Plot the eCDFs obtained so far
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
@@ -470,58 +474,21 @@ mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
-
-N <- 1:5
-M <- 20
-
-times.RW   <- matrix(NA, nrow=M, ncol=max(N))
-times.Reject <- matrix(NA, nrow=M, ncol=max(N))
-for(m in 1:M){
-    for(n in N){
-      start_time <- Sys.time()
-      sample.RW.cddm(n,par)
-      end_time <- Sys.time()
-      times.RW[m,n] <- round(end_time-start_time,4)
-      
-      start_time <- Sys.time()
-      sample.Reject.cddm(n,par,max.RT,plot=FALSE)
-      end_time <- Sys.time()
-      times.Reject[m,n] <- round(end_time-start_time, 4)
-    }
-}
 ```
 
 ```{r, echo=FALSE, fig.height=6}
-#par(mar = c(1, 1, 1, 1))#, oma = c(0, 0, 0, 0))
-par(mar=c(4,4,0,1))
-x <- rep(N, each=M)
-x.RW <- (rep(N, each=M)+0.15)+(rnorm(max(N)*M,0,0.02))
-x.Reject <- (rep(N, each=M)-0.15)+(rnorm(max(N)*M,0,0.015))
-t.RW <- c(times.RW)
-t.Reject <- c(times.Reject)
-
-max.CompTime <- round(max(times.RW),2)
-
-RL.RW <- lm(t.RW ~x)
-B0.RW <- round(RL.RW$coefficients[1],5)
-B1.RW <- round(RL.RW$coefficients[2],5)
-RL.Reject <- lm(t.Reject ~x)
-B0.Reject <- round(RL.Reject$coefficients[1],5)
-B1.Reject <- round(RL.Reject$coefficients[2],5)
-plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
-     col = col.RW(0.5), ann=F, axes=F)
-points(x.Reject,t.Reject, pch=16, cex=0.8, col=col.Reject(0.5))
-axis(1, N, paste("n = ", N))
-mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
-axis(2, seq(0,max.CompTime,0.005), seq(0,max.CompTime,0.005), las=2, line=-1.1)
-mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
-abline(RL.RW, col = col.RW(0.8), lwd=2)
-abline(RL.Reject, col= col.Reject(0.8), lwd=2)
-legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8)), lwd=2, bty = "n", 
-       c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
-         paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep="")), cex=1.2)
+n.Datasets <- 10
+n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
+test2 <- compareTime(n.Samples,n.Datasets)
+compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
 ```
 
+```{r, echo=FALSE, fig.height=6}
+n.Datasets <- 10
+n.Samples <- 1:5
+test1 <- compareTime(n.Samples,n.Datasets)
+compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
+```
 
 
 # References
