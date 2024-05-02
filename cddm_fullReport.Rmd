@@ -360,20 +360,21 @@ compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
 }
 ```
 
+```{r, echo=FALSE, fig.height=6}
+n.Datasets <- 10
+n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
+test2 <- compareTime(n.Samples,n.Datasets)
+compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
+```
 
 ```{r, echo=FALSE, fig.height=6}
-n.Datasets <- 20
-
+n.Datasets <- 10
 n.Samples <- 1:5
 test1 <- compareTime(n.Samples,n.Datasets)
 compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
 ```
 
-```{r, echo=FALSE, fig.height=6}
-n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
-test2 <- compareTime(n.Samples,n.Datasets)
-compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
-```
+
 
 # Specific results
 
@@ -395,9 +396,10 @@ max.RT <- max(X.RW$bivariate.data[,2])
 X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=FALSE)
 
 par(pty="m", mar = c(3, 3, 3, 0), mfrow=c(1,2)) 
-hist(X.RW$bivariate.data[,2], main = "RW", col = col.RW(0.7))
+hist(X.RW$bivariate.data[,2], main = "Random Walk", col = col.RW(0.7))
 par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.Reject[,2], main = "Rejection", col=col.Reject(0.7))
+hist(X.Reject[,2], main = "Rejection algorithm", col=col.Reject(0.7))
+mtext("Response Times sampled", outer=TRUE, line=-1)
 
 Reject.eCDF <- myECDF(X.Reject)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
