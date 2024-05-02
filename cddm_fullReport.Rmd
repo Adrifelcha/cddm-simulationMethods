@@ -26,6 +26,7 @@ forceRun <- TRUE    # Whether we re-run all chunks, ignoring past saved results
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
 source("./code/cddm/sim_Reject.R") # Needed for Algorithm 2
+source("./code/cddm/sim_invCDF.R")
 source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 # Short custom functions for plotting
@@ -156,7 +157,38 @@ The following Metropolis algorithm uses the density function to generate random 
 
 # Algorithm 4: Inverse CDF
 
+```{r, eval=FALSE}
+source("./code/cddm/sim_invCDF.R")
+X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT)
+```
 
+```{r,  echo=FALSE}
+# The r-chunk above is actually just for display. This is where the samples are actually
+# generated or loaded from previously-saved output files, as indicated in the opening chunk.
+if(forceRun|!file.exists("./tmp/X.invCDF.RData")){
+      start_time <- Sys.time()
+      X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT, plot=TRUE)
+      end_time <- Sys.time()
+      invCDF.time <- round(end_time-start_time,4)
+      save(X.invCDF, file = "./tmp/X.invCDF.RData")
+      save(invCDF.time, file = "./tmp/invCDF.time.RData")
+}else{
+     load("./tmp/X.invCDF.RData")    
+     load("./tmp/invCDF.time.RData")
+}
+```
+
+```{r, fig.height=5}
+plot.CDDM(X.invCDF, par, choice.col.RGB = rgb.RW)
+```
+
+
+```{r, fig.height=5}
+par(pty="m", mar = c(3, 3, 3, 0)) 
+hist(X.invCDF[,2], main = "Response Times", col = col.RW(0.7))
+```
+
+*The execution of this first algorithm took approximately `r invCDF.time` seconds.*
 
 # Accuracy testing
 
