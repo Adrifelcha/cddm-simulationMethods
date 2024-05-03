@@ -32,8 +32,10 @@ source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 # Short custom functions for plotting
 rgb.RW <- c(255/255,128/255,0)
 rgb.Reject <- c(0.4,.9,.3)
+rgb.invCDF <- c(0, 128/255, 1)
 col.RW <- function(opacity){rgb(rgb.RW[1],rgb.RW[2],rgb.RW[3],opacity)}
 col.Reject <- function(opacity){rgb(rgb.Reject[1],rgb.Reject[2],rgb.Reject[3],opacity)}
+col.invCDF <- function(opacity){rgb(rgb.invCDF[1],rgb.invCDF[2],rgb.invCDF[3],opacity)}
 ```
 
 <!-- # Introduction -->
@@ -179,13 +181,13 @@ if(forceRun|!file.exists("./tmp/X.invCDF.RData")){
 ```
 
 ```{r, fig.height=5}
-plot.CDDM(X.invCDF, par, choice.col.RGB = rgb.RW)
+plot.CDDM(X.invCDF, par, choice.col.RGB = rgb.invCDF)
 ```
 
 
 ```{r, fig.height=5}
 par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.invCDF[,2], main = "Response Times", col = col.RW(0.7))
+hist(X.invCDF[,2], main = "Response Times", col = col.invCDF(0.7))
 ```
 
 *The execution of this first algorithm took approximately `r invCDF.time` seconds.*
@@ -200,12 +202,12 @@ source("./code/general_functions/eCDF.R")
 
 Reject.eCDF <- myECDF(X.Reject)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
+invCDF.eCDF <- myECDF(X.invCDF)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
               RW.eCDF,  pch=16, cex.symbols = 0.4, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
@@ -216,6 +218,12 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
               cex.symbols = 0.4, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16,
+              cex.symbols = 0.4, color = col.invCDF(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("inverse-CDF tabloid sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
@@ -239,6 +247,12 @@ if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
       RW_tCDF.time <- round(end_time-start_time,4)
       save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
       save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
+      start_time <- Sys.time()
+      invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
+      end_time <- Sys.time()
+      invCDF_tCDF.time <- round(end_time-start_time,4)
+      save(invCDF.tCDF, file = "./tmp/invCDF.tCDF.RData")
+      save(invCDF_tCDF.time, file = "./tmp/invCDF_tCDF.time.RData")
 }else{
      # Load already existing output
       load("./tmp/Reject.tCDF.RData")
@@ -272,7 +286,18 @@ MC_tCDF.time <- round(MC_tCDF.time,4)
 
 *Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r Rejection_tCDF.time` seconds.*
 
-```{r, echo=FALSE}
+```{r, eval=FALSE}
+# Approximate the theoretical CDF for the Reject data
+start_time <- Sys.time()
+invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
+end_time <- Sys.time()
+invCDF_tCDF.time <- end_time-start_time
+invCDF_tCDF.time <- round(invCDF_tCDF.time,4)
+```
+
+*Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r invCDF_tCDF.time` seconds.*
+
+```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
@@ -286,6 +311,12 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
               cex.symbols = 0.3, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.tCDF, pch=16,
+              cex.symbols = 0.4, color = col.invCDF(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("inverse-CDF tabloid sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
@@ -485,6 +516,7 @@ mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```{r}
 getDifferences(RW.eCDF,RW.tCDF)
 getDifferences(Reject.eCDF,Reject.tCDF)
+getDifferences(invCDF.eCDF,invCDF.tCDF)
 ```
 
 ```{r, echo=FALSE}
