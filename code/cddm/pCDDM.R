@@ -3,42 +3,51 @@ if(!superCalled){ source("./dCDDM.R") }
 library("scatterplot3d")
 library("plot3D")
 
-# Auxiliary function 1: Generate a plot of how the approximation works
+# Auxiliary function 1: A function to define the bins' ending points
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# embedded_plot <- function(){
-#   # Base plot: Just draw the density
-#         nLines <- 30
-#         x.C <- seq(0,2*pi,length.out=nLines)
-#         y.RT <- seq(tzero,max(rt,10),length.out=nLines)
-#         x.theta <- rep(theta,nLines)
-#         z.Dens <- matrix(NA, nrow=nLines, ncol=nLines)
-#         for(c in 1:nLines){ for(t in 1:nLines){
-#           z.Dens[c,t] <- dCDDM(c(x.C[c],y.RT[t]),drift,theta,tzero,boundary)
-#         }}
-#         density.theta <- dCDDM(cbind(x.theta,y.RT),drift,theta,tzero,boundary)
-#         high_density <- max(c(z.Dens,density.theta))
-#         a <- scatterplot3d(x.C, y.RT, diag(z.Dens), zlab="Density",
-#                            xlim=range(x.C), ylim=range(y.RT), type="l",
-#                            zlim=c(0,high_density), xlab="Choices", ylab="RT")
-#         a$points3d(x.C, rev(y.RT), diag(z.Dens[,c(nLines:1)]),type="l")
-#         for(i in 1:nLines){  
-#           a$points3d(rep(x.C[i],nLines), y.RT, z.Dens[i,], type="l")
-#           a$points3d(x.C, rep(y.RT[i],nLines), z.Dens[,i], type="l")
-#         }
-#         a$points3d(x.theta, y.RT, density.theta, col = "red", type="l")
-#         legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
-#         
-#         nLines2 <- nLines*2
-#         k.C  <- floor(seq(1,kappa,length.out=nLines2))
-#         k.RT <- floor(seq(1+length(bad.RT),kappa.RT,length.out=nLines2))  
-#         for(i in k.C){  a$points3d(rep(bin.C[i],nLines2), bin.RT[k.RT], 
-#                                    density_mat_raw[i,k.RT], col="purple", type="l")
-#         }
-#         for(i in k.RT){ a$points3d(bin.C[k.C], rep(bin.RT[i],nLines2), 
-#                                    density_mat_raw[k.C,i], col="purple", type="l")
-#         }
-#         mtext(paste("Total =", round(total,4)),3, adj = 1, cex=0.8)  
-# }
+define_bins <- function(tzero,obs.rt){
+  ceiling(max(300, 20*(obs.rt-tzero)))
+}
+
+# Auxiliary function 2: Generate a plot of how the approximation works
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, 
+                          rt, tzero, theta, drift, boundary,
+                          density_matrix){
+   # Base plot: Just draw the density
+         nLines <- 30
+         x.C <- seq(0,2*pi,length.out=nLines)
+         y.RT <- seq(tzero,max(rt,10),length.out=nLines)
+         x.theta <- rep(theta,nLines)
+         z.Dens <- matrix(NA, nrow=nLines, ncol=nLines)
+         for(c in 1:nLines){ for(t in 1:nLines){
+           z.Dens[c,t] <- dCDDM(c(x.C[c],y.RT[t]),drift,theta,tzero,boundary)
+         }}
+         density.theta <- dCDDM(cbind(x.theta,y.RT),drift,theta,tzero,boundary)
+         high_density <- max(c(z.Dens,density.theta))
+         baseColor <- rgb(0,0,0,0.2)
+         a <- scatterplot3d(x.C, y.RT, diag(z.Dens), zlab="Density", color = baseColor,
+                            xlim=range(x.C), ylim=range(y.RT), type="l",
+                            zlim=c(0,high_density), xlab="Choices", ylab="RT")
+         a$points3d(x.C,rev(y.RT), diag(z.Dens[,c(nLines:1)]),type="l", col = baseColor)
+         for(i in 1:nLines){  
+           a$points3d(rep(x.C[i],nLines), y.RT, z.Dens[i,], type="l", col = baseColor)
+           a$points3d(x.C, rep(y.RT[i],nLines), z.Dens[,i],  col = baseColor, type="l")
+         }
+         a$points3d(x.theta, y.RT, density.theta, col = "red", type="l")
+         legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
+         
+         nLines2 <- nLines*2
+         k.C  <- floor(seq(1,kappa,length.out=nLines2))
+         k.RT <- floor(seq(1,kappa.RT,length.out=nLines2))  
+         for(i in k.C){  a$points3d(rep(bin.C[i],nLines2), bin.RT[k.RT], 
+                                    density_matrix[i,k.RT], col="purple", type="l")
+         }
+         for(i in k.RT){ a$points3d(bin.C[k.C], rep(bin.RT[i],nLines2), 
+                                    density_matrix[k.C,i], col="purple", type="l")
+         }
+         mtext(paste("Total =", round(max(total),4)),3, adj = 1, cex=0.8)  
+ }
 
 # Base function: We write a 2D Trapezoid N.I. algorithm
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
@@ -54,17 +63,12 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     rad <- rad %% (2*pi)
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
     if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
-    # Partition the Choice and RT spaces into 200 vertices (for 199 bins) OR, 
-    #      if the rt
-    kappa <- ceiling(max(300, 20*(rt-tzero)))
+    # Define the bins' cut points
+    kappa <- define_bins(tzero,rt)
     # Take largest Choice and RT and partition to form the bins
     bin.C <- seq(0,max(rad),length.out=kappa)
     bin.RT <- seq(tzero,max(rt),length.out=kappa)
-    
-    # ~~ If requested, plot base density ~~ #
-    #########################################
-    if(plot){                                 }
-    
+
     # ~~ Base area of any bin ~~ #
     ##############################
     # All bins have the same length on both direction
@@ -92,10 +96,7 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
        bin.RT <- bin.RT[-bad.RT]
     }
     kappa.RT <- ncol(density_matrix)
-    
-    # Part 4: Plot
-    if(plot){          }
-    
+
     # ~~ Compute the height of each bin ~~ #
     ########################################
     # Part 1: Empty objects for storage
@@ -126,6 +127,9 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
         total[i] <- sum(volume_per_bin[1:row,1:col])
     }
     total <- total / (2*pi)
+    
+    if(plot){   embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rt, 
+                              tzero, theta, drift, boundary, density_matrix)     }
 return(total)
 }
 
