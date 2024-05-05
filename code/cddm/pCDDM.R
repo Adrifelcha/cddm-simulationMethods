@@ -12,41 +12,60 @@ define_bins <- function(tzero,obs.rt){
 # Auxiliary function 2: Generate a plot of how the approximation works
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, 
-                          rt, tzero, theta, drift, boundary,
-                          density_matrix){
-   # Base plot: Just draw the density
+                          rt, tzero, theta, drift, boundary,density_matrix, 
+                          rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7)){
+   par(pty="s")          
+   par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+   # Plot 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # Base plot: Sketch the bivariate density curve
+         # Define line positions over the X and Y dimensions
          nLines <- 30
-         x.C <- seq(0,2*pi,length.out=nLines)
-         y.RT <- seq(tzero,max(rt,10),length.out=nLines)
-         x.theta <- rep(theta,nLines)
+         x.C <- seq(0,2*pi,length.out=nLines)            # X: Choices
+         y.RT <- seq(tzero,max(rt,10),length.out=nLines) # Y: RT
+         x.theta <- rep(theta,nLines)                    # Make sure to add theta
+         # Compute the density at each intersection point
          z.Dens <- matrix(NA, nrow=nLines, ncol=nLines)
          for(c in 1:nLines){ for(t in 1:nLines){
            z.Dens[c,t] <- dCDDM(c(x.C[c],y.RT[t]),drift,theta,tzero,boundary)
          }}
-         density.theta <- dCDDM(cbind(x.theta,y.RT),drift,theta,tzero,boundary)
-         high_density <- max(c(z.Dens,density.theta))
+         # Compute the density at Choice = theta
+         theta.Dens <- dCDDM(cbind(x.theta,y.RT),drift,theta,tzero,boundary)
+         # Draw bivariate density curve
          baseColor <- rgb(0,0,0,0.2)
-         a <- scatterplot3d(x.C, y.RT, diag(z.Dens), zlab="Density", color = baseColor,
-                            xlim=range(x.C), ylim=range(y.RT), type="l",
-                            zlim=c(0,high_density), xlab="Choices", ylab="RT")
+         a <- scatterplot3d(x.C, y.RT, diag(z.Dens), zlab="Density", color = baseColor, type="l",
+                            xlab="Choices", ylab="RT", zlim = c(0, max(z.Dens, theta.Dens)))
          a$points3d(x.C,rev(y.RT), diag(z.Dens[,c(nLines:1)]),type="l", col = baseColor)
          for(i in 1:nLines){  
            a$points3d(rep(x.C[i],nLines), y.RT, z.Dens[i,], type="l", col = baseColor)
            a$points3d(x.C, rep(y.RT[i],nLines), z.Dens[,i],  col = baseColor, type="l")
          }
-         a$points3d(x.theta, y.RT, density.theta, col = "red", type="l")
-         legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1)
-         
+         # Add a density line corresponding to Choice = Theta
+         a$points3d(x.theta, y.RT, theta.Dens, col = "red", type="l")
+         legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1, bty = "n")
+   #  plot: Color the density area 
          nLines2 <- nLines*2
          k.C  <- floor(seq(1,kappa,length.out=nLines2))
          k.RT <- floor(seq(1,kappa.RT,length.out=nLines2))  
-         for(i in k.C){  a$points3d(rep(bin.C[i],nLines2), bin.RT[k.RT], 
-                                    density_matrix[i,k.RT], col="purple", type="l")
+         for(i in k.C){  a$points3d(rep(bin.C[i],nLines2), bin.RT[k.RT], type="l", 
+                                    density_matrix[i,k.RT], col = rgb(rgb1[1],rgb1[2],rgb1[3],0.5))
          }
-         for(i in k.RT){ a$points3d(bin.C[k.C], rep(bin.RT[i],nLines2), 
-                                    density_matrix[k.C,i], col="purple", type="l")
+         for(i in k.RT){ a$points3d(bin.C[k.C], rep(bin.RT[i],nLines2), type="l",
+                                    density_matrix[k.C,i], col = rgb(rgb1[1],rgb1[2],rgb1[3],0.5))
+         }
+         for(i in 1:length(rt)){
+           row <- which.min(abs(bin.C-rad[i]))-1
+           col <- which.min(abs(bin.RT-rt[i]))-1
+           a$points3d(rad[i], rt[i], density_matrix[row,col], pch=16, cex=0.3,
+                      col=rgb(rgb2[1],rgb2[2],rgb2[3],1))
          }
          mtext(paste("Total =", round(max(total),4)),3, adj = 1, cex=0.8)  
+   # Plot 2  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # Base plot: Sketch the bivariate density curve
+         b <- scatterplot3d(rad, rt, total,  pch=16, xlab = "", ylab = "", zlab = "",
+                            color = rgb(rgb2[1],rgb2[2],rgb2[3],0.5), cex.symbols = 0.5)
+         mtext("Approximate CDF: Area under curve", f=2)
+         mtext("Choices", side=1, line=0.5)
+         mtext("RTs", side=4, line=-1, adj=0)
  }
 
 # Base function: We write a 2D Trapezoid N.I. algorithm
@@ -128,8 +147,11 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     }
     total <- total / (2*pi)
     
-    if(plot){   embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rt, 
-                              tzero, theta, drift, boundary, density_matrix)     }
+    if(plot){   
+        embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rt, 
+                      tzero, theta, drift, boundary,density_matrix, 
+                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))      
+      }
 return(total)
 }
 
@@ -176,5 +198,5 @@ if(test){
     C <- runif(n,0,2*pi)
     RT <- runif(n,0,15)
     data <- cbind(C,RT)
-    pCDDM(data,drift, theta, tzero, boundary, plot=FALSE)
+    pCDDM(data,drift, theta, tzero, boundary, plot=TRUE)
 }
