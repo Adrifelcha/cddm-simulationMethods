@@ -24,18 +24,21 @@ test <- FALSE       # When calling external scripts, don't run tests
 forceRun <- TRUE    # Whether we re-run all chunks, ignoring past saved results
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
-source("./code/cddm/sim_randomWalk.R") # Needed for Fig.1 and Algorithm 1
-source("./code/cddm/sim_Reject.R") # Needed for Algorithm 2
-source("./code/cddm/sim_invCDF.R")
+source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
+source("./code/cddm/sim_Reject.R")     # Needed for Algorithm 2
+source("./code/cddm/sim_Metropolis.R") # Needed for Algorithm 3
+source("./code/cddm/sim_invCDF.R")     # Needed for Algorithm 4
 source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 # Short custom functions for plotting
 rgb.RW <- c(255/255,128/255,0)
 rgb.Reject <- c(0.4,.9,.3)
+rgb.Metro  <- c(127/255, 0, 1)
 rgb.invCDF <- c(0, 128/255, 1)
 col.RW <- function(opacity){rgb(rgb.RW[1],rgb.RW[2],rgb.RW[3],opacity)}
 col.Reject <- function(opacity){rgb(rgb.Reject[1],rgb.Reject[2],rgb.Reject[3],opacity)}
 col.invCDF <- function(opacity){rgb(rgb.invCDF[1],rgb.invCDF[2],rgb.invCDF[3],opacity)}
+col.Metro <- function(opacity){rgb(rgb.Metro[1],rgb.Metro[2],rgb.Metro[3],opacity)}
 ```
 
 <!-- # Introduction -->
@@ -60,6 +63,30 @@ The CDDM considers four parameters, most of which are illustrated in Fig 1. The 
 source("./code/cddm/illustrateModel_Fig1.R")
 ```
 
+```{r, echo=FALSE}
+rad <- rectToPolar(choices[,1], choices[,2])$dAngle
+rt <- finalT
+x.data <- cbind(rad,rt)
+fig.drift <- as.numeric(dlength)
+fig.theta <- as.numeric(dangle)
+fig.tzero  <- min(finalT)-0.15
+fig.boundary <- boundary
+```
+
+## dCDDM(*) - CDDM density function
+
+## pCDDM(*) - CDDM cumulate density function
+
+```{r, eval=FALSE, echo=FALSE}
+source("./code/cddm/pCDDM.R")
+
+numInt.tpz.cddm(rad,rt,cddm.par,plot=TRUE)
+
+pCDDM(x.data, fig.drift, fig.theta, fig.tzero, fig.boundary, plot=TRUE)
+```
+
+## Illustrative parameter set
+
 ```{r set-up, echo=FALSE}
 # Arbitrary set of parameter values
 par <- list("drift" = 3.5, 
@@ -74,6 +101,7 @@ In this document, we present a comparison between different sampling algorithms 
 
 ```{r set-up, eval=FALSE}
 ```
+
 
 # Algorithm 1: Random walk emulator
 
@@ -157,7 +185,42 @@ hist(X.Reject[,2], main = "Response Times", col=col.Reject(0.7))
 
 The following Metropolis algorithm uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates), and an arbitrary value max.RT that indicates the maximum possible R.T we’d expect to observe under a realistic scenario.
 
-# Algorithm 4: Inverse CDF
+```{r, eval=FALSE}
+source("./code/cddm/sim_Metropolis.R")
+X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+```
+
+```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Metropolis sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
+# The r-chunk above is actually just for display. This is where the samples are actually
+# generated or loaded from previously-saved output files, as indicated in the opening chunk.
+if(forceRun|!file.exists("./tmp/X.Metro.RData")){
+      start_time <- Sys.time()
+      X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+      end_time <- Sys.time()
+      Metro.time <- round(end_time-start_time, 4)
+      save(X.Metro, file = "./tmp/X.Metro.RData")
+      save(Metro.time, file = "./tmp/Metro.time.RData")
+}else{
+     # Load already existing output
+     load("./tmp/X.Metro.RData")
+     load("./tmp/Metro.time.RData")
+     # Run the sampling algorithm to show the illlustrative plot
+     z <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+}
+```
+
+*The execution of this second algorithm took approximately `r Metro.time` seconds.*
+
+```{r, fig.height=5}
+plot.CDDM(X.Metro, par, choice.col.RGB = rgb.Metro)
+```
+
+```{r, fig.height=5}
+par(pty="m", mar = c(3, 3, 3, 0)) 
+hist(X.Metro[,2], main = "Response Times", col=col.Metro(0.7))
+```
+
+# Algorithm 4: Inverse CDF (tabloid approximation)
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_invCDF.R")
@@ -263,8 +326,6 @@ if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
 ```
 
 ```{r, eval=FALSE}
-source("./code/cddm/pCDDM.R")
-
 # Approximate the theoretical CDF for the Random Walk data
 start_time <- Sys.time()
 RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
