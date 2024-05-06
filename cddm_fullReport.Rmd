@@ -21,7 +21,12 @@ library(rmdformats)
 # Declare higher variables
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
-forceRun <- TRUE    # Whether we re-run all chunks, ignoring past saved results
+# Whether we re-run all chunks, ignoring past saved results
+forceRun_RW <- FALSE    # Re-run Random-walk algorithm
+forceRun_Rej <- TRUE    #
+forceRun_Met <- TRUE    # 
+forceRun_inv <- FALSE   #
+forceRun_tCDF <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
@@ -115,7 +120,7 @@ X.RW <- sample.RW.cddm(n,par)
 ```{r,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/X.RW.RData")){
+if(forceRun_RW|!file.exists("./tmp/X.RW.RData")){
       start_time <- Sys.time()
       X.RW <- sample.RW.cddm(n,par)
       end_time <- Sys.time()
@@ -154,7 +159,7 @@ X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/X.Reject.RData")){
+if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
       start_time <- Sys.time()
       X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
       end_time <- Sys.time()
@@ -193,7 +198,7 @@ X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Metropolis sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/X.Metro.RData")){
+if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
       start_time <- Sys.time()
       X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
       end_time <- Sys.time()
@@ -230,7 +235,7 @@ X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT)
 ```{r,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/X.invCDF.RData")){
+if(forceRun_inv|!file.exists("./tmp/X.invCDF.RData")){
       start_time <- Sys.time()
       X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT, plot=TRUE)
       end_time <- Sys.time()
@@ -263,8 +268,9 @@ hist(X.invCDF[,2], main = "Response Times", col = col.invCDF(0.7))
 # Load file containing custom eCDF function
 source("./code/general_functions/eCDF.R")
 
-Reject.eCDF <- myECDF(X.Reject)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
+Reject.eCDF <- myECDF(X.Reject)
+Metro.eCDF  <- myECDF(X.Metro)
 invCDF.eCDF <- myECDF(X.invCDF)
 ```
 
@@ -283,6 +289,12 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.eCDF, pch=16,
+              cex.symbols = 0.4, color = col.Metro(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("Metropolis sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16,
               cex.symbols = 0.4, color = col.invCDF(0.4), 
               xlab = "", ylab = "", zlab = "")
@@ -297,19 +309,29 @@ mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```{r, echo=FALSE}
 # The two r-chunks below are actually just for display. This is where the CDFs are actually
 # approximated from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
-      start_time <- Sys.time()
-      Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
-      end_time <- Sys.time()
-      Rejection_tCDF.time <- round(end_time-start_time,4)
-      save(Reject.tCDF, file = "./tmp/Reject.tCDF.RData")
-      save(Rejection_tCDF.time, file = "./tmp/Rejection_tCDF.time.RData")
+if(forceRun_tCDF|!file.exists("./tmp/Reject.tCDF.RData")){
       start_time <- Sys.time()
       RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
       RW_tCDF.time <- round(end_time-start_time,4)
       save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
       save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
+      
+      start_time <- Sys.time()
+      Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
+      end_time <- Sys.time()
+      Rejection_tCDF.time <- round(end_time-start_time,4)
+      save(Reject.tCDF, file = "./tmp/Reject.tCDF.RData")
+      save(Rejection_tCDF.time, file = "./tmp/Rejection_tCDF.time.RData")
+      
+      start_time <- Sys.time()
+      Metro.tCDF <- pCDDM(X.Metro, par$drift, par$theta, par$tzero, par$boundary)
+      end_time <- Sys.time()
+      Metro_tCDF.time <- round(end_time-start_time,4)
+      save(Metro.tCDF, file = "./tmp/Metro.tCDF.RData")
+      save(Metro_tCDF.time, file = "./tmp/Metro_tCDF.time.RData")
+      
+      
       start_time <- Sys.time()
       invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
@@ -318,10 +340,14 @@ if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
       save(invCDF_tCDF.time, file = "./tmp/invCDF_tCDF.time.RData")
 }else{
      # Load already existing output
-      load("./tmp/Reject.tCDF.RData")
-      load("./tmp/Rejection_tCDF.time.RData")
       load("./tmp/RW.tCDF.RData")
       load("./tmp/RW_tCDF.time.RData")
+      load("./tmp/Reject.tCDF.RData")
+      load("./tmp/Rejection_tCDF.time.RData")
+      load("./tmp/Metro.tCDF.RData")
+      load("./tmp/Metro_tCDF.time.RData")
+      load("./tmp/invCDF.tCDF.RData")
+      load("./tmp/invCDF_tCDF.time.RData")
 }
 ```
 
@@ -330,8 +356,7 @@ if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
 start_time <- Sys.time()
 RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
 end_time <- Sys.time()
-RW_tCDF.time <- end_time-start_time
-RW_tCDF.time <- round(RW_tCDF.time,4)
+RW_tCDF.time <- round(end_time-start_time,4)
 ```
 
 *Obtaining the approximate CDF for the Random-Walk data with a trapezoid algorithm took `r RW_tCDF.time` seconds.*
@@ -341,8 +366,7 @@ RW_tCDF.time <- round(RW_tCDF.time,4)
 start_time <- Sys.time()
 Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
 end_time <- Sys.time()
-MC_tCDF.time <- end_time-start_time
-MC_tCDF.time <- round(MC_tCDF.time,4)
+Reject_tCDF.time <- round(end_time-start_time,4)
 ```
 
 *Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r Rejection_tCDF.time` seconds.*
@@ -350,18 +374,26 @@ MC_tCDF.time <- round(MC_tCDF.time,4)
 ```{r, eval=FALSE}
 # Approximate the theoretical CDF for the Reject data
 start_time <- Sys.time()
+Metro.tCDF <- pCDDM(X.Metro, par$drift, par$theta, par$tzero, par$boundary)
+end_time <- Sys.time()
+Metro_tCDF.time <- round(end_time-start_time,4)
+```
+
+*Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r Metro_tCDF.time` seconds.*
+
+```{r, eval=FALSE}
+# Approximate the theoretical CDF for the Reject data
+start_time <- Sys.time()
 invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
 end_time <- Sys.time()
-invCDF_tCDF.time <- end_time-start_time
-invCDF_tCDF.time <- round(invCDF_tCDF.time,4)
+invCDF_tCDF.time <- round(end_time-start_time,4)
 ```
 
 *Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r invCDF_tCDF.time` seconds.*
 
 ```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
               RW.tCDF,  pch=3, cex.symbols = 0.3, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
@@ -372,6 +404,12 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
               cex.symbols = 0.3, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.tCDF, pch=3,
+              cex.symbols = 0.3, color = col.Metro(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("Metropolis sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.tCDF, pch=16,
@@ -403,6 +441,8 @@ getDifferences <- function(eCDF,tCDF){
 ```{r}
 getDifferences(RW.eCDF,RW.tCDF)
 getDifferences(Reject.eCDF,Reject.tCDF)
+getDifferences(Metro.eCDF,Metro.tCDF)
+getDifferences(invCDF.eCDF,invCDF.tCDF)
 ```
 
 ```{r, echo=FALSE}
