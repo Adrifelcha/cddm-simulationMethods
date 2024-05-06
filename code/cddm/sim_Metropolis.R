@@ -91,7 +91,6 @@ sample.Metropolis.cddm <- function(n, par, max.RT=NA, plot=FALSE){
   base.RT <- c(tzero, max.RT)
 
   n.keep <- 0
-  n.try <- n
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
   Mu <- c(predChoice, predRT)
   Sigma <- diag(c(2,3))
@@ -99,8 +98,8 @@ sample.Metropolis.cddm <- function(n, par, max.RT=NA, plot=FALSE){
   while(n.keep < n){
         valid.candidates <- 0
         test.cand <- c(NA,NA)
-        while(valid.candidates<n.try){
-              cand <- rmvnorm(n.try,Mu,Sigma)
+        while(valid.candidates<n){
+              cand <- rmvnorm(n,Mu,Sigma)
               valid.RT <- which(cand[,2] > tzero)
               valid.candidates <- valid.candidates + length(valid.RT)
               test.cand <- rbind(test.cand, cand[valid.RT,])
