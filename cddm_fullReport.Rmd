@@ -26,7 +26,7 @@ forceRun_RW <- FALSE    # Re-run Random-walk algorithm
 forceRun_Rej <- TRUE    #
 forceRun_Met <- TRUE    # 
 forceRun_inv <- FALSE   #
-forceRun_tCDF <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
+forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
@@ -309,7 +309,7 @@ mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```{r, echo=FALSE}
 # The two r-chunks below are actually just for display. This is where the CDFs are actually
 # approximated from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_tCDF|!file.exists("./tmp/Reject.tCDF.RData")){
+if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
       start_time <- Sys.time()
       RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
@@ -554,10 +554,19 @@ n <- 5000 # No. samples
 ```
 
 
-```{r echo=FALSE, fig.height=5}
-X.RW <- sample.RW.cddm(n,par)
+```{r echo=FALSE}
+if(forceRun_RW|!file.exists("./tmp/X.RW_2.RData")){
+      X.RW <- sample.RW.cddm(n,par)
+      save(X.RW, file = "./tmp/X.RW_2.RData")
+   }else{     load("./tmp/X.RW_2.RData")          }
+
 max.RT <- max(X.RW$bivariate.data[,2])
-X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=FALSE)
+
+if(forceRun_Rej|!file.exists("./tmp/X.Reject_2.RData")){
+      X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=FALSE)
+      save(X.Reject, file = "./tmp/X.Reject_2.RData")
+   }else{     load("./tmp/X.Reject_2.RData")          }
+
 
 Reject.eCDF <- myECDF(X.Reject)
 RW.eCDF <- myECDF(X.RW$bivariate.data)
@@ -617,7 +626,6 @@ mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```{r}
 getDifferences(RW.eCDF,RW.tCDF)
 getDifferences(Reject.eCDF,Reject.tCDF)
-getDifferences(invCDF.eCDF,invCDF.tCDF)
 ```
 
 ```{r, echo=FALSE}
