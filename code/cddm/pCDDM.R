@@ -1,3 +1,8 @@
+###############################################################################
+###############################################################################
+#####   Approximate the theoretical CDF function using the total volume
+###############################################################################
+########################################################   by Adriana F. Chavez 
 if(!exists("superCalled")){superCalled <- FALSE}
 if(!superCalled){ source("./dCDDM.R") }
 library("scatterplot3d")
@@ -6,7 +11,7 @@ library("plot3D")
 # Auxiliary function 1: A function to define the bins' ending points
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 define_bins <- function(tzero,obs.rt){
-  ceiling(max(300, 20*(obs.rt-tzero)))
+  ceiling(max(350, 20*(obs.rt-tzero)))
 }
 
 # Auxiliary function 2: Generate a plot of how the approximation works
