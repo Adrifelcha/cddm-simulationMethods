@@ -53,44 +53,30 @@ sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
   }
   
   n.keep <- 0
-  # The code commented here correspond to an attempt to make the algorithm faster
-  #     which was tested, and failed!
-  # if(n<500){   cut.down <- TRUE
-  #              n.try <- 500
-  #     }else{   n.try <- n}
-  n.try <- n
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
   
   while(n.keep < n){
-        cand <- matrix(NA, nrow=n.try, ncol=no.Dim)
-        cand[,1] <- runif(n.try,base.C[1],base.C[2])
-        cand[,2] <- runif(n.try,base.RT[1],base.RT[2])
+        cand <- matrix(NA, nrow=n, ncol=no.Dim)
+        cand[,1] <- runif(n,base.C[1],base.C[2])
+        cand[,2] <- runif(n,base.RT[1],base.RT[2])
         
         eval <- dCDDM(cand,drift, theta, tzero, boundary)
-        rej.crit <- runif(n.try,0,height)  
+        rej.crit <- runif(n,0,height)  
         keep <- (eval >= rej.crit)
-        
-        n.keep <- sum(keep)
-        n.try <- n.try-n.keep
-        samples <- rbind(samples, cand[keep,])
-        n.keep <- nrow(samples)-1
         
         if(plot){
           a$points3d(cand[!keep,1], cand[!keep,2], rej.crit[!keep],
-                     col = "red", pch = 16, cex = 0.2)
+                     col = rgb(204/255,0,0,0.2), pch = 16, cex = 0.3)
           a$points3d(cand[keep,1], cand[keep,2], rej.crit[keep],
-                     col = "green", pch = 16, cex = 0.2)
+                     col = rgb(0,204/255,0,0.8), pch = 16, cex = 0.3)
         }
+        
+        n.keep <- n.keep + sum(keep)
+        samples <- rbind(samples, cand[keep,])
   }
   colnames(samples) <- c("Choice","RT")
-  samples <- samples[-1,]
+  samples <- samples[2:(n+1),]
   
-  # The code commented here correspond to an attempt to make the algorithm faster
-  #     which was tested, and failed!
-  # if((exists("cut.down"))&(!is.vector(samples))){ 
-  #     z <- sample(1:nrow(samples),n)
-  #     samples <- samples[z,]
-  #  }
   return(samples)
 }
 
