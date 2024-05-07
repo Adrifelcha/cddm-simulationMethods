@@ -85,7 +85,7 @@ fig.boundary <- boundary
 ```{r, eval=FALSE, echo=FALSE}
 source("./code/cddm/pCDDM.R")
 
-numInt.tpz.cddm(rad,rt,cddm.par,plot=TRUE)
+#numInt.tpz.cddm(rad,rt,cddm.par,plot=TRUE)
 
 pCDDM(x.data, fig.drift, fig.theta, fig.tzero, fig.boundary, plot=TRUE)
 ```
@@ -143,7 +143,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.RW$bivariate.data[,2], main = "Response Times", col = col.RW(0.7))
 ```
 
-*The execution of this first algorithm took approximately `r RW.time` seconds.*
+**The execution of the Random Walk emulator algorithm took approximately `r RW.time` seconds.**
 
 # Algorithm 2: Rejection sampling algorithm
 
@@ -175,8 +175,6 @@ if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
 }
 ```
 
-*The execution of this second algorithm took approximately `r Reject.time` seconds.*
-
 ```{r, fig.height=5}
 plot.CDDM(X.Reject, par, choice.col.RGB = rgb.Reject)
 ```
@@ -185,6 +183,8 @@ plot.CDDM(X.Reject, par, choice.col.RGB = rgb.Reject)
 par(pty="m", mar = c(3, 3, 3, 0)) 
 hist(X.Reject[,2], main = "Response Times", col=col.Reject(0.7))
 ```
+
+**The execution of the Rejection sampling algorithm took approximately `r Reject.time` seconds.**
 
 # Algorithm 3: Metropolis algorithm
 
@@ -214,7 +214,6 @@ if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
 }
 ```
 
-*The execution of this second algorithm took approximately `r Metro.time` seconds.*
 
 ```{r, fig.height=5}
 plot.CDDM(X.Metro, par, choice.col.RGB = rgb.Metro)
@@ -224,6 +223,8 @@ plot.CDDM(X.Metro, par, choice.col.RGB = rgb.Metro)
 par(pty="m", mar = c(3, 3, 3, 0)) 
 hist(X.Metro[,2], main = "Response Times", col=col.Metro(0.7))
 ```
+
+**The execution of the Metropolis sampling algorithm took approximately `r Metro.time` seconds.**
 
 # Algorithm 4: Inverse CDF (tabloid approximation)
 
@@ -258,7 +259,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.invCDF[,2], main = "Response Times", col = col.invCDF(0.7))
 ```
 
-*The execution of this first algorithm took approximately `r invCDF.time` seconds.*
+**The execution of the inverse-CDF algorithm took approximately `r invCDF.time` seconds.**
 
 # Accuracy testing
 
@@ -349,47 +350,21 @@ if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
       load("./tmp/invCDF.tCDF.RData")
       load("./tmp/invCDF_tCDF.time.RData")
 }
+
+times <- c(RW_tCDF.time,Rejection_tCDF.time,Metro_tCDF.time,invCDF_tCDF.time)
+
+min_tCDF_time <- min(times)
+max_tCDF_time <- max(times)
 ```
 
 ```{r, eval=FALSE}
-# Approximate the theoretical CDF for the Random Walk data
-start_time <- Sys.time()
 RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
-end_time <- Sys.time()
-RW_tCDF.time <- round(end_time-start_time,4)
-```
-
-*Obtaining the approximate CDF for the Random-Walk data with a trapezoid algorithm took `r RW_tCDF.time` seconds.*
-
-```{r, eval=FALSE}
-# Approximate the theoretical CDF for the Reject data
-start_time <- Sys.time()
 Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
-end_time <- Sys.time()
-Reject_tCDF.time <- round(end_time-start_time,4)
-```
-
-*Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r Rejection_tCDF.time` seconds.*
-
-```{r, eval=FALSE}
-# Approximate the theoretical CDF for the Reject data
-start_time <- Sys.time()
 Metro.tCDF <- pCDDM(X.Metro, par$drift, par$theta, par$tzero, par$boundary)
-end_time <- Sys.time()
-Metro_tCDF.time <- round(end_time-start_time,4)
-```
-
-*Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r Metro_tCDF.time` seconds.*
-
-```{r, eval=FALSE}
-# Approximate the theoretical CDF for the Reject data
-start_time <- Sys.time()
 invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
-end_time <- Sys.time()
-invCDF_tCDF.time <- round(end_time-start_time,4)
 ```
 
-*Obtaining the approximate CDF for the data generated with the Rejection sampling algorithm took `r invCDF_tCDF.time` seconds.*
+**Obtaining the approximate CDF for the data generated with each sampling algorithm took between `r min_tCDF_time` and `r max_tCDF_time`  seconds.**
 
 ```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
@@ -445,10 +420,9 @@ getDifferences(Metro.eCDF,Metro.tCDF)
 getDifferences(invCDF.eCDF,invCDF.tCDF)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
 a <- scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
                    RW.eCDF,  pch=16, cex.symbols = 0.8, color = col.RW(0.4),
                   xlab = "", ylab = "", zlab = "")
@@ -463,45 +437,72 @@ a$points3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3, cex = 0.1)
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
+a <- scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.eCDF, pch=16, cex.symbols = 0.8, 
+                   color = col.Metro(0.4), xlab = "", ylab = "", zlab = "")
+a$points3d(X.Metro[,1],X.Metro[,2],Metro.tCDF, pch=3, cex = 0.1)
+mtext("Metropolis sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+a <- scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16, cex.symbols = 0.8, 
+                   color = col.invCDF(0.4), xlab = "", ylab = "", zlab = "")
+a$points3d(X.invCDF[,1],X.invCDF[,2],invCDF.tCDF, pch=3, cex = 0.1)
+mtext("inverse-CDF sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
 
 # Comparing computation times
 
 ```{r}
-compareTime <- function(n.Samples, n.Datasets){
-    times.RW   <- matrix(NA, nrow=n.Datasets, ncol=length(n.Samples))
+compareTime <- function(n.Samples, n.Datasets, par){  
+    times.RW     <- matrix(NA, nrow=n.Datasets, ncol=length(n.Samples))
     times.Reject <- matrix(NA, nrow=n.Datasets, ncol=length(n.Samples))
+    times.Metro  <- matrix(NA, nrow=n.Datasets, ncol=length(n.Samples))
+    times.invCDF <- matrix(NA, nrow=n.Datasets, ncol=length(n.Samples))
+    seed <- 1
     for(m in 1:n.Datasets){ 
+        set.seed(seed)
         i <- 1
         for(n in n.Samples){
             start_time <- Sys.time()
-            sample.RW.cddm(n,par)
+            x <- sample.RW.cddm(n,par)
             end_time <- Sys.time()
             times.RW[m,i] <- round(end_time-start_time,4)
             start_time <- Sys.time()
+            max.RT <- max(x$bivariate.data[,2])
+            
             sample.Reject.cddm(n,par,max.RT,plot=FALSE)
             end_time <- Sys.time()
             times.Reject[m,i] <- round(end_time-start_time, 4)
+            start_time <- Sys.time()
+            sample.Metropolis.cddm(n,par,max.RT=NA,plot=FALSE)
+            end_time <- Sys.time()
+            times.Metro[m,i] <- round(end_time-start_time,4)
             i <- i+1
+            seed <- seed+1
         }
     }
 return(list("times.RW" = times.RW,
-            "times.Reject" = times.Reject))
+            "times.Reject" = times.Reject,
+            "times.Metro" = times.Metro))
 }
 ```
 
 ```{r, echo=FALSE}
-compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
+compareTime_plot <- function(n.Samples,n.Datasets,
+                             times.RW, times.Reject, times.Metro){
     M <- n.Datasets; N <- n.Samples
     par(mar=c(4,4,0,1))
     x <- rep(N, each=M)
-    x.RW <- (rep(N, each=M)+0.15)+(rnorm(length(N)*M,0,0.02))
-    x.Reject <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.015))
+    x.RW <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.02))
+    x.Reject <- (rep(N, each=M)-0.05)+(rnorm(length(N)*M,0,0.015))
+    x.Metro <- (rep(N, each=M)+0.05)+(rnorm(length(N)*M,0,0.015))
     t.RW <- c(times.RW)
     t.Reject <- c(times.Reject)
+    t.Metro <- c(times.Metro)
     
-    max.CompTime <- round(max(times.RW),2)
+    max.CompTime <- round(max(t.RW, t.Reject, t.Metro),2)
     
     RL.RW <- lm(t.RW ~x)
     B0.RW <- round(RL.RW$coefficients[1],5)
@@ -509,33 +510,47 @@ compareTime_plot <- function(n.Samples,n.Datasets,times.Reject,times.RW){
     RL.Reject <- lm(t.Reject ~x)
     B0.Reject <- round(RL.Reject$coefficients[1],5)
     B1.Reject <- round(RL.Reject$coefficients[2],5)
+    RL.Metro <- lm(t.Metro ~x)
+    B0.Metro <- round(RL.Metro$coefficients[1],5)
+    B1.Metro <- round(RL.Metro$coefficients[2],5)
     plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
          col = col.RW(0.5), ann=F, axes=F)
     points(x.Reject,t.Reject, pch=16, cex=0.8, col=col.Reject(0.5))
+    points(x.Metro,t.Metro, pch=16, cex=0.8, col=col.Metro(0.5))
     axis(1, N, paste("n = ", N))
     mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
-    axis(2, seq(0,max.CompTime,0.005), seq(0,max.CompTime,0.005), las=2, line=-1.1)
+    axis(2, seq(0,max.CompTime,length.out=10), seq(0,max.CompTime,length.out=10), 
+         las=2, line=-1.1)
     mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
     abline(RL.RW, col = col.RW(0.8), lwd=2)
     abline(RL.Reject, col= col.Reject(0.8), lwd=2)
-    legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8)), lwd=2, bty = "n", 
+    abline(RL.Metro, col= col.Metro(0.8), lwd=2)
+    legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8),col.Metro(0.8)), 
+           lwd=2, bty = "n", cex=1.2,
            c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
-             paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep="")), cex=1.2)
+             paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep=""),
+             paste("Metro : Y = ", B0.Metro, " + ", B1.Metro, "n", sep="")))
 }
 ```
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
-test2 <- compareTime(n.Samples,n.Datasets)
-compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
+test2 <- compareTime(n.Samples,n.Datasets,par)
+compareTime_plot(n.Samples,n.Datasets,
+                 times.RW = test2$times.RW,
+                 times.Reject = test2$times.Reject,
+                 times.Metro = test2$times.Metro)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
-test1 <- compareTime(n.Samples,n.Datasets)
-compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
+test1 <- compareTime(n.Samples,n.Datasets,par)
+compareTime_plot(n.Samples,n.Datasets,
+                 times.RW = test1$times.RW,
+                 times.Reject = test1$times.Reject,
+                 times.Metro = test1$times.Metro)
 ```
 
 
@@ -546,7 +561,7 @@ The Reject algorithm massively outperforms the Random Walk algorithm when the pa
 
 ```{r}
 # Arbitrary set of parameter values
-par <- list("drift" = 1,   
+par2 <- list("drift" = 1,   
             "theta" = pi,
             "tzero" = 0.1,
             "boundary" = 7)
@@ -556,39 +571,55 @@ n <- 5000 # No. samples
 
 ```{r echo=FALSE}
 if(forceRun_RW|!file.exists("./tmp/X.RW_2.RData")){
-      X.RW <- sample.RW.cddm(n,par)
+      X.RW <- sample.RW.cddm(n,par2)
       save(X.RW, file = "./tmp/X.RW_2.RData")
    }else{     load("./tmp/X.RW_2.RData")          }
 
 max.RT <- max(X.RW$bivariate.data[,2])
 
 if(forceRun_Rej|!file.exists("./tmp/X.Reject_2.RData")){
-      X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=FALSE)
+      X.Reject <- sample.Reject.cddm(n,par2,max.RT,plot=FALSE)
       save(X.Reject, file = "./tmp/X.Reject_2.RData")
    }else{     load("./tmp/X.Reject_2.RData")          }
 
+if(forceRun_Met|!file.exists("./tmp/X.Metro_2.RData")){
+      X.Metro <- sample.Metropolis.cddm(n,par2,max.RT,plot=FALSE)
+      save(X.Metro, file = "./tmp/X.Metro_2.RData")
+   }else{     load("./tmp/X.Metro_2.RData")          }
 
-Reject.eCDF <- myECDF(X.Reject)
+if(forceRun_inv|!file.exists("./tmp/X.invCDF_2.RData")){
+      X.invCDF <- sample.invCDF.cddm(n,par2,max.RT,plot=FALSE)
+      save(X.invCDF, file = "./tmp/X.invCDF_2.RData")
+   }else{     load("./tmp/X.invCDF_2.RData")          }
+
 RW.eCDF <- myECDF(X.RW$bivariate.data)
+Reject.eCDF <- myECDF(X.Reject)
+Metro.eCDF <- myECDF(X.Metro)
+invCDF.eCDF <- myECDF(X.invCDF)
 
-RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
-Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
+RW.tCDF <- pCDDM(X.RW$bivariate.data, par2$drift, par2$theta, par2$tzero, par2$boundary)
+Reject.tCDF <- pCDDM(X.Reject, par2$drift, par2$theta, par2$tzero, par2$boundary)
+Metro.tCDF <- pCDDM(X.Metro, par2$drift, par2$theta, par2$tzero, par2$boundary)
+invCDF.tCDF <- pCDDM(X.invCDF, par2$drift, par2$theta, par2$tzero, par2$boundary)
 ```
 
 ```{r echo=FALSE, fig.height=5}
-par(pty="m", mar = c(3, 3, 3, 0), mfrow=c(1,2)) 
+par(pty="m", mar = c(2, 3, 3.5, 0), mfrow=c(2,2)) 
 hist(X.RW$bivariate.data[,2], main = "", col = col.RW(0.7))
 mtext("Random walk algorithm", 3, f=2, cex=0.8)
-par(pty="m", mar = c(3, 3, 3, 0)) 
 hist(X.Reject[,2], main = "", col=col.Reject(0.7))
 mtext("Rejection algorithm", 3, f=2, cex=0.8)
-mtext("Response Times sampled", outer=TRUE, line=-1.5, f=2)
+hist(X.Metro[,2], main = "", col=col.Metro(0.7))
+mtext("Metropolis algorithm", 3, f=2, cex=0.8)
+hist(X.invCDF[,2], main = "", col=col.invCDF(0.7))
+mtext("inverse CDF algorithm", 3, f=2, cex=0.8)
+mtext("Response Times sampled", outer=TRUE, line=-1.5, f=2, cex=2)
 ```
 
 ```{r, echo=FALSE}
 # Plot the eCDFs obtained so far
 par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+par(mfrow=c(1,2),mar = c(0, 0, 0, 0), mfrow=c(2,2)) 
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
               RW.eCDF,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
@@ -601,7 +632,19 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
+scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.eCDF, pch=16,
+              cex.symbols = 0.5, color = col.Metro(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("Metropolis sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16,
+              cex.symbols = 0.5, color = col.invCDF(0.4), 
+              xlab = "", ylab = "", zlab = "")
+mtext("inverse CDF sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=2)
 ```
 
 ```{r, echo=FALSE}
@@ -620,12 +663,14 @@ scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
+mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=2)
 ```
 
 ```{r}
 getDifferences(RW.eCDF,RW.tCDF)
 getDifferences(Reject.eCDF,Reject.tCDF)
+getDifferences(Metro.eCDF,Metro.tCDF)
+getDifferences(invCDF.eCDF,invCDF.tCDF)
 ```
 
 ```{r, echo=FALSE}
@@ -652,15 +697,21 @@ mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2,
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
-test2 <- compareTime(n.Samples,n.Datasets)
-compareTime_plot(n.Samples,n.Datasets,test2$times.Reject,test2$times.RW)
+test3 <- compareTime(n.Samples,n.Datasets,par2)
+compareTime_plot(n.Samples,n.Datasets,
+                 times.RW = test3$times.RW,
+                 times.Reject = test3$times.Reject,
+                 times.Metro = test3$times.Metro)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
-test1 <- compareTime(n.Samples,n.Datasets)
-compareTime_plot(n.Samples,n.Datasets,test1$times.Reject,test1$times.RW)
+test4 <- compareTime(n.Samples,n.Datasets,par2)
+compareTime_plot(n.Samples,n.Datasets,
+                 times.RW = test4$times.RW,
+                 times.Reject = test4$times.Reject,
+                 times.Metro = test4$times.Metro)
 ```
 
 
