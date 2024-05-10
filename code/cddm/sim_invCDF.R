@@ -38,9 +38,9 @@ sample.invCDF.cddm <- function(n, par, max.RT=NA, plot=FALSE){
       #scatterplot3d(cells[show,1],cells[show,2],probs[show], pch=3,
       #              cex.symbols = 0.3, #color = rgb(0.4), 
       #              xlab = "", ylab = "", zlab = "")
-      scatterplot3d(cells[,1],cells[,2],probs, pch=3,
-                    cex.symbols = 0.3, #color = rgb(0.4), 
-                    xlab = "", ylab = "", zlab = "")
+      scatterplot3d(cells[,1],cells[,2],probs, pch=16, zlim = c(0,1),
+                    cex.symbols = 0.05, xlab = "", ylab = "", zlab = "",
+                    xlim=range(cells[,1]), ylim=range(cells[,2]))
       #mtext("inverse-CDF algorithm", f=2)
       mtext("Choices", side=1, line=0.5)
       mtext("RTs", side=4, line=-1, adj=0)
@@ -74,6 +74,7 @@ if(test){
     n <- 5000
     data <- sample.invCDF.cddm(n,par)
     hist(data[,2], main="Histogram of RTs", xlab="RT")
+    
     eCDF.RT <- myECDF(data[,2])
     plot(data[,2],eCDF.RT)
 
