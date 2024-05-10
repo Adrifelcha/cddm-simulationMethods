@@ -65,16 +65,16 @@ return(data)
 # Test function
 if(!exists("test")){    test <- TRUE                           }
 if(test){
-    #par <- list("drift" = 1, 
-    #            "theta" = pi,
-    #            "tzero" = 0.1,
-    #            "boundary" = 7)
-     par <- list("drift" = 3.5, 
-                 "theta" = pi,
-                 "tzero" = 0.2,
-                 "boundary" = 2)
+    par <- list("drift" = 3.5, 
+                "theta" = pi,
+                "tzero" = 0.2,
+                "boundary" = 2)
     
     max.RT=NA
-    n <- 20
-    sample.invCDF.cddm(n,par)
+    n <- 5000
+    data <- sample.invCDF.cddm(n,par)
+    hist(data[,2], main="Histogram of RTs", xlab="RT")
+    eCDF.RT <- myECDF(data[,2])
+    plot(data[,2],eCDF.RT)
+
 }
