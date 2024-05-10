@@ -369,27 +369,23 @@ invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
 ```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
 par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
-scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-              RW.tCDF,  pch=3, cex.symbols = 0.3, color = col.RW(0.4),
-              xlab = "", ylab = "", zlab = "")
+scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2], RW.tCDF,  
+              pch=3, cex.symbols = 0.3, xlab = "", ylab = "", zlab = "")
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
-              cex.symbols = 0.3, color = col.Reject(0.4), 
-              xlab = "", ylab = "", zlab = "")
+scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3, 
+              cex.symbols = 0.3, xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.tCDF, pch=3,
-              cex.symbols = 0.3, color = col.Metro(0.4), 
-              xlab = "", ylab = "", zlab = "")
+scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.tCDF, pch=3, 
+              cex.symbols = 0.3, xlab = "", ylab = "", zlab = "")
 mtext("Metropolis sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.tCDF, pch=16,
-              cex.symbols = 0.4, color = col.invCDF(0.4), 
-              xlab = "", ylab = "", zlab = "")
+              cex.symbols = 0.4, xlab = "", ylab = "", zlab = "")
 mtext("inverse-CDF tabloid sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
@@ -498,7 +494,7 @@ compareTime_plot <- function(n.Samples,n.Datasets,
     x.RW <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.02))
     x.Reject <- (rep(N, each=M)-0.05)+(rnorm(length(N)*M,0,0.015))
     x.Metro <- (rep(N, each=M)+0.05)+(rnorm(length(N)*M,0,0.015))
-    t.RW <- c(times.RW)
+    t.RW <- c(times.RW) 
     t.Reject <- c(times.Reject)
     t.Metro <- c(times.Metro)
     
@@ -519,8 +515,8 @@ compareTime_plot <- function(n.Samples,n.Datasets,
     points(x.Metro,t.Metro, pch=16, cex=0.8, col=col.Metro(0.5))
     axis(1, N, paste("n = ", N))
     mtext("Sample size", 1, line=2.5, f=2, cex=1.2)
-    axis(2, seq(0,max.CompTime,length.out=10), seq(0,max.CompTime,length.out=10), 
-         las=2, line=-1.1)
+    y.axis <- round(seq(0,max.CompTime,length.out=10),3)
+    axis(2, y.axis, y.axis, las=2, line=-1.1)
     mtext("Y: Computation Time (in secs)", 2, line=2.5, f=2, cex=1.2)
     abline(RL.RW, col = col.RW(0.8), lwd=2)
     abline(RL.Reject, col= col.Reject(0.8), lwd=2)
@@ -555,9 +551,9 @@ compareTime_plot(n.Samples,n.Datasets,
 
 
 
-# Specific results
+# Second example
 
-The Reject algorithm massively outperforms the Random Walk algorithm when the parameter values used for $\delta$ and $\eta$ imply a slower or longer walk.
+Let's briefly explore the results we get when we try a second set of parameter values where we have a much larger response boundary (and a rather slower random walk process).
 
 ```{r}
 # Arbitrary set of parameter values
@@ -565,80 +561,80 @@ par2 <- list("drift" = 1,
             "theta" = pi,
             "tzero" = 0.1,
             "boundary" = 7)
-n <- 5000 # No. samples
+n <- 5000
 ```
 
 
 ```{r echo=FALSE}
-if(forceRun_RW|!file.exists("./tmp/X.RW_2.RData")){
-      X.RW <- sample.RW.cddm(n,par2)
-      save(X.RW, file = "./tmp/X.RW_2.RData")
-   }else{     load("./tmp/X.RW_2.RData")          }
+if(forceRun_RW|!file.exists("./tmp/X2.RW_2.RData")){
+      X2.RW <- sample.RW.cddm(n,par2)
+      save(X2.RW, file = "./tmp/X2.RW_2.RData")
+   }else{     load("./tmp/X2.RW_2.RData")          }
 
-max.RT <- max(X.RW$bivariate.data[,2])
+max.RT <- max(X2.RW$bivariate.data[,2])
 
-if(forceRun_Rej|!file.exists("./tmp/X.Reject_2.RData")){
-      X.Reject <- sample.Reject.cddm(n,par2,max.RT,plot=FALSE)
-      save(X.Reject, file = "./tmp/X.Reject_2.RData")
-   }else{     load("./tmp/X.Reject_2.RData")          }
+if(forceRun_Rej|!file.exists("./tmp/X2.Reject_2.RData")){
+      X2.Reject <- sample.Reject.cddm(n,par2,max.RT,plot=FALSE)
+      save(X2.Reject, file = "./tmp/X2.Reject_2.RData")
+   }else{     load("./tmp/X2.Reject_2.RData")          }
 
-if(forceRun_Met|!file.exists("./tmp/X.Metro_2.RData")){
-      X.Metro <- sample.Metropolis.cddm(n,par2,max.RT,plot=FALSE)
-      save(X.Metro, file = "./tmp/X.Metro_2.RData")
-   }else{     load("./tmp/X.Metro_2.RData")          }
+if(forceRun_Met|!file.exists("./tmp/X2.Metro_2.RData")){
+      X2.Metro <- sample.Metropolis.cddm(n,par2,max.RT,plot=FALSE)
+      save(X2.Metro, file = "./tmp/X2.Metro_2.RData")
+   }else{     load("./tmp/X2.Metro_2.RData")          }
 
-if(forceRun_inv|!file.exists("./tmp/X.invCDF_2.RData")){
-      X.invCDF <- sample.invCDF.cddm(n,par2,max.RT,plot=FALSE)
-      save(X.invCDF, file = "./tmp/X.invCDF_2.RData")
-   }else{     load("./tmp/X.invCDF_2.RData")          }
+if(forceRun_inv|!file.exists("./tmp/X2.invCDF_2.RData")){
+      X2.invCDF <- sample.invCDF.cddm(n,par2,max.RT,plot=FALSE)
+      save(X2.invCDF, file = "./tmp/X2.invCDF_2.RData")
+   }else{     load("./tmp/X2.invCDF_2.RData")          }
 
-RW.eCDF <- myECDF(X.RW$bivariate.data)
-Reject.eCDF <- myECDF(X.Reject)
-Metro.eCDF <- myECDF(X.Metro)
-invCDF.eCDF <- myECDF(X.invCDF)
+RW.eCDF2 <- myECDF(X2.RW$bivariate.data)
+Reject.eCDF2 <- myECDF(X2.Reject)
+Metro.eCDF2 <- myECDF(X2.Metro)
+invCDF.eCDF2 <- myECDF(X2.invCDF)
 
-RW.tCDF <- pCDDM(X.RW$bivariate.data, par2$drift, par2$theta, par2$tzero, par2$boundary)
-Reject.tCDF <- pCDDM(X.Reject, par2$drift, par2$theta, par2$tzero, par2$boundary)
-Metro.tCDF <- pCDDM(X.Metro, par2$drift, par2$theta, par2$tzero, par2$boundary)
-invCDF.tCDF <- pCDDM(X.invCDF, par2$drift, par2$theta, par2$tzero, par2$boundary)
+RW.tCDF2 <- pCDDM(X2.RW$bivariate.data, par2$drift, par2$theta, par2$tzero, par2$boundary)
+Reject.tCDF2 <- pCDDM(X2.Reject, par2$drift, par2$theta, par2$tzero, par2$boundary)
+Metro.tCDF2 <- pCDDM(X2.Metro, par2$drift, par2$theta, par2$tzero, par2$boundary)
+invCDF.tCDF2 <- pCDDM(X2.invCDF, par2$drift, par2$theta, par2$tzero, par2$boundary)
 ```
 
 ```{r echo=FALSE, fig.height=5}
 par(pty="m", mar = c(2, 3, 3.5, 0), mfrow=c(2,2)) 
-hist(X.RW$bivariate.data[,2], main = "", col = col.RW(0.7))
+hist(X2.RW$bivariate.data[,2], main = "", col = col.RW(0.7))
 mtext("Random walk algorithm", 3, f=2, cex=0.8)
-hist(X.Reject[,2], main = "", col=col.Reject(0.7))
+hist(X2.Reject[,2], main = "", col=col.Reject(0.7))
 mtext("Rejection algorithm", 3, f=2, cex=0.8)
-hist(X.Metro[,2], main = "", col=col.Metro(0.7))
+hist(X2.Metro[,2], main = "", col=col.Metro(0.7))
 mtext("Metropolis algorithm", 3, f=2, cex=0.8)
-hist(X.invCDF[,2], main = "", col=col.invCDF(0.7))
+hist(X2.invCDF[,2], main = "", col=col.invCDF(0.7))
 mtext("inverse CDF algorithm", 3, f=2, cex=0.8)
-mtext("Response Times sampled", outer=TRUE, line=-1.5, f=2, cex=2)
+mtext("Response Times sampled", outer=TRUE, line=-1.8, f=2, cex=1.9)
 ```
 
 ```{r, echo=FALSE}
 # Plot the eCDFs obtained so far
 par(pty="s")          
 par(mfrow=c(1,2),mar = c(0, 0, 0, 0), mfrow=c(2,2)) 
-scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-              RW.eCDF,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
+scatterplot3d(X2.RW$bivariate.data[,1], X2.RW$bivariate.data[,2],
+              RW.eCDF2,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
               xlab = "", ylab = "", zlab = "")
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
+scatterplot3d(X2.Reject[,1],X2.Reject[,2],Reject.eCDF2, pch=16,
               cex.symbols = 0.5, color = col.Reject(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.eCDF, pch=16,
+scatterplot3d(X2.Metro[,1],X2.Metro[,2],Metro.eCDF2, pch=16,
               cex.symbols = 0.5, color = col.Metro(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("Metropolis sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16,
+scatterplot3d(X2.invCDF[,1],X2.invCDF[,2],invCDF.eCDF2, pch=16,
               cex.symbols = 0.5, color = col.invCDF(0.4), 
               xlab = "", ylab = "", zlab = "")
 mtext("inverse CDF sampling algorithm", f=2)
@@ -647,52 +643,45 @@ mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=2)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
-scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-              RW.tCDF,  pch=3, cex.symbols = 0.5, color = col.RW(0.4),
-              xlab = "", ylab = "", zlab = "")
-mtext("Random Walk algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3,
-              cex.symbols = 0.5, color = col.Reject(0.4), 
-              xlab = "", ylab = "", zlab = "")
-mtext("Rejection sampling algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=2)
-```
-
-```{r}
-getDifferences(RW.eCDF,RW.tCDF)
-getDifferences(Reject.eCDF,Reject.tCDF)
-getDifferences(Metro.eCDF,Metro.tCDF)
-getDifferences(invCDF.eCDF,invCDF.tCDF)
-```
-
-```{r, echo=FALSE}
-# Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
-a <- scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
-                   RW.eCDF,  pch=16, cex.symbols = 0.8, color = col.RW(0.4),
+par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
+a <- scatterplot3d(X2.RW$bivariate.data[,1], X2.RW$bivariate.data[,2],
+                   RW.eCDF2,  pch=16, cex.symbols = 0.8, color = col.RW(0.4),
                   xlab = "", ylab = "", zlab = "")
-a$points3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2], RW.tCDF,
+a$points3d(X2.RW$bivariate.data[,1], X2.RW$bivariate.data[,2], RW.tCDF2,
            pch=3, cex = 0.1)
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
-a <- scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16, cex.symbols = 0.8, 
+a <- scatterplot3d(X2.Reject[,1],X2.Reject[,2],Reject.eCDF2, pch=16, cex.symbols = 0.8, 
                    color = col.Reject(0.4), xlab = "", ylab = "", zlab = "")
-a$points3d(X.Reject[,1],X.Reject[,2],Reject.tCDF, pch=3, cex = 0.1)
+a$points3d(X2.Reject[,1],X2.Reject[,2],Reject.tCDF2, pch=3, cex = 0.1)
 mtext("Rejection sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+a <- scatterplot3d(X2.Metro[,1],X2.Metro[,2],Metro.eCDF2, pch=16, cex.symbols = 0.8, 
+                   color = col.Metro(0.4), xlab = "", ylab = "", zlab = "")
+a$points3d(X2.Metro[,1],X2.Metro[,2],Metro.tCDF2, pch=3, cex = 0.1)
+mtext("Metropolis sampling algorithm", f=2)
+mtext("Choices", side=1, line=0.5)
+mtext("RTs", side=4, line=-1, adj=0)
+a <- scatterplot3d(X2.invCDF[,1],X2.invCDF[,2],invCDF.eCDF2, pch=16, cex.symbols = 0.8, 
+                   color = col.invCDF(0.4), xlab = "", ylab = "", zlab = "")
+a$points3d(X2.invCDF[,1],X2.invCDF[,2],invCDF.tCDF2, pch=3, cex = 0.1)
+mtext("inverse-CDF sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
+
+```{r}
+getDifferences(RW.eCDF2,RW.tCDF2)
+getDifferences(Reject.eCDF2,Reject.tCDF2)
+getDifferences(Metro.eCDF2,Metro.tCDF2)
+getDifferences(invCDF.eCDF2,invCDF.tCDF2)
+```
+
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
