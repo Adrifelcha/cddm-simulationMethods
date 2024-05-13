@@ -4,7 +4,7 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez 
 if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ source("./dCDDM.R") }
+if(!superCalled){     source("./dCDDM.R")       }
 library("scatterplot3d")
 library("plot3D")
 
@@ -75,7 +75,7 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total,
 
 # Base function: We write a 2D Trapezoid N.I. algorithm
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
+numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
     # ~~ Set up ~~ #
     ################
     # Load up CDDM parameters
@@ -88,7 +88,11 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
     if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
     # Define the bins' cut points
-    kappa <- define_bins(tzero,rt)
+    if(is.na(nBins)){    
+          kappa <- define_bins(tzero,rt)
+    }else{
+          kappa <- nBins
+    }
     # Take largest Choice and RT and partition to form the bins
     bin.C <- seq(0,max(rad),length.out=kappa)
     bin.RT <- seq(tzero,max(rt),length.out=kappa)
@@ -199,7 +203,7 @@ if(test){
     data <- c(C,RT)
     pCDDM(data,drift, theta, tzero, boundary, plot=TRUE)
     # Test pCDDM with n pairs of observations
-    n <- 10
+    n <- 1000
     C <- runif(n,0,2*pi)
     RT <- runif(n,0,15)
     data <- cbind(C,RT)
