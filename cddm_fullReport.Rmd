@@ -70,11 +70,11 @@ source("./code/cddm/illustrateModel_Fig1.R")
 
 ```{r, echo=FALSE}
 rad <- rectToPolar(choices[,1], choices[,2])$dAngle
-rt <- finalT
+rt <- randomWalk$RT
 x.data <- cbind(rad,rt)
 fig.drift <- as.numeric(dlength)
 fig.theta <- as.numeric(dangle)
-fig.tzero  <- min(finalT)-0.15
+fig.tzero  <- 0.1
 fig.boundary <- boundary
 ```
 
