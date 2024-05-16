@@ -33,7 +33,7 @@ source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
 source("./code/cddm/sim_Reject.R")     # Needed for Algorithm 2
 source("./code/cddm/sim_Metropolis.R") # Needed for Algorithm 3
 source("./code/cddm/sim_invCDF.R")     # Needed for Algorithm 4
-source("./code/cddm/plottingFunctions.R") # Needed to plot choices on a circle
+source("./code/cddm/plottingFunctions.R") # Needed to make custom CDDM plots
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 # Short custom functions for plotting
 rgb.RW <- c(255/255,128/255,0)
@@ -65,17 +65,16 @@ The circular drift-diffusion model (CDDM) is a stochastic sequential sampling mo
 The CDDM considers four parameters, most of which are illustrated in Fig 1. The parameter not shown is the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
 ```{r, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
-source("./code/cddm/illustrateModel_Fig1.R")
-```
+# Arbitrary set of parameter values
+drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
+par <- list("drift" = drift, 
+            "theta" = theta,
+            "tzero" = tzero,
+            "boundary" = boundary)
+n <- 500 # No. samples
 
-```{r, echo=FALSE}
-rad <- rectToPolar(choices[,1], choices[,2])$dAngle
-rt <- randomWalk$RT
-x.data <- cbind(rad,rt)
-fig.drift <- as.numeric(dlength)
-fig.theta <- as.numeric(dangle)
-fig.tzero  <- 0.1
-fig.boundary <- boundary
+set.seed(777)
+data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
 ```
 
 ## dCDDM(*) - CDDM density function
@@ -87,7 +86,7 @@ source("./code/cddm/pCDDM.R")
 
 #numInt.tpz.cddm(rad,rt,cddm.par,plot=TRUE)
 
-pCDDM(x.data, fig.drift, fig.theta, fig.tzero, fig.boundary, plot=TRUE)
+pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
 ```
 
 ## Illustrative parameter set
@@ -100,7 +99,6 @@ par <- list("drift" = 3.5,
             "boundary" = 2)
 n <- 5000 # No. samples
 ```
-
 
 In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` `r n` bivariate observations using the arbitrary set of parameter values shown below:
 
@@ -134,7 +132,7 @@ if(forceRun_RW|!file.exists("./tmp/X.RW.RData")){
 ```
 
 ```{r, fig.height=5}
-plot.CDDM(X.RW, par, choice.col.RGB = rgb.RW)
+plot.CDDM_choiceData(X.RW, par, choice.col.RGB = rgb.RW)
 ```
 
 
@@ -176,7 +174,7 @@ if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
 ```
 
 ```{r, fig.height=5}
-plot.CDDM(X.Reject, par, choice.col.RGB = rgb.Reject)
+plot.CDDM_choiceData(X.Reject, par, choice.col.RGB = rgb.Reject)
 ```
 
 ```{r, fig.height=5}
@@ -216,7 +214,7 @@ if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
 
 
 ```{r, fig.height=5}
-plot.CDDM(X.Metro, par, choice.col.RGB = rgb.Metro)
+plot.CDDM_choiceData(X.Metro, par, choice.col.RGB = rgb.Metro)
 ```
 
 ```{r, fig.height=5}
@@ -250,7 +248,7 @@ if(forceRun_inv|!file.exists("./tmp/X.invCDF.RData")){
 ```
 
 ```{r, fig.height=5}
-plot.CDDM(X.invCDF, par, choice.col.RGB = rgb.invCDF)
+plot.CDDM_choiceData(X.invCDF, par, choice.col.RGB = rgb.invCDF)
 ```
 
 
