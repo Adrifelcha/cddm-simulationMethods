@@ -86,7 +86,7 @@ plot.CDDM_choiceData <- function(data,par=NA,choice.col.RGB = c(0.65,0.5,0.15)){
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   #### If not specified, load some generic parameter values
-  if(is.na(cddm.par)){
+  if(sum(is.na(cddm.par))>0){
     boundary = 3
     tzero = 0.1
     mu1 = 2.5      
@@ -102,8 +102,8 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
     theta <- cddm.par$theta
     drift <- cddm.par$drift
     cart.coordinates = polarToRect(theta,drift)
-    mu1 <- cart.coordinates[1]
-    mu2 <- cart.coordinates[2]
+    mu1 <- as.numeric(cart.coordinates[1])
+    mu2 <- as.numeric(cart.coordinates[2])
   }
   ### Counterclockwise
   if(theta<=0){     theta <- (2*pi)+theta   }  
@@ -178,10 +178,10 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
          arr.col = arrow.color, lwd = 1, arr.lwd = 2)
   text(-1.8,1.15,expression(eta), cex=cex.greek, col=text.color, f=f)
   ### Plot / signal the drift vector parameters
-  rect <- as.numeric(polarToRect(dangle,boundary))
+  rect <- as.numeric(polarToRect(theta,boundary))
   X <- c(0,rect[1])
   Y <- c(0,rect[2])
-  draw.angle = polarToRect(seq(0,as.numeric(dangle),0.01), 0.8)
+  draw.angle = polarToRect(seq(0,as.numeric(theta),0.01), 0.8)
   ### Draw drift vector path
   lines(X,Y, lwd=1, col="navy", lty=2)
   ### Drift angle
