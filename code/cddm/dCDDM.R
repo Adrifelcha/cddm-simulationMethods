@@ -47,8 +47,8 @@ log2pi <- 1.837877066409345
 # Use the density function described in Smith (2016)
 cddm.pdf.2016 <- function(x, drift, theta, tzero, boundary){
   # Identify bivariate data
-  c <- x[1]
-  t <- x[2]
+  c <- as.numeric(x[1])
+  t <- as.numeric(x[2])
   # Relevant transformations
   mu1 = drift*cos(theta)
   mu2 = drift*sin(theta)
@@ -64,8 +64,10 @@ cddm.pdf.2016 <- function(x, drift, theta, tzero, boundary){
       exponand.left = boundary*(mu1*cos(c)+mu2*sin(c));
       exponand.right = (drift*drift)*(t-tzero)*0.5;
       Eq.23 = exp(exponand.left - exponand.right)*Eq.22
+      # Scaling constant
+      PDF = Eq.23 * inv2pi
   # Return bivariate density
-  return(PDF = Eq.23)
+  return(PDF)
 }
 
 
