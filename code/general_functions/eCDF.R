@@ -47,12 +47,12 @@ myECDF <- function(data){
 myECDF.Plot <- function(data, color="forestgreen"){
   eCDF.color <- color
   if(is.vector(data)){
+    data <- unique(data)
     sorted.data <- sort(data)
     lab.x <- "Data"
     eCDF <- myECDF(sorted.data)
     plot(sorted.data, eCDF, pch=16, cex=0.7,
          col=eCDF.color, lwd=2, ylim=c(0,1), xlab=lab.x)
-    mtext("eCDF",2, line=2.1, f=2)
   }else{
     if(ncol(data)==2){
       eCDF <- myECDF(data)
