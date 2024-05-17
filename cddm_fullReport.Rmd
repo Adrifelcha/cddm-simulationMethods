@@ -145,7 +145,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.RW$bivariate.data[,2], main = "Response Times", col = col.RW(0.7))
 ```
 
-```{r, fig.height=5, echo=FALSE}
+```{r, fig.height=6}
 plot.CDDM_margECDF(X.RW$bivariate.data, color=col.RW(0.3))
 ```
 
@@ -191,7 +191,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.Reject[,2], main = "Response Times", col=col.Reject(0.7))
 ```
 
-```{r, fig.height=5, echo=FALSE}
+```{r, fig.height=6}
 plot.CDDM_margECDF(X.Reject, color=col.Reject(0.3))
 ```
 
@@ -235,7 +235,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.Metro[,2], main = "Response Times", col=col.Metro(0.7))
 ```
 
-```{r, fig.height=5, echo=FALSE}
+```{r, fig.height=6}
 plot.CDDM_margECDF(X.Metro, color=col.Metro(0.3))
 ```
 
@@ -274,7 +274,7 @@ par(pty="m", mar = c(3, 3, 3, 0))
 hist(X.invCDF[,2], main = "Response Times", col = col.invCDF(0.7))
 ```
 
-```{r, fig.height=5, echo=FALSE}
+```{r, fig.height=6}
 plot.CDDM_margECDF(X.invCDF, color=col.invCDF(0.3))
 ```
 
