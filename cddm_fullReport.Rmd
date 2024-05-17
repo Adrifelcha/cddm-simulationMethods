@@ -645,7 +645,7 @@ mtext("RTs", side=4, line=-1, adj=0)
 mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```
 
-```{r}
+```{r, echo=FALSE}
 eCDFs2 <- cbind(RW.eCDF2, Reject.eCDF2, Metro.eCDF2, invCDF.eCDF2) 
 tCDFs2 <- cbind(RW.tCDF2, Reject.tCDF2, Metro.tCDF2, invCDF.tCDF2) 
 getDifferences(eCDFs2,tCDFs2)
