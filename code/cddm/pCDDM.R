@@ -26,7 +26,7 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
          # Define line positions over the X and Y dimensions
          nLines <- 30
          x.C <- seq(0,2*pi,length.out=nLines)            # X: Choices
-         y.RT <- seq(tzero,max(rt,10),length.out=nLines) # Y: RT
+         y.RT <- seq(tzero,max(rt,5),length.out=nLines) # Y: RT
          x.theta <- rep(theta,nLines)                    # Make sure to add theta
          # Compute the density at each intersection point
          z.Dens <- matrix(NA, nrow=nLines, ncol=nLines)
