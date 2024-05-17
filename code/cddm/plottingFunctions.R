@@ -3,7 +3,10 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
 if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ source("./sim_randomWalk.R") }
+if(!superCalled){ 
+  source("./sim_randomWalk.R") 
+  source("../general_functions/eCDF.R")
+}
 library(grid)
 library(shape)
 library(geostats)
@@ -218,6 +221,32 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   }
 }
 
+plot.CDDM_margECDF <- function(bivariate.data, color){
+      rw.choices <- unique(sort(bivariate.data[,1]))
+      rw.rt <- unique(sort(bivariate.data[,2]))  
+      
+      par(pty="m", mfrow=c(1,2), mar = c(3, 3, 3, 1)) 
+      # Draw the marginal eCDF for Choices
+      plot(rw.choices, myECDF(rw.choices), col="white", pch=16, ann=F, axes=F,
+           xlim=c(0,2*pi))
+      polygon(c(min(rw.choices),max(rw.choices),max(rw.choices),min(rw.choices)),
+              c(-0.1,-0.1,1.1,1.1), col = "gray95", border = "gray80")
+      points(rw.choices, myECDF(rw.choices), col=color, pch=16, cex=0.8)
+      axis(2,seq(0,1,length.out=10),round(seq(0,1,length.out=10),1), las=2)
+      axis(1, seq(0,2*pi,length.out=5),
+           c("0",expression(paste(0.5,pi)),expression(paste(pi)),
+             expression(paste(1.5,pi)), expression(paste(2,pi))))
+      mtext("Choices - eCDF", 3, f=2)
+      # Draw the marginal eCDF for the RTs
+      plot(rw.rt, myECDF(rw.rt), col="white", pch=16, ann=F, axes=F, xlim=c(0,max(rw.rt)))
+      polygon(c(min(rw.rt),max(rw.rt),max(rw.rt),min(rw.rt)),
+              c(-0.1,-0.1,1.1,1.1), col = "gray95", border = "gray80")
+      points(rw.rt, myECDF(rw.rt), col=color, pch=16, cex=0.8)
+      axis(2,seq(0,1,length.out=10),round(seq(0,1,length.out=10),1), las=2)
+      axis(1, seq(0,max(rw.rt),length.out=7),
+           round(seq(0,max(rw.rt),length.out=7),1))
+      mtext("Response Times - eCDF", 3, f=2)
+}
 
 # Test function
 if(!exists("test")){    test <- TRUE                           }
