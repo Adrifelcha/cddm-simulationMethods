@@ -23,9 +23,9 @@ superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
-forceRun_Rej <- TRUE    #
+forceRun_Rej <- FALSE    #
 forceRun_Met <- TRUE    # 
-forceRun_inv <- FALSE   #
+forceRun_inv <- TRUE   #
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
@@ -67,11 +67,9 @@ The CDDM considers four parameters, most of which are illustrated in Fig 1. The 
 ```{r, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
 # Arbitrary set of parameter values
 drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
-par <- list("drift" = drift, 
-            "theta" = theta,
-            "tzero" = tzero,
-            "boundary" = boundary)
-n <- 500 # No. samples
+par <- list("drift" = drift, "theta" = theta,
+            "tzero" = tzero, "boundary" = boundary)
+n <- 1000 # No. samples
 
 set.seed(777)
 data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
@@ -79,14 +77,19 @@ data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
 
 ## dCDDM(*) - CDDM density function
 
+```{r}
+source("./code/cddm/dCDDM.R")
+
+choice <- 5; rt <- 1
+dCDDM(c(choice,rt),drift,theta,tzero,boundary)
+```
+
 ## pCDDM(*) - CDDM cumulate density function
 
-```{r, eval=FALSE, echo=FALSE}
+```{r}
 source("./code/cddm/pCDDM.R")
 
-#numInt.tpz.cddm(rad,rt,cddm.par,plot=TRUE)
-
-pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
+x <- pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
 ```
 
 ## Illustrative parameter set
@@ -394,24 +397,25 @@ mtext("Approximated CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 
 ```{r}
 # We build a simple function to compare these CDFs
-getDifferences <- function(eCDF,tCDF){
-  difference <- tCDF - eCDF
-  difference.sum <- sum(difference)
-  KS_statistic <- max(abs(difference)) # Kolmogorov–Smirnov statistic
-  sq.difference <- sum((difference)^2)
+getDifferences <- function(eCDFs,tCDFs){
+  difference <- tCDFs - eCDFs
+  difference.sum <- apply(difference,2,sum)
+  KS_statistic   <- apply(abs(difference),2,max) # Kolmogorov–Smirnov statistic
+  sq.difference  <- apply(difference^2,2,sum)
   
-  output <- round(cbind(difference.sum,KS_statistic,sq.difference),4)
+  output <- cbind(difference.sum, KS_statistic, sq.difference)
   colnames(output) <- c("sumDiff","KS-statistic","SSDiff") 
+  rownames(output) <- sub("\\..*", "", colnames(eCDFs))
   return(output)
 }
 ```
 
 
 ```{r}
-getDifferences(RW.eCDF,RW.tCDF)
-getDifferences(Reject.eCDF,Reject.tCDF)
-getDifferences(Metro.eCDF,Metro.tCDF)
-getDifferences(invCDF.eCDF,invCDF.tCDF)
+eCDFs <- cbind(RW.eCDF, Reject.eCDF, Metro.eCDF, invCDF.eCDF)
+tCDFs <- cbind(RW.tCDF, Reject.tCDF, Metro.tCDF, invCDF.tCDF)
+
+getDifferences(eCDFs,tCDFs)
 ```
 
 ```{r, echo=FALSE, fig.height=12}
@@ -548,7 +552,6 @@ compareTime_plot(n.Samples,n.Datasets,
 ```
 
 
-
 # Second example
 
 Let's briefly explore the results we get when we try a second set of parameter values where we have a much larger response boundary (and a rather slower random walk process).
@@ -610,37 +613,6 @@ mtext("inverse CDF algorithm", 3, f=2, cex=0.8)
 mtext("Response Times sampled", outer=TRUE, line=-1.8, f=2, cex=1.9)
 ```
 
-```{r, echo=FALSE}
-# Plot the eCDFs obtained so far
-par(pty="s")          
-par(mfrow=c(1,2),mar = c(0, 0, 0, 0), mfrow=c(2,2)) 
-scatterplot3d(X2.RW$bivariate.data[,1], X2.RW$bivariate.data[,2],
-              RW.eCDF2,  pch=16, cex.symbols = 0.5, color = col.RW(0.4),
-              xlab = "", ylab = "", zlab = "")
-mtext("Random Walk algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X2.Reject[,1],X2.Reject[,2],Reject.eCDF2, pch=16,
-              cex.symbols = 0.5, color = col.Reject(0.4), 
-              xlab = "", ylab = "", zlab = "")
-mtext("Rejection sampling algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X2.Metro[,1],X2.Metro[,2],Metro.eCDF2, pch=16,
-              cex.symbols = 0.5, color = col.Metro(0.4), 
-              xlab = "", ylab = "", zlab = "")
-mtext("Metropolis sampling algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-scatterplot3d(X2.invCDF[,1],X2.invCDF[,2],invCDF.eCDF2, pch=16,
-              cex.symbols = 0.5, color = col.invCDF(0.4), 
-              xlab = "", ylab = "", zlab = "")
-mtext("inverse CDF sampling algorithm", f=2)
-mtext("Choices", side=1, line=0.5)
-mtext("RTs", side=4, line=-1, adj=0)
-mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=2)
-```
-
 ```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
 par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
@@ -674,10 +646,9 @@ mtext("Empirical (color) vs Approximate (black) CDFs", outer=TRUE, line=-2, f=2,
 ```
 
 ```{r}
-getDifferences(RW.eCDF2,RW.tCDF2)
-getDifferences(Reject.eCDF2,Reject.tCDF2)
-getDifferences(Metro.eCDF2,Metro.tCDF2)
-getDifferences(invCDF.eCDF2,invCDF.tCDF2)
+eCDFs2 <- cbind(RW.eCDF2, Reject.eCDF2, Metro.eCDF2, invCDF.eCDF2) 
+tCDFs2 <- cbind(RW.tCDF2, Reject.tCDF2, Metro.tCDF2, invCDF.tCDF2) 
+getDifferences(eCDFs2,tCDFs2)
 ```
 
 
