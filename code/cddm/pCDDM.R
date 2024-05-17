@@ -16,7 +16,7 @@ define_bins <- function(tzero,obs.rt){
 
 # Auxiliary function 2: Generate a plot of how the approximation works
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, 
+embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
                           rt, tzero, theta, drift, boundary,density_matrix, 
                           rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7)){
    par(pty="s")          
@@ -154,12 +154,12 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
         col <- which.min(abs(bin.RT-rt[i]))-1
         total[i] <- sum(volume_per_bin[1:row,1:col])
     }
-    total <- total / (2*pi)
+    total <- total
     
     if(plot){   
-        embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rt, 
-                      tzero, theta, drift, boundary,density_matrix, 
-                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))      
+        embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rad,
+                      rt, tzero, theta, drift, boundary,density_matrix, 
+                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))     
       }
 return(total)
 }
@@ -183,9 +183,9 @@ pCDDM <- function(data,drift, theta, tzero, boundary, plot=FALSE){
       cddm.par <- list("drift" = drift, "theta" = theta, 
                        "tzero" = tzero, "boundary" = boundary)
       if(is.vector(data)){
-         volume <- numInt.tpz.cddm(rad = data[1], rt = data[2], cddm.par, plot)
+         volume <- numInt.tpz.cddm(rad = data[1], rt = data[2], cddm.par, plot=plot)
       }else{
-         volume <- numInt.tpz.cddm(rad = data[,1],rt = data[,2], cddm.par, plot)
+         volume <- numInt.tpz.cddm(rad = data[,1],rt = data[,2], cddm.par, plot=plot)
       }
   return(volume)
 } 
