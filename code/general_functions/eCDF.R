@@ -10,10 +10,6 @@
 myECDF <- function(data){
   # Check if data is contained in a vector
   if(is.vector(data)){
-        repeated.values <- !length(data)==length(unique(data))
-        if(repeated.values){
-          data <- unique(data)
-        }
         n <- length(data)
         cdf <- NA
         for(i in 1:n){
@@ -47,7 +43,6 @@ myECDF <- function(data){
 myECDF.Plot <- function(data, color="forestgreen"){
   eCDF.color <- color
   if(is.vector(data)){
-    data <- unique(data)
     sorted.data <- sort(data)
     lab.x <- "Data"
     eCDF <- myECDF(sorted.data)
@@ -68,21 +63,6 @@ myECDF.Plot <- function(data, color="forestgreen"){
     }
   }
 }
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Part 3: Compare two CDF (ideally, an eCDF against a theoretical CDF)
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-getDifferences <- function(eCDF,tCDF){
-  difference <- tCDF - eCDF
-  difference.sum <- sum(difference)
-  Kldivergence <- max(abs(difference))
-  sq.difference <- sum((difference)^2)
-  
-  output <- round(cbind(difference.sum,Kldivergence,sq.difference),4)
-  colnames(output) <- c("sumDiff","Kldivergence","SSDiff") 
-  return(output)
-}
-
 
 #################
 # Test/Examples

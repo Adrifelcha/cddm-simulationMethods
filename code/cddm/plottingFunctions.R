@@ -222,8 +222,8 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
 }
 
 plot.CDDM_margECDF <- function(bivariate.data, color){
-      rw.choices <- unique(sort(bivariate.data[,1]))
-      rw.rt <- unique(sort(bivariate.data[,2]))  
+      rw.choices <- (sort(bivariate.data[,1]))
+      rw.rt <- (sort(bivariate.data[,2]))  
       
       par(pty="m", mfrow=c(1,2), mar = c(3, 3, 3, 1)) 
       # Draw the marginal eCDF for Choices
