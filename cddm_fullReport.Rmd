@@ -23,7 +23,7 @@ superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
-forceRun_Rej <- FALSE    #
+forceRun_Rej <- TRUE    #
 forceRun_Met <- TRUE    # 
 forceRun_inv <- TRUE   #
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
@@ -154,13 +154,9 @@ plot.CDDM_margECDF(X.RW$bivariate.data, color=col.RW(0.3))
 
 # Algorithm 2: Rejection sampling algorithm
 
-```{r}
-max.RT <- max(X.RW$bivariate.data[,2])
-```
-
 ```{r, eval=FALSE}
 source("./code/cddm/sim_Reject.R")
-X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
+X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
 ```
 
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
@@ -168,7 +164,7 @@ X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
       start_time <- Sys.time()
-      X.Reject <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
+      X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
       end_time <- Sys.time()
       Reject.time <- round(end_time-start_time, 4)
       save(X.Reject, file = "./tmp/X.Reject.RData")
@@ -178,7 +174,7 @@ if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
      load("./tmp/X.Reject.RData")
      load("./tmp/Reject.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     z <- sample.Reject.cddm(n,par,max.RT,plot=TRUE)
+     z <- sample.Reject.cddm(n,par,plot=TRUE)
 }
 ```
 
@@ -199,11 +195,11 @@ plot.CDDM_margECDF(X.Reject, color=col.Reject(0.3))
 
 # Algorithm 3: Metropolis algorithm
 
-The following Metropolis algorithm uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates), and an arbitrary value max.RT that indicates the maximum possible R.T we’d expect to observe under a realistic scenario.
+The following Metropolis algorithm uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates).
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_Metropolis.R")
-X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
 ```
 
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Metropolis sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
@@ -211,7 +207,7 @@ X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
       start_time <- Sys.time()
-      X.Metro <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+      X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
       end_time <- Sys.time()
       Metro.time <- round(end_time-start_time, 4)
       save(X.Metro, file = "./tmp/X.Metro.RData")
@@ -221,7 +217,7 @@ if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
      load("./tmp/X.Metro.RData")
      load("./tmp/Metro.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     z <- sample.Metropolis.cddm(n,par,max.RT,plot=TRUE)
+     z <- sample.Metropolis.cddm(n,par,plot=TRUE)
 }
 ```
 
@@ -241,11 +237,11 @@ plot.CDDM_margECDF(X.Metro, color=col.Metro(0.3))
 
 **The execution of the Metropolis sampling algorithm took approximately `r Metro.time` seconds.**
 
-# Algorithm 4: Inverse CDF (tabloid approximation)
+# Algorithm 4: Inverse CDF (grid approximation)
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_invCDF.R")
-X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT)
+X.invCDF <- sample.invCDF.cddm(n, par)
 ```
 
 ```{r,  echo=FALSE}
@@ -253,7 +249,7 @@ X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_inv|!file.exists("./tmp/X.invCDF.RData")){
       start_time <- Sys.time()
-      X.invCDF <- sample.invCDF.cddm(n, par, max.RT = max.RT, plot=TRUE)
+      X.invCDF <- sample.invCDF.cddm(n, par, plot=TRUE)
       end_time <- Sys.time()
       invCDF.time <- round(end_time-start_time,4)
       save(X.invCDF, file = "./tmp/X.invCDF.RData")
@@ -279,6 +275,10 @@ plot.CDDM_margECDF(X.invCDF, color=col.invCDF(0.3))
 ```
 
 **The execution of the inverse-CDF algorithm took approximately `r invCDF.time` seconds.**
+
+# Algorithm 5: Independent sampling
+
+*Future work:* 
 
 # Accuracy testing
 
@@ -484,13 +484,12 @@ compareTime <- function(n.Samples, n.Datasets, par){
             end_time <- Sys.time()
             times.RW[m,i] <- round(end_time-start_time,4)
             start_time <- Sys.time()
-            max.RT <- max(x$bivariate.data[,2])
             
-            sample.Reject.cddm(n,par,max.RT,plot=FALSE)
+            sample.Reject.cddm(n,par,plot=FALSE)
             end_time <- Sys.time()
             times.Reject[m,i] <- round(end_time-start_time, 4)
             start_time <- Sys.time()
-            sample.Metropolis.cddm(n,par,max.RT=NA,plot=FALSE)
+            sample.Metropolis.cddm(n,par,plot=FALSE)
             end_time <- Sys.time()
             times.Metro[m,i] <- round(end_time-start_time,4)
             i <- i+1
@@ -588,20 +587,18 @@ if(forceRun_RW|!file.exists("./tmp/X2.RW_2.RData")){
       save(X2.RW, file = "./tmp/X2.RW_2.RData")
    }else{     load("./tmp/X2.RW_2.RData")          }
 
-max.RT <- max(X2.RW$bivariate.data[,2])
-
 if(forceRun_Rej|!file.exists("./tmp/X2.Reject_2.RData")){
-      X2.Reject <- sample.Reject.cddm(n,par2,max.RT,plot=FALSE)
+      X2.Reject <- sample.Reject.cddm(n,par2,plot=FALSE)
       save(X2.Reject, file = "./tmp/X2.Reject_2.RData")
    }else{     load("./tmp/X2.Reject_2.RData")          }
 
 if(forceRun_Met|!file.exists("./tmp/X2.Metro_2.RData")){
-      X2.Metro <- sample.Metropolis.cddm(n,par2,max.RT,plot=FALSE)
+      X2.Metro <- sample.Metropolis.cddm(n,par2,plot=FALSE)
       save(X2.Metro, file = "./tmp/X2.Metro_2.RData")
    }else{     load("./tmp/X2.Metro_2.RData")          }
 
 if(forceRun_inv|!file.exists("./tmp/X2.invCDF_2.RData")){
-      X2.invCDF <- sample.invCDF.cddm(n,par2,max.RT,plot=FALSE)
+      X2.invCDF <- sample.invCDF.cddm(n,par2,plot=FALSE)
       save(X2.invCDF, file = "./tmp/X2.invCDF_2.RData")
    }else{     load("./tmp/X2.invCDF_2.RData")          }
 
