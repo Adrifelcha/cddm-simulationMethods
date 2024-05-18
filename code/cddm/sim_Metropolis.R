@@ -70,7 +70,7 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total,
 
 
 # Write a simple Rejection algorithm for the CDDM pdf
-sample.Metropolis.cddm <- function(n, par, max.RT=NA, plot=FALSE){
+sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   no.Dim <- 2
   drift <- par$drift;     theta <- par$theta
   tzero <- par$tzero;     boundary <- par$boundary
@@ -78,7 +78,13 @@ sample.Metropolis.cddm <- function(n, par, max.RT=NA, plot=FALSE){
   predChoice <- theta
   predRT <- boundary/drift
   
-  if(is.na(max.RT)){  max.RT <- predRT*4 }
+  density <- 1
+  max.RT <- predRT*2
+  while(density > 0.00001){
+    data <- c(theta,max.RT)
+    density <- dCDDM(data,drift,theta,tzero,boundary)
+    max.RT <- max.RT+0.01
+  }
   
   nTry.RT <- 30
   test.RT <- seq(tzero, max.RT, length.out=nTry.RT)

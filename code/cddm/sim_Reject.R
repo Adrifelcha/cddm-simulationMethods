@@ -9,12 +9,20 @@ if(!superCalled){ source("./dCDDM.R") }
 library(scatterplot3d) 
 
 # Write a simple Rejection algorithm for the CDDM pdf
-sample.Reject.cddm <- function(n, par, max.RT = 10, plot=FALSE){
+sample.Reject.cddm <- function(n, par, plot=FALSE){
   no.Dim <- 2
   drift <- par$drift
   theta <- par$theta
   tzero <- par$tzero
   boundary <- par$boundary
+  
+  density <- 1
+  max.RT <- (boundary/drift)*2
+  while(density > 0.00001){
+    data <- c(theta,max.RT)
+    density <- dCDDM(data,drift,theta,tzero,boundary)
+    max.RT <- max.RT+0.01
+  }
   
   nTry.RT <- 20
   test.RT <- seq(tzero, max.RT, length.out=nTry.RT)

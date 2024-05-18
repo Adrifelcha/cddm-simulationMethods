@@ -8,14 +8,22 @@ if(!exists("superCalled")){superCalled <- FALSE}
 if(!superCalled){ source("./pCDDM.R") }
 library(scatterplot3d) 
 
-sample.invCDF.cddm <- function(n, par, max.RT=NA, plot=FALSE){
+sample.invCDF.cddm <- function(n, par, plot=FALSE){
   # Set-up - Load important values and define important variables
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load parameter values
     drift <- par$drift;   theta <- par$theta
     tzero <- par$tzero;   boundary <- par$boundary
     # Derive a sensical max.RT point, if it hasn't been provided
-    if(is.na(max.RT)){  max.RT <- (boundary/drift)*4    }
+    
+    density <- 1
+    max.RT <- (boundary/drift)*2
+    while(density > 0.00001){
+      data <- c(theta,max.RT)
+      density <- dCDDM(data,drift,theta,tzero,boundary)
+      max.RT <- max.RT+0.01
+    }
+    
   # 
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Define the Choice and RT values for which we'll c
