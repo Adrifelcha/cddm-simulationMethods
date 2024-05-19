@@ -5,32 +5,23 @@
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez 
 if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ source("./dCDDM.R") }
+if(!superCalled){ 
+      source("./dCDDM.R") 
+      source("./sim_auxiliarFunctions.R")
+}
 library(scatterplot3d) 
 
 # Write a simple Rejection algorithm for the CDDM pdf
 sample.Reject.cddm <- function(n, par, plot=FALSE){
-  no.Dim <- 2
-  drift <- par$drift
-  theta <- par$theta
-  tzero <- par$tzero
-  boundary <- par$boundary
+  drift <- par$drift;   theta <- par$theta
+  tzero <- par$tzero;   boundary <- par$boundary
   
-  density <- 1
-  max.RT <- (boundary/drift)*2
-  while(density > 0.00009){
-    density <- dCDDM(c(theta,max.RT),drift,theta,tzero,boundary)
-    max.RT <- max.RT+0.01
-  }
-  
-  nTry.RT <- 20
-  test.RT <- seq(tzero, max.RT, length.out=nTry.RT)
-  test.data <- cbind(rep(theta,nTry.RT),test.RT)
-  test.densities <- dCDDM(test.data,drift, theta, tzero, boundary)
-  max.Density <- max(test.densities)
-  height <- max.Density*1.1
+  test.Density <- keyDensityPoints(par)
+  min.RT <- test.Density$min.RT
+  max.RT <- test.Density$max.RT
+  max.Density <- test.Density$max.Density*1.1
   base.C <- c(0, 2*pi)
-  base.RT <- c(tzero, max.RT)
+  base.RT <- c(min.RT, max.RT)
 
   if(plot){
     nSupp <- 100
@@ -43,7 +34,7 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
     z.diag2 <- dCDDM(cbind(support.C,support.RT2),drift, theta, tzero, boundary)
     z.RT_at_theta <- dCDDM(cbind(support.theta,support.RT1),drift, theta, tzero, boundary)
     a <- scatterplot3d(support.C, support.RT1, z.diag1, 
-                       xlim=base.C, ylim=base.RT, zlim=c(0,height),
+                       xlim=base.C, ylim=base.RT, zlim=c(0,max.Density),
                        xlab="Choices", ylab="RT", zlab="Density",
                        color="blue", type="l", bg="green")
     a$points3d(support.C, support.RT2, z.diag2, col = "blue", type="l")
@@ -60,15 +51,15 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
   }
   
   n.keep <- 0
-  samples <- matrix(NA, nrow=1, ncol=no.Dim)
+  samples <- matrix(NA, nrow=1, ncol=2)
   
   while(n.keep < n){
-        cand <- matrix(NA, nrow=n, ncol=no.Dim)
+        cand <- matrix(NA, nrow=n, ncol=2)
         cand[,1] <- runif(n,base.C[1],base.C[2])
         cand[,2] <- runif(n,base.RT[1],base.RT[2])
         
         eval <- dCDDM(cand,drift, theta, tzero, boundary)
-        rej.crit <- runif(n,0,height)  
+        rej.crit <- runif(n,0,max.Density)  
         keep <- (eval >= rej.crit)
         
         if(plot){
