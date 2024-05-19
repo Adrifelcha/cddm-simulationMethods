@@ -8,12 +8,6 @@ if(!superCalled){     source("./dCDDM.R")       }
 library("scatterplot3d")
 library("plot3D")
 
-# Auxiliary function 1: A function to define the bins' ending points
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-define_bins <- function(tzero,obs.rt){
-  ceiling(max(350, 20*(obs.rt-tzero)))
-}
-
 # Auxiliary function 2: Generate a plot of how the approximation works
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
@@ -75,7 +69,8 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
 
 # Base function: We write a 2D Trapezoid N.I. algorithm
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
+numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
+                            nBins.RT = NA, nBins.C = NA){
     # ~~ Set up ~~ #
     ################
     # Load up CDDM parameters
@@ -87,15 +82,22 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
     rad <- rad %% (2*pi)
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
     if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
-    # Define the bins' cut points
-    if(is.na(nBins)){    
-          kappa <- define_bins(tzero,rt)
+    # Define the bins' cut points across the Choice dimension
+    if(is.na(nBins.C)){
+          kappa.C <- 315
+          bin.C <- seq(0,max(rad),length.out=kappa.C)
     }else{
-          kappa <- nBins
+          kappa.C <- nBins.C
+          bin.C <- seq(0,max(rad),length.out=kappa.C)
     }
-    # Take largest Choice and RT and partition to form the bins
-    bin.C <- seq(0,max(rad),length.out=kappa)
-    bin.RT <- seq(tzero,max(rt),length.out=kappa)
+    # Define the bins' cut points across the RT dimension
+    if(is.na(nBins.RT)){
+          bin.RT <- seq(tzero,max(rt),0.01)
+          kappa.RT <- length(bin.RT)
+    }else{
+          kappa.RT <- nBins.RT
+          bin.RT <- seq(tzero,max(rt),length.out=kappa.RT)
+    }
 
     # ~~ Base area of any bin ~~ #
     ##############################
@@ -108,9 +110,9 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
     # ~~ Compute the density at every vertex ~~ #
     #############################################
     # Part 1: Start empty storing objects
-    density_matrix <- matrix(NA, nrow=kappa, ncol=kappa)
+    density_matrix <- matrix(NA, nrow=kappa.C, ncol=kappa.RT)
     # Part 2: Compute densities
-    for(c in 1:kappa){ for(t in 1:kappa){
+    for(c in 1:kappa.C){ for(t in 1:kappa.RT){
             vertex <- c(bin.C[c],bin.RT[t])
             v.density <- dCDDM(vertex,drift,theta,tzero,boundary)
             density_matrix[c,t] <- v.density
@@ -128,10 +130,10 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
     # ~~ Compute the height of each bin ~~ #
     ########################################
     # Part 1: Empty objects for storage
-    sumHeight_per_bin <- matrix(NA, nrow=kappa-1, ncol=kappa.RT-1)
+    sumHeight_per_bin <- matrix(NA, nrow=kappa.C-1, ncol=kappa.RT-1)
     thisC <- 1
     # Part 2: Fill height_per_bin matrix
-    for(b.c in 2:kappa){  # Move along radian dimension
+    for(b.c in 2:kappa.C){  # Move along radian dimension
         thisRT <- 1
         for(b.rt in 2:kappa.RT){  # Move along rt dimension
             sumHeight_per_bin[thisC,thisRT] <- sum(c(density_matrix[b.c,b.rt],
@@ -157,9 +159,9 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, nBins = NA, plot=FALSE){
     total <- total
     
     if(plot){   
-        embedded_plot(bin.C, bin.RT, kappa, kappa.RT, total, rad,
+        embedded_plot(bin.C, bin.RT, kappa.C, kappa.RT, total, rad,
                       rt, tzero, theta, drift, boundary,density_matrix, 
-                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))     
+                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))
       }
 return(total)
 }
@@ -183,9 +185,9 @@ pCDDM <- function(data,drift, theta, tzero, boundary, plot=FALSE){
       cddm.par <- list("drift" = drift, "theta" = theta, 
                        "tzero" = tzero, "boundary" = boundary)
       if(is.vector(data)){
-         volume <- numInt.tpz.cddm(rad = data[1], rt = data[2], cddm.par, plot=plot)
+         volume <- numInt.tpz.cddm(rad = data[1], rt = data[2], cddm.par=cddm.par, plot=plot)
       }else{
-         volume <- numInt.tpz.cddm(rad = data[,1],rt = data[,2], cddm.par, plot=plot)
+         volume <- numInt.tpz.cddm(rad = data[,1],rt = data[,2], cddm.par=cddm.par, plot=plot)
       }
   return(volume)
 } 
