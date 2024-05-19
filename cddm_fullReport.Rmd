@@ -483,39 +483,48 @@ compareTime <- function(n.Samples, n.Datasets, par){
             x <- sample.RW.cddm(n,par)
             end_time <- Sys.time()
             times.RW[m,i] <- round(end_time-start_time,4)
-            start_time <- Sys.time()
             
+            start_time <- Sys.time()
             sample.Reject.cddm(n,par,plot=FALSE)
             end_time <- Sys.time()
             times.Reject[m,i] <- round(end_time-start_time, 4)
+            
             start_time <- Sys.time()
             sample.Metropolis.cddm(n,par,plot=FALSE)
             end_time <- Sys.time()
             times.Metro[m,i] <- round(end_time-start_time,4)
-            i <- i+1
-            seed <- seed+1
+            
+            start_time <- Sys.time()
+            sample.invCDF.cddm(n,par,plot=FALSE)
+            end_time <- Sys.time()
+            times.invCDF[m,i] <- round(end_time-start_time,4)
+            
+            i <- i+1; seed <- seed+1
         }
     }
 return(list("times.RW" = times.RW,
             "times.Reject" = times.Reject,
-            "times.Metro" = times.Metro))
+            "times.Metro"  = times.Metro,
+            "times.invCDF" = times.invCDF))
 }
 ```
 
 ```{r, echo=FALSE}
 compareTime_plot <- function(n.Samples,n.Datasets,
-                             times.RW, times.Reject, times.Metro){
+                             times.RW, times.Reject, times.Metro,times.invCDF){
     M <- n.Datasets; N <- n.Samples
     par(mar=c(4,4,0,1))
     x <- rep(N, each=M)
     x.RW <- (rep(N, each=M)-0.15)+(rnorm(length(N)*M,0,0.02))
     x.Reject <- (rep(N, each=M)-0.05)+(rnorm(length(N)*M,0,0.015))
-    x.Metro <- (rep(N, each=M)+0.05)+(rnorm(length(N)*M,0,0.015))
+    x.Metro  <- (rep(N, each=M)+0.05)+(rnorm(length(N)*M,0,0.015))
+    x.invCDF <- (rep(N, each=M)+0.05)+(rnorm(length(N)*M,0,0.015))
     t.RW <- c(times.RW) 
     t.Reject <- c(times.Reject)
-    t.Metro <- c(times.Metro)
+    t.Metro  <- c(times.Metro)
+    t.invCDF <- c(times.invCDF)
     
-    max.CompTime <- round(max(t.RW, t.Reject, t.Metro),2)
+    max.CompTime <- round(max(t.RW, t.Reject, t.Metro, t.invCDF),2)
     
     RL.RW <- lm(t.RW ~x)
     B0.RW <- round(RL.RW$coefficients[1],5)
@@ -526,6 +535,9 @@ compareTime_plot <- function(n.Samples,n.Datasets,
     RL.Metro <- lm(t.Metro ~x)
     B0.Metro <- round(RL.Metro$coefficients[1],5)
     B1.Metro <- round(RL.Metro$coefficients[2],5)
+    RL.invCDF <- lm(t.invCDF ~x)
+    B0.invCDF <- round(RL.invCDF$coefficients[1],5)
+    B1.invCDF <- round(RL.invCDF$coefficients[2],5)
     plot(x.RW,t.RW, ylim=c(0,max.CompTime), xlim=c(0,max(N)+1), pch=16, cex=0.8,
          col = col.RW(0.5), ann=F, axes=F)
     points(x.Reject,t.Reject, pch=16, cex=0.8, col=col.Reject(0.5))
@@ -538,11 +550,13 @@ compareTime_plot <- function(n.Samples,n.Datasets,
     abline(RL.RW, col = col.RW(0.8), lwd=2)
     abline(RL.Reject, col= col.Reject(0.8), lwd=2)
     abline(RL.Metro, col= col.Metro(0.8), lwd=2)
-    legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8),col.Metro(0.8)), 
+    abline(RL.invCDF, col= col.invCDF(0.8), lwd=2)
+    legend(0.5,max.CompTime, col= c(col.RW(0.8),col.Reject(0.8),col.Metro(0.8),col.invCDF(0.8)), 
            lwd=2, bty = "n", cex=1.2,
            c(paste("RW : Y = ", B0.RW, " + ", B1.RW, "n", sep=""), 
              paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep=""),
-             paste("Metro : Y = ", B0.Metro, " + ", B1.Metro, "n", sep="")))
+             paste("Metro : Y = ", B0.Metro, " + ", B1.Metro, "n", sep=""),
+             paste("invCDF : Y = ", B0.invCDF, " + ", B1.invCDF, "n", sep="")))
 }
 ```
 
