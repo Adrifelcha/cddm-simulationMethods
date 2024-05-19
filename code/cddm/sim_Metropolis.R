@@ -91,9 +91,6 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   test.densities <- dCDDM(test.data,drift, theta, tzero, boundary)
   max.Density <- max(test.densities)
   height <- max.Density*1.1
-  
-  base.C <- c(0, 2*pi)
-  base.RT <- c(tzero, max.RT)
 
   n.keep <- 0
   samples <- matrix(NA, nrow=1, ncol=no.Dim)
