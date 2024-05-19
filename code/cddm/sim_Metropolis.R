@@ -80,9 +80,8 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   
   density <- 1
   max.RT <- predRT*2
-  while(density > 0.00001){
-    data <- c(theta,max.RT)
-    density <- dCDDM(data,drift,theta,tzero,boundary)
+  while(density > 0.00009){
+    density <- dCDDM(c(theta,max.RT),drift,theta,tzero,boundary)
     max.RT <- max.RT+0.01
   }
   
