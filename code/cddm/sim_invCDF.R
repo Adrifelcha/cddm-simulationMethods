@@ -5,7 +5,9 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez 
 if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ source("./pCDDM.R") }
+if(!superCalled){ 
+      source("./pCDDM.R") 
+      source("./sim_auxiliarFunctions.R")}
 library(scatterplot3d) 
 
 sample.invCDF.cddm <- function(n, par, plot=FALSE){
@@ -14,56 +16,41 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE){
     # Load parameter values
     drift <- par$drift;   theta <- par$theta
     tzero <- par$tzero;   boundary <- par$boundary
-    # Derive a sensical max.RT point, if it hasn't been provided
     
-    density <- 1
-    max.RT <- (boundary/drift)*2
-    while(density > 0.00001){
-      data <- c(theta,max.RT)
-      density <- dCDDM(data,drift,theta,tzero,boundary)
-      max.RT <- max.RT+0.01
-    }
+    test.Density <- keyDensityPoints(par,cutoff = 0.0009)
+    min.RT <- test.Density$min.RT
+    max.RT <- test.Density$max.RT
+    max.Density <- test.Density$max.Density
+    predRT <- test.Density$pred.RT
     
-  # 
-  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # Define the Choice and RT values for which we'll c
-    nC <- 300
-    space.C  <- seq(0,2*pi,length.out=nC)
-    nRT <- define_bins(tzero, max.RT)-1
-    space.RT <- seq(tzero,max.RT,length.out=nRT+1)
-    space.RT <- space.RT[2:(nRT+1)]
+    space.C  <- seq(0,2*pi,0.02)
+    test <- cbind(space.C,rep(predRT,length(space.C)))
+    test.D <- dCDDM(test,drift,theta,tzero,boundary)
+    discard.Angles <- test.D<0.0009
+    space.C <- space.C[!discard.Angles]
+    nBins.C <- length(space.C)
+    
+    space.RT <- seq(min.RT,max.RT,0.009)
+    nBins.RT <- length(space.RT)
     
     cells <- expand.grid(space.C,space.RT)
-    start_time <- Sys.time()
-    probs <-  pCDDM(cells,drift,theta,tzero,boundary)
-    end_time <- Sys.time()
-    probs_tabloid <- matrix(probs,nrow=nC,ncol=nRT,byrow=FALSE)
-    end_time-start_time
-  # Set-up
-  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+    probs <-  numInt.tpz.cddm(cells[,1],cells[,2], par, plot=FALSE,
+                              nBins.RT = nBins.RT, nBins.C = nBins.C)
+  
     if(plot){
-      #show <- seq(1,nrow(cells),length.out = 1000)
-      #scatterplot3d(cells[show,1],cells[show,2],probs[show], pch=3,
-      #              cex.symbols = 0.3, #color = rgb(0.4), 
-      #              xlab = "", ylab = "", zlab = "")
       scatterplot3d(cells[,1],cells[,2],probs, pch=16, zlim = c(0,1),
-                    cex.symbols = 0.05, xlab = "", ylab = "", zlab = "",
+                    cex.symbols = 0.1, xlab = "", ylab = "", zlab = "",
                     xlim=range(cells[,1]), ylim=range(cells[,2]))
-      #mtext("inverse-CDF algorithm", f=2)
       mtext("Choices", side=1, line=0.5)
       mtext("RTs", side=4, line=-1, adj=0)
-      #mtext("inverse CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
     }
-  # Set-up
-  # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
     u <- runif(n,0,1)
     data <- matrix(NA, nrow=n, ncol=2)
     for(i in 1:n){
-        search.for <- u[i]
-        better.match <- min(abs(probs_tabloid-search.for))
-        found.at <- which(abs(probs_tabloid-search.for)==better.match, arr.ind = TRUE)
-        data[i,1] <- space.C[found.at[1]]
-        data[i,2] <- space.RT[found.at[2]]
+        better.match <- min(abs(probs-u[i]))
+        found.at <- sample(which(abs(probs-u[i])==better.match),1)
+        data[i,] <- as.numeric(as.vector(cells[found.at,]))
     }
     colnames(data) <- c("Choice", "RT")
 return(data)
