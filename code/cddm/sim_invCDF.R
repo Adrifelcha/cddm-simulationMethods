@@ -17,41 +17,47 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE){
     drift <- par$drift;   theta <- par$theta
     tzero <- par$tzero;   boundary <- par$boundary
     
-    test.Density <- keyDensityPoints(par,cutoff = 0.0009)
+    minDensity <- 0.0009
+    test.Density <- keyDensityPoints(par,cutoff = minDensity)
     min.RT <- test.Density$min.RT
     max.RT <- test.Density$max.RT
-    max.Density <- test.Density$max.Density
     predRT <- test.Density$pred.RT
     
-    space.C  <- seq(0,2*pi,0.02)
-    test <- cbind(space.C,rep(predRT,length(space.C)))
-    test.D <- dCDDM(test,drift,theta,tzero,boundary)
-    discard.Angles <- test.D<0.0009
-    space.C <- space.C[!discard.Angles]
+    space.C  <- seq(0,2*pi,0.01)
+    predRT.D <- cbind(space.C,rep(predRT,length(space.C)))
+    test.D <- dCDDM(predRT.D,drift,theta,tzero,boundary)
+    keep.Angles <- (minDensity < test.D)
+    space.C <- space.C[keep.Angles]
     nBins.C <- length(space.C)
     
-    space.RT <- seq(min.RT,max.RT,0.009)
+    space.RT <- seq(min.RT,max.RT,0.005)
     nBins.RT <- length(space.RT)
     
     cells <- expand.grid(space.C,space.RT)
     probs <-  numInt.tpz.cddm(cells[,1],cells[,2], par, plot=FALSE,
-                              nBins.RT = nBins.RT, nBins.C = nBins.C)
-  
-    if(plot){
-      scatterplot3d(cells[,1],cells[,2],probs, pch=16, zlim = c(0,1),
-                    cex.symbols = 0.1, xlab = "", ylab = "", zlab = "",
-                    xlim=range(cells[,1]), ylim=range(cells[,2]))
-      mtext("Choices", side=1, line=0.5)
-      mtext("RTs", side=4, line=-1, adj=0)
-    }
+                              bin.RT = space.RT, bin.C = space.C)
   
     u <- runif(n,0,1)
     data <- matrix(NA, nrow=n, ncol=2)
     for(i in 1:n){
-        better.match <- min(abs(probs-u[i]))
-        found.at <- sample(which(abs(probs-u[i])==better.match),1)
+        look.match <- abs(probs-u[i])
+        better.match <- as.character(which(look.match==min(look.match)))
+        found.at <- as.numeric(sample(better.match,1))
         data[i,] <- as.numeric(as.vector(cells[found.at,]))
     }
+    
+    if(plot){
+      par(mfrow=c(1,3),mar = c(0, 0, 0, 0)) 
+      a <- scatterplot3d(cells[,1],cells[,2],probs, pch=16, zlim = c(0,1),
+                         cex.symbols = 0.2, xlab = "", ylab = "", zlab = "",
+                         xlim=range(cells[,1]), ylim=range(cells[,2]))
+      a$points3d(data[,1], data[,2], u, col = "gray", pch=16, cex=0.5)
+      mtext("Choices", side=1, line=0.5)
+      mtext("RTs", side=4, line=-1, adj=0)
+      plot(data[,1], u)
+      plot(data[,2], u)
+    }
+    
     colnames(data) <- c("Choice", "RT")
 return(data)
 }
