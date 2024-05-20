@@ -25,7 +25,7 @@ test <- FALSE       # When calling external scripts, don't run tests
 forceAll <- FALSE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
 forceRun_Rej <- FALSE    #
-forceRun_Met <- FALSE    # 
+forceRun_Met <- TRUE    # 
 forceRun_inv <- TRUE   #
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
 # Call scripts containing auxiliary custom functions
@@ -243,7 +243,7 @@ plot.CDDM_margECDF(X.Metro, color=col.Metro(0.3))
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_invCDF.R")
-X.invCDF <- sample.invCDF.cddm(n, par)
+X.invCDF <- sample.invCDF.cddm(n, par, plot=TRUE)
 ```
 
 ```{r,  echo=FALSE}
@@ -540,7 +540,7 @@ compareTime_plot <- function(n.Samples,n.Datasets,
 }
 ```
 
-```{r, echo=FALSE, fig.height=6}
+```{r, echo=FALSE, fig.height=6,eval=FALSE}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
 test2 <- compareTime(n.Samples,n.Datasets,par)
@@ -551,7 +551,7 @@ compareTime_plot(n.Samples,n.Datasets,
                  times.invCDF = test2$times.invCDF)
 ```
 
-```{r, echo=FALSE, fig.height=6}
+```{r, echo=FALSE, fig.height=6,eval=FALSE}
 n.Datasets <- 10
 n.Samples <- 1:5
 test1 <- compareTime(n.Samples,n.Datasets,par)
@@ -578,22 +578,22 @@ n <- 5000
 
 
 ```{r echo=FALSE}
-if(forceRun_RW|!file.exists("./tmp/X2.RW_2.RData")){
+if(forceRun_RW|forceAll|!file.exists("./tmp/X2.RW_2.RData")){
       X2.RW <- sample.RW.cddm(n,par2)
       save(X2.RW, file = "./tmp/X2.RW_2.RData")
    }else{     load("./tmp/X2.RW_2.RData")          }
 
-if(forceRun_Rej|!file.exists("./tmp/X2.Reject_2.RData")){
+if(forceRun_Rej|forceAll|!file.exists("./tmp/X2.Reject_2.RData")){
       X2.Reject <- sample.Reject.cddm(n,par2,plot=FALSE)
       save(X2.Reject, file = "./tmp/X2.Reject_2.RData")
    }else{     load("./tmp/X2.Reject_2.RData")          }
 
-if(forceRun_Met|!file.exists("./tmp/X2.Metro_2.RData")){
+if(forceRun_Met|forceAll|!file.exists("./tmp/X2.Metro_2.RData")){
       X2.Metro <- sample.Metropolis.cddm(n,par2,plot=FALSE)
       save(X2.Metro, file = "./tmp/X2.Metro_2.RData")
    }else{     load("./tmp/X2.Metro_2.RData")          }
 
-if(forceRun_inv|!file.exists("./tmp/X2.invCDF_2.RData")){
+if(forceRun_inv|forceAll|!file.exists("./tmp/X2.invCDF_2.RData")){
       X2.invCDF <- sample.invCDF.cddm(n,par2,plot=FALSE)
       save(X2.invCDF, file = "./tmp/X2.invCDF_2.RData")
    }else{     load("./tmp/X2.invCDF_2.RData")          }
@@ -661,7 +661,7 @@ getDifferences(eCDFs2,tCDFs2)
 ```
 
 
-```{r, echo=FALSE, fig.height=6}
+```{r, echo=FALSE, fig.height=6, eval=FALSE}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
 test3 <- compareTime(n.Samples,n.Datasets,par2)
@@ -672,7 +672,7 @@ compareTime_plot(n.Samples,n.Datasets,
                  times.invCDF = test3$times.invCDF)
 ```
 
-```{r, echo=FALSE, fig.height=6}
+```{r, echo=FALSE, fig.height=6, eval=FALSE}
 n.Datasets <- 10
 n.Samples <- 1:5
 test4 <- compareTime(n.Samples,n.Datasets,par2)
