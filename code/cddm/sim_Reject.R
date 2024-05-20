@@ -22,10 +22,9 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
   max.Density <- test.Density$max.Density*1.1
   base.C <- c(0, 2*pi)
   base.RT <- c(min.RT, max.RT)
-
+  
   if(plot){
-    nSupp <- 100
-    nLines <- 30
+    nSupp <- 100; nLines <- 30
     support.C <- seq(base.C[1],base.C[2],length.out=nSupp)
     support.RT1 <- seq(base.RT[1],base.RT[2],length.out=nSupp)
     support.RT2 <- rev(support.RT1)
