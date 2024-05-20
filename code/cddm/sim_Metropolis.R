@@ -50,13 +50,12 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
           a$points3d(x.theta, y.RT, theta.Dens, col = baseColor, type="l")
   }
   
-  #baseColor <- rgb(0.75,0.75,0.75,0.3)
-  baseColor <- rgb(0.75,0.75,0.75,1)
+  baseColor <- rgb(0.75,0.75,0.75,0.3)
   M <- 500
   ARate_des <- 0.25
   ARate_obs <- ARate_des
   Mu <- c(predChoice, predRT)
-  Sigma <- diag(c((2*pi)^2,10))
+  Sigma <- diag(c((2*pi)^2,50))
   warm_up <- TRUE
   
   while(warm_up){
@@ -78,11 +77,12 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
       test.cand <- c(NA,NA)
       while(valid.candidates<M){
         cand <- rmvnorm(M,Mu,Sigma)
-        valid.RT <- which(cand[,2] > tzero)
+        valid.RT <- which(cand[,2] > min.RT)
         valid.candidates <- valid.candidates + length(valid.RT)
         test.cand <- rbind(test.cand, cand[valid.RT,])
       }
       cand <- test.cand[2:(M+1),]
+      cand[,1] <- cand[,1] %% (2*pi)
       ratio.num <- dCDDM(cand,drift, theta, tzero, boundary)
       ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
       ratio <- ratio.num/ratio.den
@@ -98,12 +98,12 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
         test.cand <- c(NA,NA)
         while(valid.candidates<n){
               cand <- rmvnorm(n,Mu,Sigma)
-              valid.RT <- which(cand[,2] > tzero)
+              valid.RT <- which(cand[,2] > min.RT)
               valid.candidates <- valid.candidates + length(valid.RT)
               test.cand <- rbind(test.cand, cand[valid.RT,])
         }
         cand <- matrix(test.cand[2:(n+1),], ncol=2, byrow = FALSE)
-        cand[,1] <- cand[,1] %% 2*pi
+        cand[,1] <- cand[,1] %% (2*pi)
         
         # ratio.num <- dCDDM(cand,drift, theta, tzero, boundary)
         # ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
