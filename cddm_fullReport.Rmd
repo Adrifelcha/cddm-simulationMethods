@@ -22,15 +22,17 @@ library(rmdformats)
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
+forceAll <- FALSE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
-forceRun_Rej <- TRUE    #
-forceRun_Met <- TRUE    # 
+forceRun_Rej <- FALSE    #
+forceRun_Met <- FALSE    # 
 forceRun_inv <- TRUE   #
-forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv
+forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 source("./code/general_functions/eCDF.R") # Needed for computing empirical CDF
+source("./code/cddm/sim_auxiliarFunctions.R")
 source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
 source("./code/cddm/sim_Reject.R")     # Needed for Algorithm 2
 source("./code/cddm/sim_Metropolis.R") # Needed for Algorithm 3
@@ -122,7 +124,7 @@ X.RW <- sample.RW.cddm(n,par)
 ```{r,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_RW|!file.exists("./tmp/X.RW.RData")){
+if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
       start_time <- Sys.time()
       X.RW <- sample.RW.cddm(n,par)
       end_time <- Sys.time()
@@ -162,7 +164,7 @@ X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_Rej|!file.exists("./tmp/X.Reject.RData")){
+if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject.RData")){
       start_time <- Sys.time()
       X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
       end_time <- Sys.time()
@@ -205,7 +207,7 @@ X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Metropolis sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_Met|!file.exists("./tmp/X.Metro.RData")){
+if(forceRun_Met|forceAll|!file.exists("./tmp/X.Metro.RData")){
       start_time <- Sys.time()
       X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
       end_time <- Sys.time()
@@ -247,7 +249,7 @@ X.invCDF <- sample.invCDF.cddm(n, par)
 ```{r,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_inv|!file.exists("./tmp/X.invCDF.RData")){
+if(forceRun_inv|forceAll|!file.exists("./tmp/X.invCDF.RData")){
       start_time <- Sys.time()
       X.invCDF <- sample.invCDF.cddm(n, par, plot=TRUE)
       end_time <- Sys.time()
@@ -329,49 +331,27 @@ mtext("Empirically derived CDFs", outer=TRUE, line=-2, f=2, cex=1.2)
 ```{r, echo=FALSE}
 # The two r-chunks below are actually just for display. This is where the CDFs are actually
 # approximated from previously-saved output files, as indicated in the opening chunk.
-if(forceRun|!file.exists("./tmp/Reject.tCDF.RData")){
       start_time <- Sys.time()
       RW.tCDF <- pCDDM(X.RW$bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
       RW_tCDF.time <- round(end_time-start_time,4)
-      save(RW.tCDF, file = "./tmp/RW.tCDF.RData")
-      save(RW_tCDF.time, file = "./tmp/RW_tCDF.time.RData")
       
       start_time <- Sys.time()
       Reject.tCDF <- pCDDM(X.Reject, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
       Rejection_tCDF.time <- round(end_time-start_time,4)
-      save(Reject.tCDF, file = "./tmp/Reject.tCDF.RData")
-      save(Rejection_tCDF.time, file = "./tmp/Rejection_tCDF.time.RData")
       
       start_time <- Sys.time()
       Metro.tCDF <- pCDDM(X.Metro, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
       Metro_tCDF.time <- round(end_time-start_time,4)
-      save(Metro.tCDF, file = "./tmp/Metro.tCDF.RData")
-      save(Metro_tCDF.time, file = "./tmp/Metro_tCDF.time.RData")
-      
       
       start_time <- Sys.time()
       invCDF.tCDF <- pCDDM(X.invCDF, par$drift, par$theta, par$tzero, par$boundary)
       end_time <- Sys.time()
       invCDF_tCDF.time <- round(end_time-start_time,4)
-      save(invCDF.tCDF, file = "./tmp/invCDF.tCDF.RData")
-      save(invCDF_tCDF.time, file = "./tmp/invCDF_tCDF.time.RData")
-}else{
-     # Load already existing output
-      load("./tmp/RW.tCDF.RData")
-      load("./tmp/RW_tCDF.time.RData")
-      load("./tmp/Reject.tCDF.RData")
-      load("./tmp/Rejection_tCDF.time.RData")
-      load("./tmp/Metro.tCDF.RData")
-      load("./tmp/Metro_tCDF.time.RData")
-      load("./tmp/invCDF.tCDF.RData")
-      load("./tmp/invCDF_tCDF.time.RData")
-}
-
+      
 times <- c(RW_tCDF.time,Rejection_tCDF.time,Metro_tCDF.time,invCDF_tCDF.time)
-
 min_tCDF_time <- min(times)
 max_tCDF_time <- max(times)
 ```
@@ -511,7 +491,7 @@ return(list("times.RW" = times.RW,
 
 ```{r, echo=FALSE}
 compareTime_plot <- function(n.Samples,n.Datasets,
-                             times.RW, times.Reject, times.Metro,times.invCDF){
+                             times.RW, times.Reject, times.Metro, times.invCDF){
     M <- n.Datasets; N <- n.Samples
     par(mar=c(4,4,0,1))
     x <- rep(N, each=M)
@@ -567,7 +547,8 @@ test2 <- compareTime(n.Samples,n.Datasets,par)
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test2$times.RW,
                  times.Reject = test2$times.Reject,
-                 times.Metro = test2$times.Metro)
+                 times.Metro = test2$times.Metro,
+                 times.invCDF = test2$times.invCDF)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
@@ -577,7 +558,8 @@ test1 <- compareTime(n.Samples,n.Datasets,par)
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test1$times.RW,
                  times.Reject = test1$times.Reject,
-                 times.Metro = test1$times.Metro)
+                 times.Metro = test1$times.Metro,
+                 times.invCDF = test1$times.invCDF)
 ```
 
 
@@ -590,7 +572,7 @@ Let's briefly explore the results we get when we try a second set of parameter v
 par2 <- list("drift" = 1,   
             "theta" = pi,
             "tzero" = 0.1,
-            "boundary" = 7)
+            "boundary" = 4)
 n <- 5000
 ```
 
@@ -686,7 +668,8 @@ test3 <- compareTime(n.Samples,n.Datasets,par2)
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test3$times.RW,
                  times.Reject = test3$times.Reject,
-                 times.Metro = test3$times.Metro)
+                 times.Metro = test3$times.Metro,
+                 times.invCDF = test3$times.invCDF)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
@@ -696,7 +679,8 @@ test4 <- compareTime(n.Samples,n.Datasets,par2)
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test4$times.RW,
                  times.Reject = test4$times.Reject,
-                 times.Metro = test4$times.Metro)
+                 times.Metro = test4$times.Metro,
+                 times.invCDF = test4$times.invCDF)
 ```
 
 
