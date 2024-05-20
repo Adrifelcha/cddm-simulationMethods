@@ -10,14 +10,14 @@ library(mvtnorm)
 
 
 ### Use CDDM density function to find key values
-keyDensityPoints <- function(par){
+keyDensityPoints <- function(par, cutoff = 0.00009){
   drift <- par$drift;   theta <- par$theta
   tzero <- par$tzero;   boundary <- par$boundary
   
   ### Determine a reasonable minimum RT testing the density at theta
   density <- 0
   min.RT <- tzero+0.1
-  while(density < 0.00009){
+  while(density < cutoff){
     density <- dCDDM(c(theta,min.RT),drift,theta,tzero,boundary)
     min.RT <- min.RT+0.01
   }
@@ -33,7 +33,7 @@ keyDensityPoints <- function(par){
   max.Density <- density
   ### Determine a reasonable maximum RT testing the density at theta
   max.RT <- pred.RT
-  while(density > 0.00009){
+  while(density > cutoff){
     density <- dCDDM(c(theta,max.RT),drift,theta,tzero,boundary)
     max.RT <- max.RT+0.01
   }
