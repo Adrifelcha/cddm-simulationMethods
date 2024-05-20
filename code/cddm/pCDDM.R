@@ -13,7 +13,6 @@ library("plot3D")
 embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
                           rt, tzero, theta, drift, boundary,density_matrix, 
                           rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7)){
-   par(pty="s")          
    par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
    # Plot 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
    # Base plot: Sketch the bivariate density curve
@@ -70,7 +69,7 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
 # Base function: We write a 2D Trapezoid N.I. algorithm
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
-                            nBins.RT = NA, nBins.C = NA){
+                            bin.RT = NA, bin.C = NA){
     # ~~ Set up ~~ #
     ################
     # Load up CDDM parameters
@@ -83,20 +82,20 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
     # Since 2pi = 0pi, we use 2*pi for simplicity ****
     if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
     # Define the bins' cut points across the Choice dimension
-    if(is.na(nBins.C)){
+    if(sum(is.na(bin.C))>0){
           kappa.C <- 315
           bin.C <- seq(0,max(rad),length.out=kappa.C)
     }else{
-          kappa.C <- nBins.C
-          bin.C <- seq(0,max(rad),length.out=kappa.C)
+          kappa.C <- length(bin.C)
     }
     # Define the bins' cut points across the RT dimension
-    if(is.na(nBins.RT)){
-          bin.RT <- seq(tzero,max(rt),0.01)
+    test.Density <- keyDensityPoints(par)
+    min.RT <- test.Density$min.RT
+    if(sum(is.na(bin.RT))>0){
+          bin.RT <- seq(min.RT,max(rt),0.01)
           kappa.RT <- length(bin.RT)
     }else{
-          kappa.RT <- nBins.RT
-          bin.RT <- seq(tzero,max(rt),length.out=kappa.RT)
+          kappa.RT <- length(bin.RT)
     }
 
     # ~~ Base area of any bin ~~ #
