@@ -64,9 +64,64 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
          mtext("Approximate CDF: Area under curve", f=2)
          mtext("Choices", side=1, line=0.5)
          mtext("RTs", side=4, line=-1, adj=0)
- }
+}
 
-# Base function: We write a 2D Trapezoid N.I. algorithm
+
+# Base function, compute the volume for each bin
+binVolumes <- function(bin.C, bin.RT, kappa.C, kappa.RT, 
+                       drift, theta, tzero, boundary){
+      ##############################
+      # All bins have the same length on both direction
+      sidesLength.C <- bin.C[2]-bin.C[1]
+      sidesLength.RT <- bin.RT[2]-bin.RT[1]
+      # Compute the base area of all bins
+      binBase.area <- sidesLength.C*sidesLength.RT
+      
+      # ~~ Compute the density at every vertex ~~ #
+      #############################################
+      # Part 1: Start empty storing objects
+      density_matrix <- matrix(NA, nrow=kappa.C, ncol=kappa.RT)
+      # Part 2: Compute densities
+      for(c in 1:kappa.C){ for(t in 1:kappa.RT){
+        vertex <- c(bin.C[c],bin.RT[t])
+        v.density <- dCDDM(vertex,drift,theta,tzero,boundary)
+        density_matrix[c,t] <- v.density
+      }}
+      # Part 3: Densities computed from RT close to tzero are problematic 
+      #         we locate them and remove them
+      problem <- which(density_matrix < 0, arr.ind = T)
+      if(length(problem)!=0){
+        bad.RT <- as.numeric(unique(problem[,2]))
+        density_matrix <- density_matrix[,-bad.RT]
+        bin.RT <- bin.RT[-bad.RT]
+      }
+      kappa.RT <- ncol(density_matrix)
+      
+      # ~~ Compute the height of each bin ~~ #
+      ########################################
+      # Part 1: Empty objects for storage
+      sumHeight_per_bin <- matrix(NA, nrow=kappa.C-1, ncol=kappa.RT-1)
+      thisC <- 1
+      # Part 2: Fill height_per_bin matrix
+      for(b.c in 2:kappa.C){  # Move along radian dimension
+        thisRT <- 1
+        for(b.rt in 2:kappa.RT){  # Move along rt dimension
+          sumHeight_per_bin[thisC,thisRT] <- sum(c(density_matrix[b.c,b.rt],
+                                                   density_matrix[b.c-1,b.rt],
+                                                   density_matrix[b.c,b.rt-1],
+                                                   density_matrix[b.c-1,b.rt-1]))
+          thisRT <- thisRT + 1
+        }
+        thisC <- thisC +1
+      }
+      # ~~ Compute the volume of each bin ~~ #
+      ########################################
+      volume_per_bin <- sumHeight_per_bin*binBase.area*0.25
+return(volume_per_bin)
+}
+
+
+# Main function: We write a 2D Trapezoid N.I. algorithm
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
                             bin.RT = NA, bin.C = NA){
@@ -89,63 +144,17 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
           kappa.C <- length(bin.C)
     }
     # Define the bins' cut points across the RT dimension
-    test.Density <- keyDensityPoints(par)
-    min.RT <- test.Density$min.RT
     if(sum(is.na(bin.RT))>0){
+          test.Density <- keyDensityPoints(par)
+          min.RT <- test.Density$min.RT
           bin.RT <- seq(min.RT,max(rt),0.01)
           kappa.RT <- length(bin.RT)
     }else{
           kappa.RT <- length(bin.RT)
     }
 
-    # ~~ Base area of any bin ~~ #
-    ##############################
-    # All bins have the same length on both direction
-    sidesLength.C <- bin.C[2]-bin.C[1]
-    sidesLength.RT <- bin.RT[2]-bin.RT[1]
-    # Compute the base area of all bins
-    binBase.area <- sidesLength.C*sidesLength.RT
-    
-    # ~~ Compute the density at every vertex ~~ #
-    #############################################
-    # Part 1: Start empty storing objects
-    density_matrix <- matrix(NA, nrow=kappa.C, ncol=kappa.RT)
-    # Part 2: Compute densities
-    for(c in 1:kappa.C){ for(t in 1:kappa.RT){
-            vertex <- c(bin.C[c],bin.RT[t])
-            v.density <- dCDDM(vertex,drift,theta,tzero,boundary)
-            density_matrix[c,t] <- v.density
-    }}
-    # Part 3: Densities computed from RT close to tzero are problematic 
-    #         we locate them and remove them
-    problem <- which(density_matrix < 0, arr.ind = T)
-    if(length(problem)!=0){
-       bad.RT <- as.numeric(unique(problem[,2]))
-       density_matrix <- density_matrix[,-bad.RT]
-       bin.RT <- bin.RT[-bad.RT]
-    }
-    kappa.RT <- ncol(density_matrix)
-
-    # ~~ Compute the height of each bin ~~ #
-    ########################################
-    # Part 1: Empty objects for storage
-    sumHeight_per_bin <- matrix(NA, nrow=kappa.C-1, ncol=kappa.RT-1)
-    thisC <- 1
-    # Part 2: Fill height_per_bin matrix
-    for(b.c in 2:kappa.C){  # Move along radian dimension
-        thisRT <- 1
-        for(b.rt in 2:kappa.RT){  # Move along rt dimension
-            sumHeight_per_bin[thisC,thisRT] <- sum(c(density_matrix[b.c,b.rt],
-                                                     density_matrix[b.c-1,b.rt],
-                                                     density_matrix[b.c,b.rt-1],
-                                                     density_matrix[b.c-1,b.rt-1]))
-            thisRT <- thisRT + 1
-        }
-        thisC <- thisC +1
-    }
-    # ~~ Compute the volume of each bin ~~ #
-    ########################################
-    volume_per_bin <- sumHeight_per_bin*binBase.area*0.25
+    volume_per_bin <- binVolumes(bin.C, bin.RT, kappa.C, kappa.RT, 
+                                 drift, theta, tzero, boundary)
     
     # ~~ Compute the volume under each data point ~~ #
     ##################################################
