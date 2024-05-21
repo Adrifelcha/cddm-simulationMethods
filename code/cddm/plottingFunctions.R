@@ -248,6 +248,20 @@ plot.CDDM_margECDF <- function(bivariate.data, color){
       mtext("Response Times - eCDF", 3, f=2)
 }
 
+myRThistogram <- function(rt.vector, color=NA, maxY=NA){
+    if(!is.function(color)){
+          color <- function(opacity){   rgb(0.2,0.6,0.9,opacity)    }
+    }
+    if(is.na(maxY)){
+           maxY <- max(density(rt.vector)$y)
+    }
+    par(pty="m", mar = c(3, 3, 3, 0)) 
+    hist(rt.vector, main = "Response Times", col = color(0.3), freq = FALSE, axes=F,
+         ylim = c(0,maxY))
+    lines(density(rt.vector), col = color(1), lwd=3)
+    x.axis <- round(seq(min(rt.vector),max(rt.vector),length.out=10),1)
+}
+
 # Test function
 if(!exists("test")){    test <- TRUE                           }
 if(test){
