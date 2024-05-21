@@ -10,7 +10,7 @@ if(!superCalled){
       source("./sim_auxiliarFunctions.R")}
 library(scatterplot3d) 
 
-sample.invCDF.cddm <- function(n, par, plot=FALSE){
+sample.invCDF.cddm <- function(n, par, plot=FALSE, color = NA){
   # Set-up - Load important values and define important variables
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # Load parameter values
@@ -42,6 +42,16 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE){
     cells <- expand.grid(bin_at.C,bin_at.RT)
     grid <- cbind(cells,c(probs),cumsum(c(probs)))
   
+    if(plot){     
+      if(!is.function(color)){ color <- function(alpha){rgb(0,204/255,0,alpha)} }
+      par(pty="m") 
+      plot(grid[,4], ann=F, axes=F)
+      axis(2, seq(0,1,0.1), seq(0,1,0.1), las=2)
+      mtext("RT x Choice pairings",1,line=2, f=2)
+      axis(1,c(1,nrow(grid)),c("min RT", "max RT"),line=-1)
+      axis(1,c(1,nrow(grid)),c(min.RT, max.RT), line=0, tick = FALSE)
+    }
+    
     u <- runif(n,0,1)
     data <- matrix(NA, nrow=n, ncol=2)
     for(i in 1:n){
@@ -49,11 +59,13 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE){
         better.match <- as.character(which(look.match==min(look.match)))
         found.at <- as.numeric(sample(better.match,1))
         data[i,] <- as.numeric(as.vector(grid[found.at,c(1,2)]))
+        if(plot){
+           lines(c(1,found.at),c(u[i],u[i]), col=color(0.1), lwd=0.1)
+           lines(c(found.at,found.at),c(0,u[i]), col = color(0.1), lwd=0.5)
+           points(found.at,u[i],col=color(1), cex=0.5, pch=16)
+        }
     }
     colnames(data) <- c("Choice", "RT")
-    
-    if(plot){     }
-
 return(data)
 }
 
