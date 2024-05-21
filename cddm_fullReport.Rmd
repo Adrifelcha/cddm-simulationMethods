@@ -22,7 +22,7 @@ library(rmdformats)
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
-forceAll <- FALSE
+forceAll <- TRUE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
 forceRun_Rej <- FALSE    #
 forceRun_Met <- TRUE    # 
@@ -67,7 +67,7 @@ The circular drift-diffusion model (CDDM) is a stochastic sequential sampling mo
 
 The CDDM considers four parameters, most of which are illustrated in Fig 1. The parameter not shown is the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
-```{r, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
+```{r fig-1, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
 # Arbitrary set of parameter values
 drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
 par <- list("drift" = drift, "theta" = theta,
@@ -80,7 +80,7 @@ data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
 
 ## dCDDM(*) - CDDM density function
 
-```{r}
+```{r intro_dCDDM}
 source("./code/cddm/dCDDM.R")
 
 choice <- 5; rt <- 1
@@ -89,7 +89,7 @@ dCDDM(c(choice,rt),drift,theta,tzero,boundary)
 
 ## pCDDM(*) - CDDM cumulate density function
 
-```{r}
+```{r intro_pCDDM}
 source("./code/cddm/pCDDM.R")
 
 x <- pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
@@ -97,7 +97,7 @@ x <- pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
 
 ## Illustrative parameter set
 
-```{r set-up, echo=FALSE}
+```{r par_values, echo=FALSE}
 # Arbitrary set of parameter values
 par <- list("drift" = 3.5, 
             "theta" = pi,
@@ -108,7 +108,7 @@ n <- 5000 # No. samples
 
 In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` `r n` bivariate observations using the arbitrary set of parameter values shown below:
 
-```{r set-up, eval=FALSE}
+```{r par_values, eval=FALSE}
 ```
 
 
@@ -121,7 +121,7 @@ source("./code/cddm/sim_randomWalk.R")
 X.RW <- sample.RW.cddm(n,par)
 ```
 
-```{r,  echo=FALSE}
+```{r run_RW,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
@@ -137,14 +137,13 @@ if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
 }
 ```
 
-```{r, fig.height=5}
+```{r plot_RWchoices, fig.height=5}
 plot.CDDM_choiceData(X.RW, par, choice.col.RGB = rgb.RW)
 ```
 
 
 ```{r, fig.height=5}
-par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.RW$bivariate.data[,2], main = "Response Times", col = col.RW(0.7))
+myRThistogram(X.RW$bivariate.data[,2], color=col.RW)
 ```
 
 ```{r, fig.height=6}
@@ -185,9 +184,10 @@ plot.CDDM_choiceData(X.Reject, par, choice.col.RGB = rgb.Reject)
 ```
 
 ```{r, fig.height=5}
-par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.Reject[,2], main = "Response Times", col=col.Reject(0.7))
+myRThistogram(X.Reject[,2], color=col.Reject)
+lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
 ```
+
 
 ```{r, fig.height=6}
 plot.CDDM_margECDF(X.Reject, color=col.Reject(0.3))
@@ -229,8 +229,9 @@ plot.CDDM_choiceData(X.Metro, par, choice.col.RGB = rgb.Metro)
 ```
 
 ```{r, fig.height=5}
-par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.Metro[,2], main = "Response Times", col=col.Metro(0.7))
+myRThistogram(X.Metro[,2], color=col.Metro, maxY = 2.4)
+lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
+lines(density(X.Reject[,2]), col = col.Reject(1), lwd=3)
 ```
 
 ```{r, fig.height=6}
@@ -266,10 +267,11 @@ if(forceRun_inv|forceAll|!file.exists("./tmp/X.invCDF.RData")){
 plot.CDDM_choiceData(X.invCDF, par, choice.col.RGB = rgb.invCDF)
 ```
 
-
 ```{r, fig.height=5}
-par(pty="m", mar = c(3, 3, 3, 0)) 
-hist(X.invCDF[,2], main = "Response Times", col = col.invCDF(0.7))
+myRThistogram(X.invCDF[,2], color=col.invCDF, maxY = 2.4)
+lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
+lines(density(X.Reject[,2]), col = col.Reject(1), lwd=3)
+lines(density(X.Metro[,2]), col = col.Metro(1), lwd=3)
 ```
 
 ```{r, fig.height=6}
