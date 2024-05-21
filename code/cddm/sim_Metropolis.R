@@ -73,17 +73,9 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
               }
             }
       u <- runif(M,0,1)
-      valid.candidates <- 0
-      test.cand <- c(NA,NA)
-      while(valid.candidates<M){
-        cand <- rmvnorm(M,Mu,Sigma)
-        valid.RT <- which(cand[,2] > min.RT)
-        valid.candidates <- valid.candidates + length(valid.RT)
-        test.cand <- rbind(test.cand, cand[valid.RT,])
-      }
-      cand <- test.cand[2:(M+1),]
-      cand[,1] <- cand[,1] %% (2*pi)
+      cand <- rmvnorm(M,Mu,Sigma)
       ratio.num <- dCDDM(cand,drift, theta, tzero, boundary)
+      ratio.num[which(is.na(ratio.num))] <- 0
       ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
       ratio <- ratio.num/ratio.den
       change <- ratio>u
@@ -95,15 +87,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   samples <- matrix(NA, nrow=1, ncol=2)
   while(n.keep < n){
         valid.candidates <- 0
-        test.cand <- c(NA,NA)
-        while(valid.candidates<n){
-              cand <- rmvnorm(n,Mu,Sigma)
-              valid.RT <- which(cand[,2] > min.RT)
-              valid.candidates <- valid.candidates + length(valid.RT)
-              test.cand <- rbind(test.cand, cand[valid.RT,])
-        }
-        cand <- matrix(test.cand[2:(n+1),], ncol=2, byrow = FALSE)
-        cand[,1] <- cand[,1] %% (2*pi)
+        cand <- rmvnorm(n,Mu,Sigma)
         
         # ratio.num <- dCDDM(cand,drift, theta, tzero, boundary)
         # ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
@@ -118,6 +102,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
         # }
         
         eval <- dCDDM(cand,drift,theta,tzero,boundary)
+        eval[which(is.na(eval))] <- 0
         max.Density <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
         rej.crit <- runif(n,0,max.Density)  
         keep <- (eval >= rej.crit)
