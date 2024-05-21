@@ -38,9 +38,7 @@ plot.CDDM_choiceData <- function(data,par=NA,choice.col.RGB = c(0.65,0.5,0.15)){
     
     # Formatting and plot settings
     cex.text <- 1
-    par(pty="s",             # Square canvas
-        mfrow=c(1,1),        # A single plot
-        mar = c(0, 0, 0, 0)) # outer margins
+    par(pty="s") 
     pm <- boundary + 0.2     # Set x/y lims
     pi.at <- boundary + 0.3  # Set position of pi indicators 
     
@@ -54,12 +52,6 @@ plot.CDDM_choiceData <- function(data,par=NA,choice.col.RGB = c(0.65,0.5,0.15)){
     # Emphasize X and Y coordinates
     abline(h = 0, lty=4, col="gray60")  # X axis
     abline(v = 0, lty=4, col="gray60")  # Y axis
-    # Add "pi" markers
-    text(pi.at,0.15,"0", cex=cex.text, f=1, col="black")                # Pi markers
-    text(pi.at,-0.15,expression(2*pi), cex=cex.text+0.1, f=1, col="black")
-    text(-pi.at,0.15,expression(pi), cex=cex.text+0.1, f=1, col="black")
-    text(-0.25,pi.at,expression(pi/2), cex=cex.text+0.1, f=1, col="black")
-    text(-0.27,-pi.at,expression(3*pi/2), cex=cex.text+0.1, f=1, col="black")
     # Mark response observed
     z <- 40
     rgbCol = as.numeric(choice.col.RGB)
