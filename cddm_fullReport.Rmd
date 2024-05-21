@@ -301,26 +301,31 @@ invCDF.eCDF <- myECDF(X.invCDF)
 ```{r, echo=FALSE, fig.height=12}
 # Plot the eCDFs obtained so far
 par(pty="s", mfrow=c(2,2),mar = c(0, 0, 0, 0)) 
+x.lim <- c(0,2*pi)
 scatterplot3d(X.RW$bivariate.data[,1], X.RW$bivariate.data[,2],
               RW.eCDF,  pch=16, cex.symbols = 0.4, color = col.RW(0.4),
+              xlim = x.lim,
               xlab = "", ylab = "", zlab = "")
 mtext("Random Walk algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.Reject[,1],X.Reject[,2],Reject.eCDF, pch=16,
               cex.symbols = 0.4, color = col.Reject(0.4), 
+              xlim = x.lim, 
               xlab = "", ylab = "", zlab = "")
 mtext("Rejection sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.Metro[,1],X.Metro[,2],Metro.eCDF, pch=16,
               cex.symbols = 0.4, color = col.Metro(0.4), 
+              xlim = x.lim, 
               xlab = "", ylab = "", zlab = "")
 mtext("Metropolis sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
 mtext("RTs", side=4, line=-1, adj=0)
 scatterplot3d(X.invCDF[,1],X.invCDF[,2],invCDF.eCDF, pch=16,
               cex.symbols = 0.4, color = col.invCDF(0.4), 
+              xlim = x.lim, 
               xlab = "", ylab = "", zlab = "")
 mtext("inverse-CDF tabloid sampling algorithm", f=2)
 mtext("Choices", side=1, line=0.5)
