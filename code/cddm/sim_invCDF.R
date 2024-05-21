@@ -33,32 +33,27 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE){
     space.RT <- seq(min.RT,max.RT,0.005)
     nBins.RT <- length(space.RT)
     
-    cells <- expand.grid(space.C,space.RT)
-    probs <-  numInt.tpz.cddm(cells[,1],cells[,2], par, plot=FALSE,
-                              bin.RT = space.RT, bin.C = space.C)
+    Histogram3D <-  binsVolume_3Dhist(space.C, space.RT,
+                                      drift, theta, tzero, boundary)
+    probs <- Histogram3D$volume_per_bin
+
+    bin_at.C  <- space.C[-length(space.C)] + diff(space.C)/2
+    bin_at.RT <- space.RT[-length(space.RT)] + diff(space.RT)/2
+    cells <- expand.grid(bin_at.C,bin_at.RT)
+    grid <- cbind(cells,c(probs),cumsum(c(probs)))
   
     u <- runif(n,0,1)
     data <- matrix(NA, nrow=n, ncol=2)
     for(i in 1:n){
-        look.match <- abs(probs-u[i])
+        look.match <- abs(grid[,4]-u[i])
         better.match <- as.character(which(look.match==min(look.match)))
         found.at <- as.numeric(sample(better.match,1))
-        data[i,] <- as.numeric(as.vector(cells[found.at,]))
+        data[i,] <- as.numeric(as.vector(grid[found.at,c(1,2)]))
     }
-    
-    if(plot){
-      par(mfrow=c(1,3),mar = c(0, 0, 0, 0)) 
-      a <- scatterplot3d(cells[,1],cells[,2],probs, pch=16, zlim = c(0,1),
-                         cex.symbols = 0.2, xlab = "", ylab = "", zlab = "",
-                         xlim=range(cells[,1]), ylim=range(cells[,2]))
-      a$points3d(data[,1], data[,2], u, col = "gray", pch=16, cex=0.5)
-      mtext("Choices", side=1, line=0.5)
-      mtext("RTs", side=4, line=-1, adj=0)
-      plot(data[,1], u)
-      plot(data[,2], u)
-    }
-    
     colnames(data) <- c("Choice", "RT")
+    
+    if(plot){     }
+
 return(data)
 }
 
