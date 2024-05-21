@@ -68,22 +68,24 @@ embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
 
 
 # Base function, compute the volume for each bin
-binVolumes <- function(bin.C, bin.RT, kappa.C, kappa.RT, 
+binsVolume_3Dhist <- function(space.C, space.RT,
                        drift, theta, tzero, boundary){
+      n.C  <- length(space.C)
+      n.RT <- length(space.RT)
       ##############################
       # All bins have the same length on both direction
-      sidesLength.C <- bin.C[2]-bin.C[1]
-      sidesLength.RT <- bin.RT[2]-bin.RT[1]
+      sidesLength.C <- space.C[2]-space.C[1]
+      sidesLength.RT <- space.RT[2]-space.RT[1]
       # Compute the base area of all bins
       binBase.area <- sidesLength.C*sidesLength.RT
       
       # ~~ Compute the density at every vertex ~~ #
       #############################################
       # Part 1: Start empty storing objects
-      density_matrix <- matrix(NA, nrow=kappa.C, ncol=kappa.RT)
+      density_matrix <- matrix(NA, nrow=n.C, ncol=n.RT)
       # Part 2: Compute densities
-      for(c in 1:kappa.C){ for(t in 1:kappa.RT){
-        vertex <- c(bin.C[c],bin.RT[t])
+      for(c in 1:n.C){ for(t in 1:n.RT){
+        vertex <- c(space.C[c],space.RT[t])
         v.density <- dCDDM(vertex,drift,theta,tzero,boundary)
         density_matrix[c,t] <- v.density
       }}
@@ -93,19 +95,19 @@ binVolumes <- function(bin.C, bin.RT, kappa.C, kappa.RT,
       if(length(problem)!=0){
         bad.RT <- as.numeric(unique(problem[,2]))
         density_matrix <- density_matrix[,-bad.RT]
-        bin.RT <- bin.RT[-bad.RT]
+        space.RT <- space.RT[-bad.RT]
       }
-      kappa.RT <- ncol(density_matrix)
+      n.RT <- ncol(density_matrix)
       
       # ~~ Compute the height of each bin ~~ #
       ########################################
       # Part 1: Empty objects for storage
-      sumHeight_per_bin <- matrix(NA, nrow=kappa.C-1, ncol=kappa.RT-1)
+      sumHeight_per_bin <- matrix(NA, nrow=n.C-1, ncol=n.RT-1)
       thisC <- 1
       # Part 2: Fill height_per_bin matrix
-      for(b.c in 2:kappa.C){  # Move along radian dimension
+      for(b.c in 2:n.C){  # Move along radian dimension
         thisRT <- 1
-        for(b.rt in 2:kappa.RT){  # Move along rt dimension
+        for(b.rt in 2:n.RT){  # Move along rt dimension
           sumHeight_per_bin[thisC,thisRT] <- sum(c(density_matrix[b.c,b.rt],
                                                    density_matrix[b.c-1,b.rt],
                                                    density_matrix[b.c,b.rt-1],
@@ -117,7 +119,8 @@ binVolumes <- function(bin.C, bin.RT, kappa.C, kappa.RT,
       # ~~ Compute the volume of each bin ~~ #
       ########################################
       volume_per_bin <- sumHeight_per_bin*binBase.area*0.25
-return(volume_per_bin)
+return(list("volume_per_bin" = volume_per_bin,
+            "density_matrix" = density_matrix))
 }
 
 
@@ -149,12 +152,18 @@ numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
           min.RT <- test.Density$min.RT
           bin.RT <- seq(min.RT,max(rt),0.01)
           kappa.RT <- length(bin.RT)
+          if(kappa.RT<300){ 
+            bin.RT <- seq(min.RT,max(rt),0.005)
+            kappa.RT <- length(bin.RT)
+          }
     }else{
           kappa.RT <- length(bin.RT)
     }
 
-    volume_per_bin <- binVolumes(bin.C, bin.RT, kappa.C, kappa.RT, 
-                                 drift, theta, tzero, boundary)
+    Histogram3D <- binsVolume_3Dhist(bin.C, bin.RT,
+                                     drift, theta, tzero, boundary)
+    volume_per_bin <- Histogram3D$volume_per_bin
+    density_matrix <- Histogram3D$density_matrix
     
     # ~~ Compute the volume under each data point ~~ #
     ##################################################
