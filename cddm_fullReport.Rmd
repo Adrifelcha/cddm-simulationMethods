@@ -22,7 +22,7 @@ library(rmdformats)
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
-forceAll <- FALSE
+forceAll <- TRUE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
 forceRun_Rej <- FALSE    #
 forceRun_Met <- TRUE    # 
@@ -148,6 +148,8 @@ if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
 ```{r plot_RWchoices, fig.height=5}
 par(pty="s", mar = c(0, 0, 0, 0)) 
 plot.CDDM_choiceData(X.RW, par, choice.col.RGB = rgb.RW)
+text(0,0.5,"Choices",cex=1.2, f=2, col="gray40")
+text(0,-0.5,"observed",cex=1.2, f=2, col="gray40")
 ```
 
 
@@ -174,11 +176,12 @@ X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject.RData")){
       start_time <- Sys.time()
-      X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
+      X.Reject <- sample.Reject.cddm(n,par,plot=FALSE)
       end_time <- Sys.time()
       Reject.time <- round(end_time-start_time, 4)
       save(X.Reject, file = "./tmp/X.Reject.RData")
       save(Reject.time, file = "./tmp/Reject.time.RData")
+      z <- sample.Reject.cddm(n,par,plot=TRUE)
 }else{
      # Load already existing output
      load("./tmp/X.Reject.RData")
@@ -219,11 +222,12 @@ X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Met|forceAll|!file.exists("./tmp/X.Metro.RData")){
       start_time <- Sys.time()
-      X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
+      X.Metro <- sample.Metropolis.cddm(n,par,plot=FALSE)
       end_time <- Sys.time()
       Metro.time <- round(end_time-start_time, 4)
       save(X.Metro, file = "./tmp/X.Metro.RData")
       save(Metro.time, file = "./tmp/Metro.time.RData")
+      z <- sample.Metropolis.cddm(n,par,plot=TRUE)
 }else{
      # Load already existing output
      load("./tmp/X.Metro.RData")
