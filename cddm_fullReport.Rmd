@@ -25,7 +25,7 @@ test <- FALSE       # When calling external scripts, don't run tests
 forceAll <- TRUE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
 forceRun_Rej <- FALSE    #
-forceRun_Met <- TRUE    # 
+forceRun_Met <- FALSE    # 
 forceRun_inv <- FALSE   #
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
 # Call scripts containing auxiliary custom functions
