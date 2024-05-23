@@ -95,7 +95,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
         }
       }
     }
-    ARate_obs <- mean(change)
+    ARate_obs <- max(mean(change),0.001)
     warm_up <- ARate_obs<ARate_des
   }
   
