@@ -43,7 +43,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   }
   
   M <- 300
-  ARate_des <- 0.25
+  ARate_des <- 0.4
   ARate_obs <- ARate_des
   Mu <- c(predChoice, predRT)
   Sigma <- diag(c((2*pi)^2,50))
