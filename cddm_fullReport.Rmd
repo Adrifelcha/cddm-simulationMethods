@@ -564,7 +564,7 @@ compareTime_plot <- function(n.Samples,n.Datasets,
 }
 ```
 
-```{r, echo=FALSE, fig.height=6,eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
 test2 <- compareTime(n.Samples,n.Datasets,par)
@@ -575,7 +575,7 @@ compareTime_plot(n.Samples,n.Datasets,
                  times.invCDF = test2$times.invCDF)
 ```
 
-```{r, echo=FALSE, fig.height=6,eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
 test1 <- compareTime(n.Samples,n.Datasets,par)
@@ -701,7 +701,7 @@ getDifferences(eCDFs2,tCDFs2)
 ```
 
 
-```{r, echo=FALSE, fig.height=6, eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
 test3 <- compareTime(n.Samples,n.Datasets,par2)
@@ -712,7 +712,7 @@ compareTime_plot(n.Samples,n.Datasets,
                  times.invCDF = test3$times.invCDF)
 ```
 
-```{r, echo=FALSE, fig.height=6, eval=FALSE}
+```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
 test4 <- compareTime(n.Samples,n.Datasets,par2)
