@@ -43,7 +43,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   }
   
   M <- 300
-  ARate_des <- 0.25
+  ARate_des <- 0.4
   ARate_obs <- ARate_des
   Mu <- c(predChoice, predRT)
   Sigma <- diag(c((2*pi)^2,50))
@@ -76,7 +76,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
       cand <- rmvnorm(1,Mu,Sigma)
       cand[1] <- cand[1] %% (2*pi)
       ratio.num <- max(dCDDM(cand,drift, theta, tzero, boundary),0,na.rm = TRUE)
-      ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
+      ratio.den <- dCDDM(Mu,drift, theta, tzero, boundary)
       ratio <- ratio.num/ratio.den
       change[i] <- ratio>u[i]
       if(change[i]){
@@ -95,8 +95,9 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
         }
       }
     }
-    ARate_obs <- max(mean(change),0.001)
+    ARate_obs <- mean(change)
     warm_up <- ARate_obs<ARate_des
+    if(ARate_obs==0){ ARate_obs <- ARate_des}
   }
   
   if(plot){
@@ -112,11 +113,11 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){
   u <- runif(n,0,1)
   for(i in 1:n){
     cand <- c(0,-1)
-    while(cand[2]<min.RT){  cand <- rmvnorm(1,Mu,Sigma)   }
+    while(cand[2]<=min.RT){  cand <- rmvnorm(1,Mu,Sigma)   }
     samples[i,1] <- cand[1] %% (2*pi)
     samples[i,2] <- cand[2]
     ratio.num <- max(dCDDM(cand,drift, theta, tzero, boundary),0,na.rm = TRUE)
-    ratio.den <- (dmvnorm(cand,Mu,Sigma)*max.Density)/dmvnorm(Mu,Mu,Sigma)
+    ratio.den <- dCDDM(Mu,drift, theta, tzero, boundary)
     ratio <- ratio.num/ratio.den
     if(ratio>u[i]){
       Mu <- as.vector(cand)
