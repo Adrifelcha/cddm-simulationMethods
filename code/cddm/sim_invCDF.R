@@ -48,8 +48,8 @@ sample.invCDF.cddm <- function(n, par, plot=FALSE, color = NA){
       plot(grid[,4], ann=F, axes=F)
       axis(2, seq(0,1,0.1), seq(0,1,0.1), las=2)
       mtext("RT x Choice pairings",1,line=2, f=2)
-      axis(1,c(1,nrow(grid)),c("min RT", "max RT"),line=-1)
-      axis(1,c(1,nrow(grid)),c(min.RT, max.RT), line=0, tick = FALSE)
+      axis(1,c(1,nrow(grid)),c("min RT", "max RT"),line=0)
+      axis(1,c(1,nrow(grid)),c(min.RT, max.RT), line=1, tick = FALSE)
     }
     
     u <- runif(n,0,1)
