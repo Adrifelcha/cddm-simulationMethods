@@ -161,8 +161,8 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   text(choices[show.rw,1]+1,choices[show.rw,2]-0.25,"observed",
        cex=cex.text, col=text.color, f=f)
   ### Plot / signal the boundary parameter
-  arrow.color = "#C3DDC1"
-  text.color = "#739070"
+  arrow.color = "#256962"
+  text.color = "#2C968B"
   Arrows(-0.05, 0.05, -2.65, 1.3, code = 2, arr.length = 0.2, arr.width = 0.2,
          arr.adj = 0.5, arr.type = "curved", segment = TRUE,
          col = arrow.color, lcol = arrow.color, lty = 2,
@@ -180,14 +180,14 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   ### Draw drift vector path
   lines(X,Y, lwd=1, col="navy", lty=2)
   ### Drift angle
-  color.line <- "#D091E6"
-  color.text <- "#AE5BCB"
+  color.line <- "#D6395A"
+  color.text <- "#BA2242"
   points(draw.angle[,1],draw.angle[,2], type="l", 
          col=color.line, lwd=3, lty=3)
   text(.8,0.7,expression(theta), cex=cex.greek, col=color.text, f=f)
   ### MuX
-  color1 <- "#4C8DED"
-  color2 <- "#1964D3"
+  color1 <- "#DC8B0F"
+  color2 <- "#C67E0F"
   lines(c(0,tail(draw.angle,1)[1]),
         c(tail(draw.angle,1)[2],tail(draw.angle,1)[2]),lty=3, col=color1, lwd=2)
   text(.35,tail(draw.angle,1)[2]-0.2,expression(paste(mu)), cex=cex.greek, col=color2, f=f)
@@ -201,8 +201,8 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   tmp <- tail(draw.angle,1)[1]
   X2 <- seq(0,as.numeric(tmp),0.01)
   Y2 <- (mu2/mu1)*X2
-  color.line <- "#906BE0"
-  color.text <- "#804BF1"
+  color.line <- "#B01435"
+  color.text <- "#D9153E"
   lines(X2,Y2, lwd=3, col=color.line)
   text(0.33,-0.02,expression(delta), cex=cex.greek, col=color.text, f=f)
   ### MuX x MuY
