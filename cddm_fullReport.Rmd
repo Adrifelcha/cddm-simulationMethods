@@ -22,11 +22,12 @@ library(rmdformats)
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
-forceAll <- TRUE
+forceAll <- FALSE
 forceRun_RW <- FALSE    # Re-run Random-walk algorithm
-forceRun_Rej <- FALSE    #
-forceRun_Met <- FALSE    # 
+forceRun_Rej <- FALSE   #
+forceRun_Met <- TRUE    # 
 forceRun_inv <- FALSE   #
+repCompTimes <- FALSE
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
 # Call scripts containing auxiliary custom functions
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
@@ -567,23 +568,34 @@ compareTime_plot <- function(n.Samples,n.Datasets,
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
-test2 <- compareTime(n.Samples,n.Datasets,par)
+
+fileName <- "./tmp/results_compTime_par-N.RData"
+if(repCompTimes|!file.exists(fileName)){
+    test1 <- compareTime(n.Samples,n.Datasets,par)
+    save(test1,file=fileName)
+}else{    load(fileName)      }
+
 compareTime_plot(n.Samples,n.Datasets,
-                 times.RW = test2$times.RW,
-                 times.Reject = test2$times.Reject,
-                 times.Metro = test2$times.Metro,
-                 times.invCDF = test2$times.invCDF)
+                 times.RW     = test1$times.RW,
+                 times.Reject = test1$times.Reject,
+                 times.Metro  = test1$times.Metro,
+                 times.invCDF = test1$times.invCDF)
 ```
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
-test1 <- compareTime(n.Samples,n.Datasets,par)
+
+fileName <- "./tmp/results_compTime_par-n.RData"
+if(repCompTimes|!file.exists(fileName)){
+    test2 <- compareTime(n.Samples,n.Datasets,par)
+    save(test2,file=fileName)
+}else{    load(fileName)      }
 compareTime_plot(n.Samples,n.Datasets,
-                 times.RW = test1$times.RW,
-                 times.Reject = test1$times.Reject,
-                 times.Metro = test1$times.Metro,
-                 times.invCDF = test1$times.invCDF)
+                 times.RW = test2$times.RW,
+                 times.Reject = test2$times.Reject,
+                 times.Metro  = test2$times.Metro,
+                 times.invCDF = test2$times.invCDF)
 ```
 
 
@@ -704,7 +716,13 @@ getDifferences(eCDFs2,tCDFs2)
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- c(seq(1,20,5),50,seq(80,200,30))
-test3 <- compareTime(n.Samples,n.Datasets,par2)
+
+fileName <- "./tmp/results_compTime_par2-N.RData"
+if(repCompTimes|!file.exists(fileName)){
+    test3 <- compareTime(n.Samples,n.Datasets,par2)
+    save(test3,file=fileName)
+}else{    load(fileName)      }
+
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test3$times.RW,
                  times.Reject = test3$times.Reject,
@@ -715,7 +733,13 @@ compareTime_plot(n.Samples,n.Datasets,
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
 n.Samples <- 1:5
-test4 <- compareTime(n.Samples,n.Datasets,par2)
+
+fileName <- "./tmp/results_compTime_par2-n.RData"
+if(repCompTimes|!file.exists(fileName)){
+    test4 <- compareTime(n.Samples,n.Datasets,par2)
+    save(test4,file=fileName)
+}else{    load(fileName)      }
+
 compareTime_plot(n.Samples,n.Datasets,
                  times.RW = test4$times.RW,
                  times.Reject = test4$times.Reject,
