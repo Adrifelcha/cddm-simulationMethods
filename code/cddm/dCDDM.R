@@ -71,10 +71,9 @@ cddm.pdf.2016 <- function(x, drift, theta, tzero, boundary){
 }
 
 
-
-
-# Use the density function we wrote on the CDDM paper (Villarreal et al)
+# Use the density function we wrote on the CDDM paper (Villarreal et al, 2023)
 cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary){
+  # Likelihood function specified for the JAGS CDDM module paper
   # Identify bivariate data
   c <- x[1]
   t <- x[2]
@@ -83,22 +82,18 @@ cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary){
   eta.squared <- boundary*boundary
   constant <- 1/(2*pi*eta.squared)
   # Outer exponential
-  squareBracket.left <- (delta*delta)*(t-tzero)
-  squareBracket.right <- 2*boundary*delta*cos(c-theta)
+  squareBracket.left <- (drift*drift)*(t-tzero)
+  squareBracket.right <- 2*boundary*drift*cos(c-theta)
   outer.exponand <- exp(-0.5*(squareBracket.left - squareBracket.right))
   # Last term: The sum
+  inva2 = 1 / (boundary*boundary)
   sum = 0
   for (i in 1:length(j0_squared)) {
     exponand = j0_squared[i] * inva2 * (t-tzero) * -0.5
-    sum = sum + exp(exponand) * j0_over_J1_of_j0[i]
+    sum = sum + j0_over_J1_of_j0[i] * exp(exponand)
   }
-  Eq.22 = sum * inva2
-  # Equation 23 on Smith (2016)
-  exponand.left = boundary*(mu1*cos(c)+mu2*sin(c));
-  exponand.right = (drift*drift)*(t-tzero)*0.5;
-  Eq.23 = exp(exponand.left - exponand.right)*Eq.22
   # Return bivariate density
-  return(PDF = Eq.23)
+  return(PDF = constant * outer.exponand * sum)
 }
 
 
@@ -134,12 +129,12 @@ cddm.pdf.jags <- function(x, drift, theta, tzero, boundary){
 dCDDM <- function(data,drift,theta,tzero,boundary){
       if(is.vector(data)){
           N <- 1
-          pdf <- cddm.pdf.2016(data,drift,theta,tzero,boundary)
+          pdf <- cddm.pdf.villarreal(data,drift,theta,tzero,boundary)
       }else{
           N <- nrow(data)
           pdf <- rep(NA, N)
           for(i in 1:N){
-            pdf[i] <- cddm.pdf.2016(data[i,],drift,theta,tzero,boundary)
+            pdf[i] <- cddm.pdf.villarreal(data[i,],drift,theta,tzero,boundary)
           }
       }
   return(pdf)
