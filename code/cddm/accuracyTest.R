@@ -5,8 +5,9 @@
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
 test <- FALSE # Turn-off built-in examples.
-source("../general_functions/customFunctions.R")
-source("../cddm/pCDDM.R")
+if(!exists("superCalled")){superCalled <- FALSE}
+if(!superCalled){       
+      source("../cddm/pCDDM.R")}
 
 accuracyTest.cddm <- function(data, par){
       drift <- par$drift
