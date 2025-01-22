@@ -200,22 +200,22 @@ sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
   
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
   #               Defensive Coding                                         #
-        noPolar <- is.null(drift.Angle) & is.null(drift.Length)
-        noRect <- is.null(mu1) & is.null(mu2)
-        if(noRect){
-            if(noPolar){
-               stop("Provide Cartesian or Polar coordinates", call. = FALSE)
-            }else{
-                Mu <- polarToRect(drift.Angle,drift.Length)
-                mu1 <- Mu$x
-                mu2 <-Mu$y
-            }
-        }
+  noPolar <- is.null(drift.Angle) & is.null(drift.Length)
+  noRect <- is.null(mu1) & is.null(mu2)
+  if(noRect){
+    if(noPolar){
+      stop("Provide Cartesian or Polar coordinates", call. = FALSE)
+    }else{
+      Mu <- polarToRect(drift.Angle,drift.Length)
+      mu1 <- Mu$x
+      mu2 <-Mu$y
+    }
+  }
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
   # Get full Random walk using the function in the *customFunctions.R* file
   full.randomWalk <-  cddm.randomWalk(trials=trials,mu1=mu1,mu2=mu2,
-                                 boundary=boundary,ndt=ndt,
-                                 drift.Coeff=drift.Coeff,dt=dt)
+                                      boundary=boundary,ndt=ndt,
+                                      drift.Coeff=drift.Coeff,dt=dt)
   # Isolate important variables
   RT <- full.randomWalk$RT
   add.Iterations <- full.randomWalk$repeated.Walk
