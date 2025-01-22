@@ -7,6 +7,7 @@ method_tested <- "RandomWalk"
 # 4) "Rejection"
 #############################################################
 superCalled <- TRUE
+source("code/cddm/sim_randomWalk.R")
 # Load all R files from code/cddm folder
 r_files <- list.files(path = "code/cddm", 
                       pattern = "\\.R$", 
@@ -31,7 +32,7 @@ param_sets <- list( easy = list(par = list(
 # Different trial sizes to test
 trial_sizes <- c(100, 500, 1000)
 # Number of replications
-n_reps <- 10
+n_reps <- 200
 
 
 #############################################################
