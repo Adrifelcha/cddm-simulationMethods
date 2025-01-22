@@ -1,5 +1,3 @@
-source("../customFunctions.R")
-
 trials = 500
 boundary = 3
 mu1 = 2.5      #   Specify drift vector
