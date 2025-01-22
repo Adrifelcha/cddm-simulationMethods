@@ -1,25 +1,30 @@
-#source("code/cddm/sim_randomWalk.R")
+source("code/cddm/sim_randomWalk.R")
 
 
 # Define parameter sets to test
-param_sets <- list( easy = list(mu1 = 2.0,  mu2 = 2.0,        # (strong drift)
-                                boundary = 5, tzero = 0.1,
-                                drift = NULL, theta = NULL),
-                    hard = list(mu1 = 0.5,  mu2 = 0.5,        # (weak drift)
-                                boundary = 5, tzero = 0.1,
-                                drift = NULL, theta = NULL))
+param_sets <- list( easy = list(par = list(
+                                 mu1 = 2.0,  mu2 = 2.0,  # (strong drift)
+                                 boundary = 5, tzero = 0.1
+                               )),
+                    hard = list(par = list(
+                                 mu1 = 0.5,  mu2 = 0.5,  # (weak drift)
+                                 boundary = 5, tzero = 0.1
+                               )))
 # Different trial sizes to test
 trial_sizes <- c(100, 500, 1000)
 # Number of replications
 n_reps <- 10
 
 # Function to run one benchmark test
-run_single_benchmark <- function(params, n_trials) {
-    # Add number of trials to parameters
-    params$n <- n_trials
+run_single_test <- function(params, n_trials) {
+    # Create a new list with n and the existing parameters
+    full_params <- list(
+        n = n_trials,
+        par = params$par
+    )
     
     start_time <- Sys.time()
-    result <- do.call(sample.RW.cddm, params)
+    result <- do.call(sample.RW.cddm, full_params)
     end_time <- Sys.time()
     
     # Get final states
@@ -50,7 +55,7 @@ for(param_name in names(param_sets)) {
         for(rep in 1:n_reps) {
             cat(sprintf("\nRunning %s, trials=%d, rep=%d", param_name, n_trials, rep))
             
-            bench <- run_single_benchmark(param_sets[[param_name]], n_trials)
+            bench <- run_single_test(param_sets[[param_name]], n_trials)
             
             results <- rbind(results, data.frame(
                 param_set = param_name,
@@ -81,7 +86,7 @@ summary_stats <- aggregate(
 )
 
 # Create PDF for jittered points
-pdf("benchmark_results.pdf", width=10, height=8)
+pdf("tests/test_RW-old.pdf", width=10, height=8)
 
 # Set up plotting parameters
 par(mfrow=c(2,1), 
@@ -162,6 +167,7 @@ text(1:length(circ_means) + 0.3, circ_means,
 axis(1, at=seq_along(levels(results$group)), labels=levels(results$group))
 
 dev.off()
+
 
 # Print summary
 print(summary_stats)
