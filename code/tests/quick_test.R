@@ -150,46 +150,71 @@ pdf(filename, width=10, height=8)
 exec_means <- tapply(results$execution_time, results$group, mean)
 circ_means <- tapply(results$circumference_precision, results$group, mean)
 
-# Create color vector based on parameter set
-point_colors <- ifelse(results$param_set == "easy", "lightblue", "lightgreen")
+# Create color vectors with transparency
+transparent_blue <- rgb(173/255, 216/255, 230/255, alpha=0.3)  # lightblue with 30% opacity
+transparent_green <- rgb(144/255, 238/255, 144/255, alpha=0.3)  # lightgreen with 30% opacity
+point_colors <- ifelse(results$param_set == "easy", transparent_blue, transparent_green)
 
 # Plot execution time
 plot(jitter(x_positions, amount=0.2), results$execution_time,
-    col=point_colors, pch=19, main="Execution Time Distribution",
-    xlab="Number of Trials", ylab="Time (seconds)", xaxt="n",
-    yaxt="n", xlim=c(0.5, 6.5))
+     col=point_colors,
+     pch=19,
+     main="Execution Time Distribution",
+     xlab="Number of Trials",
+     ylab="Time (seconds)",
+     xaxt="n",
+     yaxt="n",  
+     xlim=c(0.5, 6.5))
 mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
       side=3, line=1, adj=1, cex=0.8)
+# Add custom y-axis with 0 decimal places and horizontal labels
 axis(2, at=axTicks(2), labels=sprintf("%.0f", axTicks(2)), las=2)
 # Add mean lines and text
 segments(1:length(exec_means) - 0.25, exec_means,
-        1:length(exec_means) + 0.25, exec_means,
-        lwd=2, col="black")
-text(1:length(exec_means) + 0.3, exec_means, sprintf("%.4f", exec_means), 
-    adj=0, cex=0.8)
+         1:length(exec_means) + 0.25, exec_means,
+         lwd=2, col="black")
+text(1:length(exec_means) + 0.3, exec_means, 
+     sprintf("%.4f", exec_means),
+     adj=0, cex=0.8)
+# Add custom x-axis labels
 axis(1, at=seq_along(levels(results$group)), labels=levels(results$group))
+# Add legend to top plot with bold title and parameter values
 legend("topleft", 
-    legend=c(
-        expression(paste("Easy (", delta, " = 2.8, ", theta, " = ", pi/4, ", ", tau, " = 0.1)")),
-        expression(paste("Hard (", delta, " = 0.7)"))
-    ),
-    fill=c("lightblue", "lightgreen"),
-    title="Parameter Set",
-    title.font=2,
-    cex=1.2,
-    bty="n")
+       legend=c(
+           expression(paste("Easy (", delta, " = 2.8, ", theta, " = ", pi/4, ", ", tau, " = 0.1)")),
+           expression(paste("Hard (", delta, " = 0.7)"))
+       ),
+       fill=c(transparent_blue, transparent_green),
+       title="Parameter Set",
+       title.font=2,
+       cex=1.2,
+       bty="n")
 
 # Plot circumference precision
 plot(jitter(x_positions, amount=0.2), results$circumference_precision,
-    col=point_colors, pch=19, main="Circumference Precision Distribution",
-    xlab="Number of Trials", ylab="Average Distance from Boundary",
-    xaxt="n", yaxt="n", xlim=c(0.5, 6.5))
+     col=point_colors,
+     pch=19,
+     main="Circumference Precision Distribution",
+     xlab="Number of Trials",
+     ylab="Average Distance from Boundary",
+     xaxt="n",
+     yaxt="n",
+     xlim=c(0.5, 6.5))
+
+# Calculate y-axis values
+y_range <- range(results$circumference_precision)
+y_mid <- mean(y_range)
+y_values <- c(y_range[1], y_mid, y_range[2])
+
+# Add custom y-axis with 3 values in scientific notation
 axis(2, at=y_values, labels=sprintf("%.2e", y_values), las=2)
 segments(1:length(circ_means) - 0.25, circ_means,
-        1:length(circ_means) + 0.25, circ_means,
-        lwd=2, col="black")
-text(1:length(circ_means) + 0.3, circ_means, sprintf("%.4f", circ_means),  
-    adj=0, cex=0.8)
+         1:length(circ_means) + 0.25, circ_means,
+         lwd=2, col="black")
+text(1:length(circ_means) + 0.3, circ_means, 
+     sprintf("%.4f", circ_means),
+     adj=0, cex=0.8)
+# Add custom x-axis labels
 axis(1, at=seq_along(levels(results$group)), labels=levels(results$group))
 dev.off()
 
