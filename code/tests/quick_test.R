@@ -106,7 +106,9 @@ plot_order <- paste(rep(trial_sizes, each=2),
 # Prepare results
 results$group <- factor(paste(results$n_trials, results$param_set),
                        levels = plot_order)
-
+# Save results!
+filename <- sprintf("tests/test_%s_%s.RData", method_tested, format(Sys.Date(), "%Y%m%d"))
+save(results,file = filename)
 #############################################################
 #### G E T     R E S U L T S ################################
 #############################################################
@@ -122,8 +124,8 @@ summary_stats <- aggregate(
 #### P L O T T I N G     R E S U L T S ######################
 #############################################################
 # Open pdf
-filename <- sprintf("tests/test_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
-pdf(filename, width=10, height=8)
+figname <- sprintf("tests/test_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
+pdf(figname, width=10, height=8)
 
 # Set up plotting parameters
 par(mfrow=c(2,1), mar=c(5,5,3,2),    
