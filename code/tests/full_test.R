@@ -6,6 +6,7 @@ method_tested <- "RandomWalk"
 # 3) "inverseCDF"
 # 4) "Rejection"
 #############################################################
+library(circular)
 superCalled <- TRUE
 source("code/cddm/sim_randomWalk.R")
 # Load all R files from code/cddm folder
@@ -23,23 +24,23 @@ for(file in r_files) {
 # Define comprehensive parameter sets to test
 param_sets <- list(
     very_easy = list(par = list(
-        mu1 = 3.0, mu2 = 3.0,     # very strong drift
+        mu1 = 3.0, mu2 = 3.0,     # very strong drift (δ = 4.24)
         boundary = 5, tzero = 0.1
     )),
     easy = list(par = list(
-        mu1 = 2.0, mu2 = 2.0,     # strong drift
+        mu1 = 2.0, mu2 = 2.0,     # strong drift (δ = 2.83)
         boundary = 5, tzero = 0.1
     )),
     medium = list(par = list(
-        mu1 = 1.0, mu2 = 1.0,     # moderate drift
+        mu1 = 1.0, mu2 = 1.0,     # moderate drift (δ = 1.41)
         boundary = 5, tzero = 0.1
     )),
     hard = list(par = list(
-        mu1 = 0.5, mu2 = 0.5,     # weak drift
+        mu1 = 0.5, mu2 = 0.5,     # weak drift (δ = 0.71)
         boundary = 5, tzero = 0.1
     )),
     very_hard = list(par = list(
-        mu1 = 0.2, mu2 = 0.2,     # very weak drift
+        mu1 = 0.2, mu2 = 0.2,     # very weak drift (δ = 0.28)
         boundary = 5, tzero = 0.1
     ))
 )
@@ -47,8 +48,8 @@ param_sets <- list(
 # More comprehensive trial sizes
 trial_sizes <- c(50, 150, 300, 500)
 
-# Set to 1 for initial testing
-n_reps <- 1
+# Number of replications
+n_reps <- 10
 
 #############################################################
 #### T E S T I N G     F U N C T I O N S ####################
@@ -65,13 +66,17 @@ run_single_test <- function(params, n_trials, method_tested) {
     start_time <- Sys.time()
     
     # Select the appropriate sampling function based on method_tested
-    result <- switch(method_tested,
-        "RandomWalk" = do.call(sample.RW.cddm, full_params),
-        "Metropolis" = do.call(sample.Metropolis.cddm, full_params),
-        "inverseCDF" = do.call(sample.invCDF.cddm, full_params),
-        "Rejection" = do.call(sample.Reject.cddm, full_params),
+    if (method_tested == "RandomWalk") {
+        result <- do.call(sample.RW.cddm, full_params)
+    } else if (method_tested == "Metropolis") {
+        result <- do.call(sample.Metropolis.cddm, full_params)
+    } else if (method_tested == "inverseCDF") {
+        result <- do.call(sample.invCDF.cddm, full_params)
+    } else if (method_tested == "Rejection") {
+        result <- do.call(sample.Reject.cddm, full_params)
+    } else {
         stop(paste("Unknown method:", method_tested))
-    )
+    }
     
     end_time <- Sys.time()
     
@@ -80,23 +85,31 @@ run_single_test <- function(params, n_trials, method_tested) {
     
     # Calculate metrics
     execution_time <- as.numeric(difftime(end_time, start_time, units="secs"))
-    completion <- mean(!is.na(result$bivariate.data$RT))
+    completion <- mean(!is.na(result$bivariate.data$RT))  
     
-    # Calculate distance from boundary for each trial
-    distances_from_boundary <- sqrt(rowSums(final_coords^2))
-    circumference_precision <- mean(abs(distances_from_boundary - params$par$boundary))
+    # Convert angles to circular data type and calculate circular mean
+    angles <- circular::circular(result$bivariate.data$Choice, type="angles", units="radians")
+    mean_angle <- circular::mean.circular(angles)
     
-    # Additional metrics for full test
+    # Calculate theoretical angle (theta) from mu parameters
+    theoretical_theta <- circular::circular(atan2(params$par$mu2, params$par$mu1))
+    
+    # Calculate angular error as the difference between mean_angle and theoretical_theta
+    angular_error <- abs(as.numeric(mean_angle - theoretical_theta))
+    
+    # Calculate proportion of negative RTs (excluding NAs)
+    prop_negative_rt <- mean(result$bivariate.data$RT < 0, na.rm=TRUE)
+    
+    # Calculate all metrics
     return(list(
         execution_time = execution_time,
         completion = completion,
-        circumference_precision = circumference_precision,
+        angular_error = angular_error,
         mean_rt = mean(result$bivariate.data$RT, na.rm=TRUE),
         sd_rt = sd(result$bivariate.data$RT, na.rm=TRUE),
-        min_rt = min(result$bivariate.data$RT, na.rm=TRUE),
-        max_rt = max(result$bivariate.data$RT, na.rm=TRUE),
-        median_rt = median(result$bivariate.data$RT, na.rm=TRUE),
-        na_count = sum(is.na(result$bivariate.data$RT))
+        mean_angle = abs(as.numeric(mean_angle - theoretical_theta)),
+        sd_angle = sd.circular(angles),
+        prop_negative_rt = prop_negative_rt
     ))
 }
 
@@ -130,13 +143,12 @@ for(param_name in names(param_sets)) {
                 replication = rep,
                 execution_time = bench$execution_time,
                 completion = bench$completion,
-                circumference_precision = bench$circumference_precision,
+                angular_error = bench$angular_error,
                 mean_rt = bench$mean_rt,
                 sd_rt = bench$sd_rt,
-                min_rt = bench$min_rt,
-                max_rt = bench$max_rt,
-                median_rt = bench$median_rt,
-                na_count = bench$na_count
+                mean_angle = bench$mean_angle,
+                sd_angle = bench$sd_angle,
+                prop_negative_rt = bench$prop_negative_rt
             ))
         }
     }
@@ -155,7 +167,7 @@ results$group <- factor(paste(results$n_trials, results$param_set),
 
 # Analyze results
 summary_stats <- aggregate(
-    cbind(execution_time, completion, circumference_precision) 
+    cbind(execution_time, completion, angular_error) 
     ~ param_set + n_trials, 
     data = results,
     FUN = function(x) c(mean = mean(x), sd = sd(x))
@@ -171,7 +183,7 @@ plot_order <- paste(rep(trial_sizes, each=2),
 #############################################################
 
 # Create PDF with date in filename
-filename <- sprintf("tests/test_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
+filename <- sprintf("tests/testFull_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
 pdf(filename, width=12, height=10)
 
 # Set up 2x2 plotting layout
@@ -180,7 +192,7 @@ par(mfrow=c(2,2), mar=c(5,5,3,2),
 
 # Calculate means for plotting
 exec_means <- tapply(results$execution_time, results$group, mean)
-circ_means <- tapply(results$circumference_precision, results$group, mean)
+circ_means <- tapply(results$angular_error, results$group, mean)
 rt_means <- tapply(results$mean_rt, results$group, mean)
 compl_means <- tapply(results$completion, results$group, mean)
 
@@ -190,64 +202,58 @@ point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set)
 # Function to add mean lines and labels
 add_means <- function(means) {
     segments(1:length(means) - 0.25, means,
-            1:length(means) + 0.25, means,
-            lwd=2, col="black")
-    text(1:length(means) + 0.3, means, 
-         sprintf("%.4f", means), adj=0, cex=0.7)
+             1:length(means) + 0.25, means,
+             lwd=3, col="black")
 }
 
 # 1. Execution Time Plot
 plot(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
-     col=point_colors, pch=19, main="Execution Time Distribution",
-     xlab="Number of Trials", ylab="Time (seconds)", 
+     col=point_colors, pch=19, 
+     main="Execution Time Distribution",
+     xlab="", 
+     ylab="Time (seconds)",
      xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
-mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=1, adj=1, cex=0.8)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(exec_means)
 
-# 2. Circumference Precision Plot
-plot(jitter(as.numeric(results$group), amount=0.2), results$circumference_precision,
-     col=point_colors, pch=19, main="Circumference Precision",
-     xlab="Number of Trials", ylab="Average Distance from Boundary",
+# 2. Angular Error Plot
+plot(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
+     col=point_colors, pch=19, 
+     main=expression(bold(paste("Distance between mean angle and ", theta))),
+     xlab="",  # Removed "Number of Trials"
+     ylab="Angular Distance (radians)",
      xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
-mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=1, adj=1, cex=0.8)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(circ_means)
 
 # 3. Mean RT Plot
 plot(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
-     col=point_colors, pch=19, main="Mean Response Time",
-     xlab="Number of Trials", ylab="RT (seconds)",
+     col=point_colors, pch=19, 
+     main="Mean Response Time",
+     xlab="",  # Removed "Number of Trials"
+     ylab="Time (seconds)",
      xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
-mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=1, adj=1, cex=0.8)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(rt_means)
 
-# 4. Completion Rate Plot
-plot(jitter(as.numeric(results$group), amount=0.2), results$completion,
-     col=point_colors, pch=19, main="Completion Rate",
-     xlab="Number of Trials", ylab="Completion Rate",
-     xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
-mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=1, adj=1, cex=0.8)
-axis(2, las=2)
-axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
-add_means(compl_means)
-
-# Add legend to the first plot
-legend("topleft", 
-       legend=names(param_sets),
-       fill=rainbow(length(param_sets)),
-       title="Parameter Set",
-       title.font=2,
-       cex=0.8,
-       bty="n")
+# 4. Legend Panel (replacing Mean Angular Choice plot)
+plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)  # Empty plot
+legend("center", 
+       legend=c(
+           expression(paste("Easy (", mu[1], " = ", mu[2], " = 2.0)")),
+           expression(paste("Medium (", mu[1], " = ", mu[2], " = 1.0)")),
+           expression(paste("Hard (", mu[1], " = ", mu[2], " = 0.5)")),
+           expression(paste("Very Hard (", mu[1], " = ", mu[2], " = 0.2)"))
+       ),
+       fill=point_colors,  # Use the same colors as in the plots
+       title="Parameter Sets",
+       title.font=2,  # Bold title
+       cex=1.5,  # Increased from 1.2 to 1.5
+       bty="n"   # No box around legend
+)
 
 dev.off()
 
@@ -257,7 +263,7 @@ save(results, file=sprintf("tests/results_%s_%s.RData",
 
 # Print summary statistics
 summary_stats <- aggregate(
-    cbind(execution_time, completion, circumference_precision, mean_rt) 
+    cbind(execution_time, completion, angular_error, mean_rt) 
     ~ param_set + n_trials, 
     data = results,
     FUN = function(x) c(mean = mean(x), sd = sd(x))
