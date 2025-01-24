@@ -187,7 +187,7 @@ filename <- sprintf("tests/testFull_%s_%s.pdf", method_tested, format(Sys.Date()
 pdf(filename, width=12, height=10)
 
 # Set up 2x2 plotting layout
-par(mfrow=c(2,2), mar=c(5,5,3,2),
+par(mfrow=c(2,2), oma=c(2,2,2,2), mar=c(4,4,3,1), mgp=c(2,0.7,0),
     cex.main=1.5, cex.lab=1.2, cex.axis=1.1)
 
 # Calculate means for plotting
@@ -206,41 +206,68 @@ add_means <- function(means) {
              lwd=3, col="black")
 }
 
+# Function to add background stripes with different colors
+add_background_stripes <- function() {
+    # Define four light colors for the stripes
+    stripe_colors <- c("lavender", "azure", "honeydew", "cornsilk")
+    
+    # Add each colored stripe
+    for(i in 1:4) {
+        rect(xleft = seq(0.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20) - 0.5,
+             ybottom = par("usr")[3],
+             xright = seq(5.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20) - 0.5,
+             ytop = par("usr")[4],
+             col = stripe_colors[i],
+             border = NA)
+    }
+}
+
 # 1. Execution Time Plot
-plot(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
-     col=point_colors, pch=19, 
+plot(1, type="n",
+     xlim=c(0.5, length(levels(results$group))+0.5),
+     ylim=range(results$execution_time),
+     xlab="", ylab="Time (seconds)",
      main="Execution Time Distribution",
-     xlab="", 
-     ylab="Time (seconds)",
-     xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
+     xaxt="n", yaxt="n")
+add_background_stripes()
+points(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
+       col=point_colors, pch=19)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(exec_means)
 
 # 2. Angular Error Plot
-plot(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
-     col=point_colors, pch=19, 
+plot(1, type="n",
+     xlim=c(0.5, length(levels(results$group))+0.5),
+     ylim=range(results$angular_error),
+     xlab="", ylab="Angular Distance (radians)",
      main=expression(bold(paste("Distance between mean angle and ", theta))),
-     xlab="",  # Removed "Number of Trials"
-     ylab="Angular Distance (radians)",
-     xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
+     xaxt="n", yaxt="n")
+add_background_stripes()
+points(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
+       col=point_colors, pch=19)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(circ_means)
 
 # 3. Mean RT Plot
-plot(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
-     col=point_colors, pch=19, 
+plot(1, type="n",
+     xlim=c(0.5, length(levels(results$group))+0.5),
+     ylim=range(results$mean_rt),
+     xlab="", ylab="Time (seconds)",
      main="Mean Response Time",
-     xlab="",  # Removed "Number of Trials"
-     ylab="Time (seconds)",
-     xaxt="n", yaxt="n", xlim=c(0.5, length(levels(results$group))+0.5))
+     xaxt="n", yaxt="n")
+add_background_stripes()
+points(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
+       col=point_colors, pch=19)
 axis(2, las=2)
 axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
 add_means(rt_means)
 
-# 4. Legend Panel (replacing Mean Angular Choice plot)
-plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)  # Empty plot
+# 4. Legend Panel with both parameter sets and trial size legends
+plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)
+
+# First legend for parameter sets (moved up)
 legend("center", 
        legend=c(
            expression(paste("Easy (", mu[1], " = ", mu[2], " = 2.0)")),
@@ -248,12 +275,22 @@ legend("center",
            expression(paste("Hard (", mu[1], " = ", mu[2], " = 0.5)")),
            expression(paste("Very Hard (", mu[1], " = ", mu[2], " = 0.2)"))
        ),
-       fill=point_colors,  # Use the same colors as in the plots
+       fill=point_colors,
        title="Parameter Sets",
-       title.font=2,  # Bold title
-       cex=1.5,  # Increased from 1.2 to 1.5
-       bty="n"   # No box around legend
-)
+       title.font=2,
+       cex=1.5,
+       bty="n",
+       inset=c(0, -0.2))
+
+# Second legend for trial sizes
+legend("bottom", 
+       legend=paste(trial_sizes, "trials"),
+       fill=c("lavender", "azure", "honeydew", "cornsilk"),
+       title="Trial Sizes",
+       title.font=2,
+       cex=1.5,
+       bty="n",
+       horiz=TRUE)
 
 dev.off()
 
