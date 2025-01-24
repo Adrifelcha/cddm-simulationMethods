@@ -49,7 +49,7 @@ param_sets <- list(
 trial_sizes <- c(50, 150, 300, 500)
 
 # Number of replications
-n_reps <- 10
+n_reps <- 1
 
 #############################################################
 #### T E S T I N G     F U N C T I O N S ####################
@@ -229,6 +229,8 @@ plot(1, type="n",
      xlab="", ylab="Time (seconds)",
      main="Execution Time Distribution",
      xaxt="n", yaxt="n")
+mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
+      side=3, line=1, adj=0, cex=0.8)
 add_background_stripes()
 points(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
        col=point_colors, pch=19)
@@ -268,29 +270,36 @@ add_means(rt_means)
 plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)
 
 # First legend for parameter sets (moved up)
-legend("center", 
+legend("top", 
        legend=c(
+           expression(paste("Very Easy (", mu[1], " = ", mu[2], " = 3.0)")),
            expression(paste("Easy (", mu[1], " = ", mu[2], " = 2.0)")),
            expression(paste("Medium (", mu[1], " = ", mu[2], " = 1.0)")),
            expression(paste("Hard (", mu[1], " = ", mu[2], " = 0.5)")),
            expression(paste("Very Hard (", mu[1], " = ", mu[2], " = 0.2)"))
        ),
        fill=point_colors,
-       title="Parameter Sets",
-       title.font=2,
+       title=expression(bold("Parameter Sets")),
        cex=1.5,
        bty="n",
-       inset=c(0, -0.2))
+       inset=c(0, 0.075))
 
 # Second legend for trial sizes
 legend("bottom", 
        legend=paste(trial_sizes, "trials"),
        fill=c("lavender", "azure", "honeydew", "cornsilk"),
-       title="Trial Sizes",
-       title.font=2,
+       title=expression(bold("Trial Sizes")),
        cex=1.5,
        bty="n",
-       horiz=TRUE)
+       ncol=2,
+       inset=c(0, 0.2))
+
+# Second legend for trial sizes
+legend("bottom", 
+       legend=bquote(bold("Repetitions: ") * .(n_reps)),
+       cex=1.5,
+       bty="n",       
+       inset=c(0, 0))
 
 dev.off()
 
