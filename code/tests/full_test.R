@@ -49,7 +49,7 @@ param_sets <- list(
 trial_sizes <- c(50, 150, 300, 500)
 
 # Number of replications
-n_reps <- 1
+n_reps <- 10
 
 #############################################################
 #### T E S T I N G     F U N C T I O N S ####################
@@ -94,8 +94,8 @@ run_single_test <- function(params, n_trials, method_tested) {
     # Calculate theoretical angle (theta) from mu parameters
     theoretical_theta <- circular::circular(atan2(params$par$mu2, params$par$mu1))
     
-    # Calculate angular error as the difference between mean_angle and theoretical_theta
-    angular_error <- abs(as.numeric(mean_angle - theoretical_theta))
+    # Calculate angular error (without absolute value)
+    angular_error <- as.numeric(mean_angle - theoretical_theta)
     
     # Calculate proportion of negative RTs (excluding NAs)
     prop_negative_rt <- mean(result$bivariate.data$RT < 0, na.rm=TRUE)
@@ -224,7 +224,7 @@ add_background_stripes <- function() {
 
 # 1. Execution Time Plot
 plot(1, type="n",
-     xlim=c(0.5, length(levels(results$group))+0.5),
+     xlim=c(0.8, length(levels(results$group))+0.2),
      ylim=range(results$execution_time),
      xlab="", ylab="Time (seconds)",
      main="Execution Time Distribution",
@@ -240,7 +240,7 @@ add_means(exec_means)
 
 # 2. Angular Error Plot
 plot(1, type="n",
-     xlim=c(0.5, length(levels(results$group))+0.5),
+     xlim=c(0.8, length(levels(results$group))+0.2),
      ylim=range(results$angular_error),
      xlab="", ylab="Angular Distance (radians)",
      main=expression(bold(paste("Distance between mean angle and ", theta))),
@@ -254,7 +254,7 @@ add_means(circ_means)
 
 # 3. Mean RT Plot
 plot(1, type="n",
-     xlim=c(0.5, length(levels(results$group))+0.5),
+     xlim=c(0.8, length(levels(results$group))+0.2),
      ylim=range(results$mean_rt),
      xlab="", ylab="Time (seconds)",
      main="Mean Response Time",
@@ -292,14 +292,14 @@ legend("bottom",
        cex=1.5,
        bty="n",
        ncol=2,
-       inset=c(0, 0.2))
+       inset=c(0, 0.15))
 
 # Second legend for trial sizes
 legend("bottom", 
        legend=bquote(bold("Repetitions: ") * .(n_reps)),
        cex=1.5,
        bty="n",       
-       inset=c(0, 0))
+       inset=c(0, 0.015))
 
 dev.off()
 
