@@ -79,10 +79,9 @@ results <- foreach(seed = 1:n_reps,
    
     current_iteration <- current_iteration + 1   
     # Progress indicator
-    cat(sprintf("\rProgress: %d/%d (%.1f%%) - Running %s, trials=%d, rep=%d",
+    cat(sprintf("\rProgress: %d/%d (%.1f%%) - Running seed=%d",
         current_iteration, total_iterations,
-        100 * current_iteration/total_iterations,
-        param_name, n_trials, rep))
+        100 * current_iteration/total_iterations, seed))
 
     # Container for this seed's results
     seed_results <- data.frame()    
@@ -110,7 +109,7 @@ results <- foreach(seed = 1:n_reps,
             seed_results <- rbind(seed_results, result_row)
         }
     }
-        
+    seed_results    
 }
 
 stopCluster(cl = my.cluster)
