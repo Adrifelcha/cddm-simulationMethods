@@ -5,6 +5,8 @@ method_tested <- "RandomWalk"
 # 2) "RandomWalk"
 # 3) "inverseCDF"
 # 4) "Rejection"
+
+forceRun <- TRUE # Ignore existing results and run again
 #############################################################
 library(circular)
 library(foreach)
@@ -54,9 +56,23 @@ trial_sizes <- c(50, 150, 300, 500)
 # Number of replications
 n_reps <- 10
 
+# Define plot and results filenames
+plotname <- sprintf("tests/testParallel_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
+filename <- sprintf("tests/resultsParallel_%s_%s_n%s.RData", method_tested, format(Sys.Date(), "%Y%m%d"),n_reps)
+
 #############################################################
 #### R U N N I N G     T E S T S ############################
 #############################################################
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Determine if we should run the tests
+if(!forceRun) {
+    if(file.exists(filename)) {
+        results <- readRDS(filename)
+        cat("Results already exist, skipping tests")
+    }
+} else {
+
 # Initialize results dataframe with additional columns
 results <- data.frame()
 
@@ -120,12 +136,12 @@ plot_order <- paste(rep(trial_sizes, each=length(param_sets)),
                    rep(names(param_sets), length(trial_sizes)))
 results$group <- factor(paste(results$n_trials, results$param_set),
                        levels = plot_order)
-
+}
 #############################################################
 #### G E T     R E S U L T S ################################
 #############################################################
 # Save results
-saveRDS(results, file = here("results/parallel_test_results.rds"))
+saveRDS(results, file = filename)
 
 # Basic analysis of results
 summary_stats <- aggregate(
@@ -135,27 +151,10 @@ summary_stats <- aggregate(
 )
 
 
-
-# Analyze results
-summary_stats <- aggregate(
-    cbind(execution_time, completion, angular_error) 
-    ~ param_set + n_trials, 
-    data = results,
-    FUN = function(x) c(mean = mean(x), sd = sd(x))
-)
-
-# Create ordered groups that will be used across all plots
-plot_order <- paste(rep(trial_sizes, each=2), 
-                   rep(c("fast", "slow"), length(trial_sizes)))
-
-
 #############################################################
 #### P L O T T I N G     R E S U L T S ######################
 #############################################################
-
-# Create PDF with date in filename
-filename <- sprintf("tests/testFull_%s_%s.pdf", method_tested, format(Sys.Date(), "%Y%m%d"))
-pdf(filename, width=12, height=10)
+pdf(plotname, width=12, height=10)
 
 # Set up 2x2 plotting layout
 par(mfrow=c(2,2), oma=c(2,2,2,2), mar=c(4,4,3,1), mgp=c(2,0.7,0),
