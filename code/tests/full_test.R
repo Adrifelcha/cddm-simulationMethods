@@ -23,24 +23,24 @@ for(file in r_files) {
 
 # Define comprehensive parameter sets to test
 param_sets <- list(
-    very_easy = list(par = list(
-        mu1 = 3.0, mu2 = 3.0,     # very strong drift (δ = 4.24)
+    very_fast = list(par = list(
+        mu1 = 3.0, mu2 = 3.0,     # very fast drift (δ = 4.24)
         boundary = 5, tzero = 0.1
     )),
-    easy = list(par = list(
-        mu1 = 2.0, mu2 = 2.0,     # strong drift (δ = 2.83)
+    fast = list(par = list(
+        mu1 = 2.0, mu2 = 2.0,     # fast drift (δ = 2.83)
         boundary = 5, tzero = 0.1
     )),
     medium = list(par = list(
         mu1 = 1.0, mu2 = 1.0,     # moderate drift (δ = 1.41)
         boundary = 5, tzero = 0.1
     )),
-    hard = list(par = list(
-        mu1 = 0.5, mu2 = 0.5,     # weak drift (δ = 0.71)
+    slow = list(par = list(
+        mu1 = 0.5, mu2 = 0.5,     # slow drift (δ = 0.71)
         boundary = 5, tzero = 0.1
     )),
-    very_hard = list(par = list(
-        mu1 = 0.2, mu2 = 0.2,     # very weak drift (δ = 0.28)
+    very_slow = list(par = list(
+        mu1 = 0.2, mu2 = 0.2,     # very slow drift (δ = 0.28)
         boundary = 5, tzero = 0.1
     ))
 )
@@ -175,7 +175,7 @@ summary_stats <- aggregate(
 
 # Create ordered groups that will be used across all plots
 plot_order <- paste(rep(trial_sizes, each=2), 
-                   rep(c("easy", "hard"), length(trial_sizes)))
+                   rep(c("fast", "slow"), length(trial_sizes)))
 
 
 #############################################################
@@ -195,9 +195,13 @@ exec_means <- tapply(results$execution_time, results$group, mean)
 circ_means <- tapply(results$angular_error, results$group, mean)
 rt_means <- tapply(results$mean_rt, results$group, mean)
 compl_means <- tapply(results$completion, results$group, mean)
+cex.axis = 0.9
 
 # Create color vector based on parameter set
 point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
+
+# Add transparency to point colors
+point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)  # 0.3 for 70% transparency
 
 # Function to add mean lines and labels
 add_means <- function(means) {
@@ -206,21 +210,25 @@ add_means <- function(means) {
              lwd=3, col="black")
 }
 
+
+# Define four light colors for the stripes
+stripe_colors <- c("lavender", "azure", "honeydew", "cornsilk")
+
 # Function to add background stripes with different colors
-add_background_stripes <- function() {
-    # Define four light colors for the stripes
-    stripe_colors <- c("lavender", "azure", "honeydew", "cornsilk")
-    
+add_background_stripes <- function(stripe_colors) {    
     # Add each colored stripe
     for(i in 1:4) {
-        rect(xleft = seq(0.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20) - 0.5,
+        rect(xleft = seq(0.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20),
              ybottom = par("usr")[3],
-             xright = seq(5.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20) - 0.5,
+             xright = seq(5.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20),
              ytop = par("usr")[4],
              col = stripe_colors[i],
              border = NA)
     }
 }
+
+# Define speed labels
+speed_labels <- c("Very Fast", "Fast", "Medium", "Slow", "Very Slow")
 
 # 1. Execution Time Plot
 plot(1, type="n",
@@ -230,12 +238,12 @@ plot(1, type="n",
      main="Execution Time Distribution",
      xaxt="n", yaxt="n")
 mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=1, adj=0, cex=0.8)
-add_background_stripes()
+      side=3, line=0, adj=0, cex=0.8, outer=TRUE)
+add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
-       col=point_colors, pch=19)
-axis(2, las=2)
-axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
+       col=point_colors_transparent, pch=19)
+axis(2, las=2, cex.axis=cex.axis)
+axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(exec_means)
 
 # 2. Angular Error Plot
@@ -245,11 +253,11 @@ plot(1, type="n",
      xlab="", ylab="Angular Distance (radians)",
      main=expression(bold(paste("Distance between mean angle and ", theta))),
      xaxt="n", yaxt="n")
-add_background_stripes()
+add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
-       col=point_colors, pch=19)
-axis(2, las=2)
-axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
+       col=point_colors_transparent, pch=19)
+axis(2, las=2, cex.axis=cex.axis)
+axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(circ_means)
 
 # 3. Mean RT Plot
@@ -259,11 +267,11 @@ plot(1, type="n",
      xlab="", ylab="Time (seconds)",
      main="Mean Response Time",
      xaxt="n", yaxt="n")
-add_background_stripes()
+add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
-       col=point_colors, pch=19)
-axis(2, las=2)
-axis(1, at=1:length(levels(results$group)), labels=levels(results$group), las=2)
+       col=point_colors_transparent, pch=19)
+axis(2, las=2, cex.axis=cex.axis)
+axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(rt_means)
 
 # 4. Legend Panel with both parameter sets and trial size legends
@@ -272,13 +280,15 @@ plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)
 # First legend for parameter sets (moved up)
 legend("top", 
        legend=c(
-           expression(paste("Very Easy (", mu[1], " = ", mu[2], " = 3.0)")),
-           expression(paste("Easy (", mu[1], " = ", mu[2], " = 2.0)")),
-           expression(paste("Medium (", mu[1], " = ", mu[2], " = 1.0)")),
-           expression(paste("Hard (", mu[1], " = ", mu[2], " = 0.5)")),
-           expression(paste("Very Hard (", mu[1], " = ", mu[2], " = 0.2)"))
+           expression(paste("Very Fast (", delta, " = 4.24)")),
+           expression(paste("Fast (", delta, " = 2.83)")),
+           expression(paste("Medium (", delta, " = 1.41)")),
+           expression(paste("Slow (", delta, " = 0.71)")),
+           expression(paste("Very Slow (", delta, " = 0.28)"))
        ),
-       fill=point_colors,
+       col=adjustcolor(unique(point_colors), alpha=0.5),
+       pch=19,
+       pt.cex=2,
        title=expression(bold("Parameter Sets")),
        cex=1.5,
        bty="n",
@@ -287,7 +297,7 @@ legend("top",
 # Second legend for trial sizes
 legend("bottom", 
        legend=paste(trial_sizes, "trials"),
-       fill=c("lavender", "azure", "honeydew", "cornsilk"),
+       fill=stripe_colors,
        title=expression(bold("Trial Sizes")),
        cex=1.5,
        bty="n",
