@@ -32,61 +32,29 @@ param_sets <- list( easy = list(par = list(
 # Different trial sizes to test
 trial_sizes <- c(100, 500, 1000)
 # Number of replications
-n_reps <- 200
-
-
-#############################################################
-#### T E S T I N G     F U N C T I O N S ####################
-#############################################################
-
-# Function to run one benchmark test
-run_single_test <- function(params, n_trials, method_tested) {
-    # Create a new list with n and the existing parameters
-    full_params <- list(n = n_trials,
-                        par = params$par)
-    start_time <- Sys.time()
-    # Select the appropriate sampling function based on method_tested
-    if (method_tested == "RandomWalk") {
-        result <- do.call(sample.RW.cddm, full_params)
-    } else if (method_tested == "Metropolis") {
-        result <- do.call(sample.Metropolis.cddm, full_params)
-    } else if (method_tested == "inverseCDF") {
-        result <- do.call(sample.invCDF.cddm, full_params)
-    } else if (method_tested == "Rejection") {
-        result <- do.call(sample.Reject.cddm, full_params)
-    } else {
-        stop(paste("Unknown method:", method_tested))
-    }
-    end_time <- Sys.time()
-    # Execution time
-    execution_time <- as.numeric(difftime(end_time, start_time, units="secs"))
-    # Completion rate
-    completion <- mean(!is.na(result$bivariate.data$RT))
-    # Calculate distance from boundary for each trial
-    final_coords <- getFinalState(result$random.walk)
-    distances_from_boundary <- sqrt(rowSums(final_coords^2))
-    circumference_precision <- mean(abs(distances_from_boundary - params$par$boundary))
-    return(list(
-        execution_time = execution_time,
-        completion = completion,
-        circumference_precision = circumference_precision,
-        mean_rt = mean(result$bivariate.data$RT, na.rm=TRUE),
-        sd_rt = sd(result$bivariate.data$RT, na.rm=TRUE)
-    ))
-}
+n_reps <- 10
 
 
 #############################################################
 #### R U N N I N G     T E S T S ############################
 #############################################################
 results <- data.frame()
+# Progress counter
+total_iterations <- length(names(param_sets)) * length(trial_sizes) * n_reps
+current_iteration <- 0
 for(param_name in names(param_sets)) {
     for(n_trials in trial_sizes) {
         for(rep in 1:n_reps) {
-            # Show cell tested
-            cat(sprintf("\nRunning %s, trials=%d, rep=%d", param_name, n_trials, rep))
+            current_iteration <- current_iteration + 1
+            
+            # Progress indicator
+            cat(sprintf("\rProgress: %d/%d (%.1f%%) - Running %s, trials=%d, rep=%d",
+                current_iteration, total_iterations,
+                100 * current_iteration/total_iterations,
+                param_name, n_trials, rep))
+            
             # Run test
-            bench <- run_single_test(param_sets[[param_name]], n_trials, method_tested)
+            bench <- run_simple_test(param_sets[[param_name]], n_trials, method_tested)
             # Process results
             results <- rbind(results, 
                              data.frame(param_set = param_name,
