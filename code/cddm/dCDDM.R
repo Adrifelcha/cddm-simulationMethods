@@ -72,32 +72,33 @@ cddm.pdf.2016 <- function(x, drift, theta, tzero, boundary){
 
 
 # Use the density function we wrote on the CDDM paper (Villarreal et al, 2023)
-cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary, log=FALSE) {
-  # Likelihood function specified for the JAGS CDDM module paper
-  # Identify bivariate data
-  c <- x[1]
-  t <- x[2]
-  ### Listed under "The CDDM likelihood function"
-  # First constant
-  eta.squared <- boundary*boundary
-  constant <- 1/(2*pi*eta.squared)
-  # Outer exponential
-  squareBracket.left <- (drift*drift)*(t-tzero)
-  squareBracket.right <- 2*boundary*drift*cos(c-theta)
-  outer.exponand <- exp(-0.5*(squareBracket.left - squareBracket.right))
-  # Last term: The sum
-  inva2 = 1 / (boundary*boundary)
-  sum = 0
-  for (i in 1:length(j0_squared)) {
-    exponand = j0_squared[i] * inva2 * (t-tzero) * -0.5
-    sum = sum + j0_over_J1_of_j0[i] * exp(exponand)
-  }
-  
-  if(log) {
-    return(log(constant) + log(outer.exponand) + log(sum))
-  } else {
-    return(constant * outer.exponand * sum)
-  }
+cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary) {
+    # Identify bivariate data
+    c <- x[1]
+    t <- x[2]
+    
+    # Early return for impossible times
+    if(t <= tzero) return(0)
+    
+    # First constant
+    eta.squared <- boundary * boundary
+    constant <- 1/(2*pi*eta.squared)
+    
+    # Outer exponential
+    squareBracket.left <- (drift*drift)*(t-tzero)
+    squareBracket.right <- 2*boundary*drift*cos(c-theta)
+    outer.exponand <- exp(-0.5*(squareBracket.left - squareBracket.right))
+    
+    # Last term: The sum
+    inva2 <- 1 / eta.squared
+    sum <- 0
+    for(i in 1:length(j0_squared)) {
+        exponand <- j0_squared[i] * inva2 * (t-tzero) * -0.5
+        sum <- sum + j0_over_J1_of_j0[i] * exp(exponand)
+    }
+    
+    # Return bivariate density (ensure non-negative)
+    return(max(0, constant * outer.exponand * sum))
 }
 
 
@@ -131,20 +132,21 @@ cddm.pdf.jags <- function(x, drift, theta, tzero, boundary){
 
 # Compute the bivariate density and produce a suiting output for the data
 dCDDM <- function(data, drift, theta, tzero, boundary) {
-    # Validate parameters
-    if(tzero < 0) stop("tzero must be non-negative")
-    if(boundary <= 0) stop("boundary must be positive")
+    # Input validation
     if(drift < 0) stop("drift must be non-negative")
-    if(theta < 0 || theta > 2*pi) warning("theta should be in [0, 2π]")
+    if(boundary <= 0) stop("boundary must be positive")
+    if(tzero < 0) stop("tzero must be non-negative")
     
-    if(is.vector(data)){
+    if(is.vector(data)) {
         N <- 1
-        pdf <- cddm.pdf.villarreal(data,drift,theta,tzero,boundary)
-    }else{
+        # Ensure non-negative output
+        pdf <- max(0, cddm.pdf.villarreal(data, drift, theta, tzero, boundary))
+    } else {
         N <- nrow(data)
         pdf <- rep(NA, N)
-        for(i in 1:N){
-          pdf[i] <- cddm.pdf.villarreal(data[i,],drift,theta,tzero,boundary)
+        for(i in 1:N) {
+            # Ensure non-negative output for each point
+            pdf[i] <- max(0, cddm.pdf.villarreal(data[i,], drift, theta, tzero, boundary))
         }
     }
     return(pdf)
