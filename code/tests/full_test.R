@@ -196,10 +196,10 @@ circ_means <- tapply(results$angular_error, results$group, mean)
 rt_means <- tapply(results$mean_rt, results$group, mean)
 compl_means <- tapply(results$completion, results$group, mean)
 cex.axis = 0.9
+xlim <- c(1, length(levels(results$group)))
 
 # Create color vector based on parameter set
 point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
-
 # Add transparency to point colors
 point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)  # 0.3 for 70% transparency
 
@@ -224,6 +224,14 @@ add_background_stripes <- function(stripe_colors) {
              ytop = par("usr")[4],
              col = stripe_colors[i],
              border = NA)
+        
+        # Add trial size text
+        text(x = 2.5 + (i-1)*5,  # Center of each stripe
+             y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.6,  # Middle of plot
+             labels = paste(trial_sizes[i], "trials"),
+             col = "gray50",  # Subtle gray color
+             cex = 0.8,       # Smaller text
+             srt = 0)        # Rotate text 90 degrees
     }
 }
 
@@ -231,8 +239,8 @@ add_background_stripes <- function(stripe_colors) {
 speed_labels <- c("Very Fast", "Fast", "Medium", "Slow", "Very Slow")
 
 # 1. Execution Time Plot
-plot(1, type="n",
-     xlim=c(0.8, length(levels(results$group))+0.2),
+plot(1, type="n", axes=FALSE,
+     xlim=xlim,
      ylim=range(results$execution_time),
      xlab="", ylab="Time (seconds)",
      main="Execution Time Distribution",
@@ -242,13 +250,13 @@ mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")),
 add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
        col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis)
+axis(2, las=2, cex.axis=cex.axis, line=-0.3)
 axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(exec_means)
 
 # 2. Angular Error Plot
-plot(1, type="n",
-     xlim=c(0.8, length(levels(results$group))+0.2),
+plot(1, type="n", axes=FALSE,
+     xlim=xlim,
      ylim=range(results$angular_error),
      xlab="", ylab="Angular Distance (radians)",
      main=expression(bold(paste("Distance between mean angle and ", theta))),
@@ -256,13 +264,13 @@ plot(1, type="n",
 add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
        col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis)
+axis(2, las=2, cex.axis=cex.axis, line=-0.3)
 axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(circ_means)
 
 # 3. Mean RT Plot
-plot(1, type="n",
-     xlim=c(0.8, length(levels(results$group))+0.2),
+plot(1, type="n", axes=FALSE,
+     xlim=xlim,
      ylim=range(results$mean_rt),
      xlab="", ylab="Time (seconds)",
      main="Mean Response Time",
@@ -270,7 +278,7 @@ plot(1, type="n",
 add_background_stripes(stripe_colors)
 points(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
        col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis)
+axis(2, las=2, cex.axis=cex.axis, line=-0.3)
 axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
 add_means(rt_means)
 
