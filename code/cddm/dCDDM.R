@@ -72,7 +72,7 @@ cddm.pdf.2016 <- function(x, drift, theta, tzero, boundary){
 
 
 # Use the density function we wrote on the CDDM paper (Villarreal et al, 2023)
-cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary){
+cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary, log=FALSE) {
   # Likelihood function specified for the JAGS CDDM module paper
   # Identify bivariate data
   c <- x[1]
@@ -92,8 +92,12 @@ cddm.pdf.villarreal <- function(x, drift, theta, tzero, boundary){
     exponand = j0_squared[i] * inva2 * (t-tzero) * -0.5
     sum = sum + j0_over_J1_of_j0[i] * exp(exponand)
   }
-  # Return bivariate density
-  return(PDF = constant * outer.exponand * sum)
+  
+  if(log) {
+    return(log(constant) + log(outer.exponand) + log(sum))
+  } else {
+    return(constant * outer.exponand * sum)
+  }
 }
 
 
@@ -126,18 +130,24 @@ cddm.pdf.jags <- function(x, drift, theta, tzero, boundary){
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Compute the bivariate density and produce a suiting output for the data
-dCDDM <- function(data,drift,theta,tzero,boundary){
-      if(is.vector(data)){
-          N <- 1
-          pdf <- cddm.pdf.villarreal(data,drift,theta,tzero,boundary)
-      }else{
-          N <- nrow(data)
-          pdf <- rep(NA, N)
-          for(i in 1:N){
-            pdf[i] <- cddm.pdf.villarreal(data[i,],drift,theta,tzero,boundary)
-          }
-      }
-  return(pdf)
+dCDDM <- function(data, drift, theta, tzero, boundary) {
+    # Validate parameters
+    if(tzero < 0) stop("tzero must be non-negative")
+    if(boundary <= 0) stop("boundary must be positive")
+    if(drift < 0) stop("drift must be non-negative")
+    if(theta < 0 || theta > 2*pi) warning("theta should be in [0, 2π]")
+    
+    if(is.vector(data)){
+        N <- 1
+        pdf <- cddm.pdf.villarreal(data,drift,theta,tzero,boundary)
+    }else{
+        N <- nrow(data)
+        pdf <- rep(NA, N)
+        for(i in 1:N){
+          pdf[i] <- cddm.pdf.villarreal(data[i,],drift,theta,tzero,boundary)
+        }
+    }
+    return(pdf)
 }
 
 #################
