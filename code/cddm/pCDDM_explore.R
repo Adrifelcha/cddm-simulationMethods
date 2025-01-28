@@ -54,6 +54,7 @@ pCDDM <- function(data, drift, theta, tzero, boundary,
     if(length(valid_idx) == 0) return(probs)
     
     if(method == "monte_carlo") {
+        if(is.na(n_points)) {       n_points <- 4000        }
         n_valid <- length(valid_idx)
         
         # Generate all points at once
@@ -151,6 +152,7 @@ pCDDM <- function(data, drift, theta, tzero, boundary,
                    pt.cex = 1.5)   # Increased legend symbol size
         }
     } else if(method == "grid") {
+        if(is.na(n_points)) {       n_points <- 1000        }
         # Similar optimization needed for grid method
         probs[valid_idx] <- sapply(valid_idx, function(i) {
             rad_grid <- seq(0, rad[i], length.out=n_points)
