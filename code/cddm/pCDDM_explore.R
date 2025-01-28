@@ -31,69 +31,81 @@ pCDDM <- function(data, drift, theta, tzero, boundary,
                   method="monte_carlo", n_points=NA, show=FALSE,
                   type="joint", max_time=10) {
     
+    # Convert single vector to matrix if needed
+    if(is.vector(data)) {
+        data <- matrix(data, nrow=1)
+    }
+    
     # Handle different types of CDF calculations
-    if(type == "joint") {     rad <- data[1]; time <- data[2]        
-    } else if(type == "RT") { rad <- 2*pi; time <- data[1]        
-    } else if(type == "rad") { rad <- data[1]; time <- max_time } else {
+    if(type == "joint") {     
+        rad <- data[,1]; time <- data[,2]        
+    } else if(type == "RT") { 
+        rad <- rep(2*pi, nrow(data)); time <- data[,1]        
+    } else if(type == "rad") { 
+        rad <- data[,1]; time <- rep(max_time, nrow(data))
+    } else {
         stop("Unknown type. Use 'joint', 'RT', or 'rad'")
     }
     
     # Input validation
-    if(time < tzero) return(0)  # No probability mass before tzero
-    if(rad <= 0) return(0)    # No probability mass at or below 0 rad
+    probs <- rep(0, length(rad))  # Initialize output vector
+    valid_idx <- which(time >= tzero & rad > 0)
+    
+    if(length(valid_idx) == 0) return(probs)
     
     if(method == "grid") {
-        if(is.na(n_points)) {
-            n_points <- 1000
-        }
-        # Grid-based numerical integration
-        rad_grid <- seq(0, rad, length.out=n_points)
-        time_grid <- seq(tzero, time, length.out=n_points)
-        
-        # Create meshgrid
-        da <- rad_grid[2] - rad_grid[1]
-        dt <- time_grid[2] - time_grid[1]
-        
-        # Create all combinations as a matrix
-        grid_points <- as.matrix(expand.grid(rad=rad_grid, time=time_grid))
-        
-        # Vectorized computation
-        densities <- sapply(1:nrow(grid_points), function(i) {
-            dCDDM(grid_points[i,], drift, theta, tzero, boundary)
-        })
-        total_prob <- sum(densities) * da * dt
-        
-        return(total_prob)
-        
-    } else if(method == "monte_carlo") {        
-        if(is.na(n_points)) {
-            n_points <- 2000
-        }
-        # Monte Carlo integration
-        points <- matrix(
-            c(runif(n_points, 0, rad),     # rads
-              runif(n_points, tzero, time)),  # times
-            ncol=2
-        )
-        
-        # Evaluate densities
-        densities <- sapply(1:nrow(points), function(i) {
-            dCDDM(points[i,], drift, theta, tzero, boundary)
+        if(is.na(n_points)) {       n_points <- 1000        }
+        # TODO: Optimize grid method if needed
+        probs[valid_idx] <- sapply(valid_idx, function(i) {
+            rad_grid <- seq(0, rad[i], length.out=n_points)
+            time_grid <- seq(tzero, time[i], length.out=n_points)
+            
+            da <- rad_grid[2] - rad_grid[1]
+            dt <- time_grid[2] - time_grid[1]
+            
+            grid_points <- as.matrix(expand.grid(rad=rad_grid, time=time_grid))
+            
+            densities <- sapply(1:nrow(grid_points), function(j) {
+                dCDDM(grid_points[j,], drift, theta, tzero, boundary)
+            })
+            sum(densities) * da * dt
         })
         
-        # Monte Carlo integration formula
-        area <- rad * (time - tzero)
-        total_prob <- area * mean(densities)      
+    } else if(method == "monte_carlo") {
+        if(is.na(n_points)) {       n_points <- 3000        }
+        # Generate all random points at once for all valid observations
+        n_valid <- length(valid_idx)
         
-        return(total_prob)
+        # Create matrices of random points for all observations
+        rand_rad <- matrix(runif(n_points * n_valid), nrow=n_points)
+        rand_time <- matrix(runif(n_points * n_valid), nrow=n_points)
+        
+        # Scale random points to correct ranges
+        for(i in 1:n_valid) {
+            rand_rad[,i] <- rand_rad[,i] * rad[valid_idx[i]]
+            rand_time[,i] <- rand_time[,i] * (time[valid_idx[i]] - tzero) + tzero
+        }
+        
+        # Evaluate all densities at once
+        densities <- matrix(0, nrow=n_points, ncol=n_valid)
+        for(i in 1:n_points) {
+            points <- cbind(rand_rad[i,], rand_time[i,])
+            densities[i,] <- apply(points, 1, function(p) {
+                dCDDM(p, drift, theta, tzero, boundary)
+            })
+        }
+        
+        # Compute areas and means for each observation
+        areas <- rad[valid_idx] * (time[valid_idx] - tzero)
+        probs[valid_idx] <- areas * colMeans(densities)
     } else {
         stop("Unknown method. Use 'grid' or 'monte_carlo'")
     }
     
     # Ensure output is between 0 and 1
-    total_prob <- pmax(0, pmin(1, total_prob))
+    probs <- pmax(0, pmin(1, probs))
     
-    return(total_prob)
+    return(probs)
 }
 
 # Example usage:
@@ -171,7 +183,7 @@ if(test) {
     print(results)
     
     # Create PDF file
-    pdf("tests/pCDDM_testing.pdf", width=10, height=5)
+    pdf("tests/pCDDM_testing2.pdf", width=10, height=5)
     
     # Set up side-by-side plots
     par(mfrow=c(1,2))
