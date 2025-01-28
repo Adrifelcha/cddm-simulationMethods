@@ -74,6 +74,82 @@ pCDDM <- function(data, drift, theta, tzero, boundary,
         areas <- rad[valid_idx] * (time[valid_idx] - tzero)
         probs[valid_idx] <- areas * colMeans(densities_matrix)
         
+        # Visualization if requested
+        if(show && length(valid_idx) > 0) {
+            par(mfrow=c(1,1), mar = c(5, 3, 6, 3), oma = c(0, 0, 0.3, 0))
+            # Load required package
+            if (!require("scatterplot3d")) {
+                install.packages("scatterplot3d")
+                library(scatterplot3d)
+            }
+                                    
+            i <- valid_idx[1]  # Visualize first valid point
+            points_i <- all_points[obs_indices == 1, ]
+            densities_i <- all_densities[obs_indices == 1]
+            
+            # Create base 3D scatterplot
+            s3d <- scatterplot3d(points_i[,1], points_i[,2], densities_i,
+                               xlab = "Choice (radians)",
+                               ylab = "Response Time",
+                               zlab = "Density",
+                               main = paste("Monte Carlo Approximation to CDF\n", 
+                                          "Choice =", round(rad[i], 3), 
+                                          ", RT =", round(time[i], 3),
+                                          "\nEstimated CDF =", round(probs[i], 4)),
+                               color = rgb(0, 0, 1, 0.3),
+                               pch = 19,
+                               angle = 45,
+                               cex.main = 1.5,    
+                               cex.lab = 1.2)
+            
+            # Add points on the bottom plane
+            s3d$points3d(points_i[,1], points_i[,2], 
+                        rep(0, nrow(points_i)),
+                        col = rgb(0.7, 0.7, 0.7, 0.5),
+                        pch = 19)
+            
+            # Add vertical lines connecting base points to density heights
+            for(j in 1:nrow(points_i)) {
+                s3d$points3d(rep(points_i[j,1], 2),
+                            rep(points_i[j,2], 2),
+                            c(0, densities_i[j]),
+                            type = "l",
+                            col = rgb(0, 0, 1, 0.1))
+            }
+            
+            # Add integration region boundaries
+            s3d$points3d(c(0, rad[i], rad[i], 0, 0), 
+                        c(tzero, tzero, time[i], time[i], tzero), 
+                        rep(0, 5), 
+                        type = "l", 
+                        col = "red",
+                        lwd = 2)
+            
+            # Add target point (choice, rt) with projections
+            s3d$points3d(rad[i], time[i], 0,
+                        col = "darkred",
+                        pch = 19,
+                        cex = 2)
+            
+            # Projection lines to axes
+            s3d$points3d(c(rad[i], rad[i]), c(tzero, time[i]), c(0, 0),
+                        type = "l", col = "darkred", lty = 2)
+            s3d$points3d(c(0, rad[i]), c(time[i], time[i]), c(0, 0),
+                        type = "l", col = "darkred", lty = 2)
+            
+            # Add legend
+            legend("topright", 
+                   c("Density Points", "Random Samples", 
+                     "Integration Region", "Data Point"), 
+                   col = c(rgb(0, 0, 1, 0.3), 
+                          rgb(0.7, 0.7, 0.7, 0.5),
+                          "red",
+                          "darkred"), 
+                   pch = c(19, 19, NA, 19),
+                   lty = c(NA, NA, 1, NA),
+                   cex = 1.4,      # Increased legend text size
+                   pt.cex = 1.5)   # Increased legend symbol size
+        }
     } else if(method == "grid") {
         # Similar optimization needed for grid method
         probs[valid_idx] <- sapply(valid_idx, function(i) {
@@ -113,10 +189,14 @@ if(test) {
     p2 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="monte_carlo", n_points=2000)
     end_time2 <- Sys.time()
     print(end_time2 - start_time2)
+    start_time3 <- Sys.time()
+    p3 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="monte_carlo", n_points=2000, show=TRUE)
+    end_time3 <- Sys.time()
+    print(end_time3 - start_time3)
     
     # Test marginal CDFs
-    p_rt <- pCDDM_RT(2, drift, theta, tzero, boundary)
-    p_rad <- pCDDM_rad(pi, drift, theta, tzero, boundary)
+    p_rt <- pCDDM(c(2, 1), drift, theta, tzero, boundary, type="RT")
+    p_rad <- pCDDM(c(pi, 0.1), drift, theta, tzero, boundary, type="rad")
     
     # Print results
     cat("Grid method:", p1, "\n")
@@ -173,7 +253,7 @@ if(test) {
     print(results)
     
     # Create PDF file
-    pdf("tests/pCDDM_testing2.pdf", width=10, height=5)
+    pdf("tests/pCDDM_testing3.pdf", width=10, height=5)
     
     # Set up side-by-side plots
     par(mfrow=c(1,2))
