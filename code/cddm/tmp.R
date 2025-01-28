@@ -14,3 +14,18 @@ end2 <- Sys.time()
 
 print(end1 - start1)
 print(end2 - start2)
+
+
+
+
+ drift <- 1;  theta <- pi/4; tzero <- 0.1; boundary <- 4
+
+    # Test full CDF
+    start_time <- Sys.time()    
+    p1 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, plot=FALSE)
+    end_time <- Sys.time()
+    print(end_time - start_time)
+    start_time2 <- Sys.time()
+    p2 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary)
+    end_time2 <- Sys.time()
+    print(end_time2 - start_time2)
