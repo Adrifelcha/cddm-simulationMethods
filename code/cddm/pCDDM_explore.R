@@ -27,14 +27,10 @@ library("plot3D")
 # n_points Number of points for numerical integration
 # type: Type of CDF to compute ("joint", "RT", or "rad")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-pCDDM <- function(data, drift, theta, tzero, boundary, 
-                  method="monte_carlo", n_points=NA, show=FALSE,
-                  type="joint", max_time=10) {
-    
+pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo", 
+                  n_points=NA, show=FALSE, type="joint", max_time=10) {    
     # Convert single vector to matrix if needed
-    if(is.vector(data)) {
-        data <- matrix(data, nrow=1)
-    }
+    if(is.vector(data)){        data <- matrix(data, nrow=1)        }
     
     # Handle different types of CDF calculations
     if(type == "joint") {     
@@ -46,12 +42,11 @@ pCDDM <- function(data, drift, theta, tzero, boundary,
     } else {
         stop("Unknown type. Use 'joint', 'RT', or 'rad'")
     }
-    
+    # Initialize output vector    
+    probs <- rep(0, length(rad))  
     # Input validation
-    probs <- rep(0, length(rad))  # Initialize output vector
-    valid_idx <- which(time >= tzero & rad > 0)
-    
-    if(length(valid_idx) == 0) return(probs)
+    valid_idx <- which(time >= tzero & rad > 0)    
+    if(length(valid_idx) == 0){ return(probs) }
     
     if(method == "monte_carlo") {
         if(is.na(n_points)) {       n_points <- 4000        }
