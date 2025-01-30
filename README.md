@@ -17,13 +17,13 @@ Each method generates paired angular choices (in radians) and response times (in
 
 ## Repository Structure
 
-- `code/cddm`: Contains the R code for the simulation methods
-- `code/ddm/`: Placeholder for generated data
-- `code/figures`: Placeholder for analysis scripts
-- `code/general_functions`: Placeholder for analysis scripts
-- `code/tests`: Placeholder for analysis scripts
-- `references/`
-- `tests/`
+- `code/cddm`: R code specific to the CDDM
+- `code/ddm/`: R code specific to the DDM
+- `code/figures`: R scripts for generating figures
+- `code/general_functions`: R functions for general use
+- `code/tests`: R scripts for testing the simulation methods
+- `references/`: References and citations
+- `tests/`: Placeholder for analysis scripts
 
 # Docker Container for Reproducibility
 
