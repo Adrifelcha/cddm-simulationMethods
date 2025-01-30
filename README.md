@@ -1,19 +1,21 @@
-# Simulation Methods for the Circular Drift-Diffusion Model (CDDM)
+# Simulation Methods for the Circular Drift Diffusion Model (CDDM)
 
-This repository contains code and materials for comparing different simulation methods for generating data from the Circular Drift-Diffusion Model (CDDM). All simulation algorithms are implemented in R.
-
+This repository contains R code for the implementation of different simulation methods for generating data from the Circular Drift-Diffusion Model (CDDM). The performance of each method is evaluated for both computational efficiency and statistical accuracy.
 
 ## Overview
 
-The Circular Drift-Diffusion Model (CDDM) is a sequential sampling model designed for decisions with circular alternatives. This project evaluates four distinct computational methods for generating bivariate data from the CDDM:
+File `cddm_fullReport.Rmd` contains a brief description of the simulation methods explored, and the custom functions build for their implementation. The four simulation methods explored are:
 
 1. **Direct Emulation**: Approximates the underlying stochastic process through discrete time steps
 2. **Rejection Sampling**: Operates in a bounded bivariate space
 3. **Metropolis-Hastings Algorithm**: Uses a bivariate normal proposal distribution
 4. **Probability Integral Transform**: Applies probability integral transform using trapezoid integration
 
+Each method generates paired angular choices (in radians) and response times (in seconds). They are evaluated on the basis of:
 
-Each method generates paired angular choices (in radians) and response times (in seconds), and is evaluated for both computational efficiency and statistical accuracy.
+- Their execution time
+- The difference between the mean angular choice generated and the true underlying drift direction used to generate the data.
+- The difference between the empirical cumulative distribution function of the generated data and the theoretical cumulative distribution function approximated through numerical integration.
 
 ## Repository Structure
 
