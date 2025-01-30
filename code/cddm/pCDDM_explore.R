@@ -205,6 +205,7 @@ if(test) {
 # Test Monte Carlo convergence and timing
 if(!exists("test")) { test <- TRUE }
 if(test) {
+    set.seed(789)
     # Test parameters
     drift <- 1
     theta <- pi/4
@@ -250,7 +251,7 @@ if(test) {
     print(results)
     
     # Create PDF file
-    pdf("tests/pCDDM_testing3.pdf", width=10, height=5)
+    pdf("results/pCDDM_testing.pdf", width=10, height=5)
     
     # Set up side-by-side plots
     par(mfrow=c(1,2))
