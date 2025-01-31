@@ -3,16 +3,7 @@
 #####   Approximate the theoretical CDF function using the total volume
 ###############################################################################
 ########################################################   by Adriana F. Chavez 
-if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){     source("code/cddm/dCDDM.R")       }
-library("scatterplot3d")
-library("plot3D")
-
-# Auxiliary functions needed are available in pCDDM_aux.R
-# integrate_grid()
-# pCDDM_grid()
-
-###########################################################################
+##############################################################################
 # Parameters and variable definitions:
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Data ~~~~  
@@ -105,89 +96,3 @@ pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo",
     
     return(probs)
 }
-
-
-
-
-# Test Monte Carlo convergence and timing
-if(!exists("test")) { test <- TRUE }
-if(test) {
-    set.seed(789)
-    # Test parameters
-    drift <- 1
-    theta <- pi/4
-    tzero <- 0.1
-    boundary <- 4
-    data <- c(pi, 2)
-    
-    # Different n_points to test
-    n_points_seq <- seq(500, 10000, 500)  # More evenly distributed sequence
-    n_repetitions <- 100  # Number of times to repeat each test
-    
-    # Store results
-    results <- data.frame()
-    
-    # Run tests
-    for(n in n_points_seq) {
-        cat("\nTesting n_points =", n, "\n")
-        
-        # Store results for this n_points
-        values <- numeric(n_repetitions)
-        times <- numeric(n_repetitions)
-        
-        for(i in 1:n_repetitions) {
-            start_time <- Sys.time()
-            values[i] <- pCDDM(data, drift, theta, tzero, boundary, 
-                              method="monte_carlo", n_points=n)
-            end_time <- Sys.time()
-            times[i] <- as.numeric(end_time - start_time, units="secs")
-        }
-        
-        # Compute statistics
-        results <- rbind(results, data.frame(
-            n_points = n,
-            mean_value = mean(values),
-            sd_value = sd(values),
-            mean_time = mean(times),
-            sd_time = sd(times)
-        ))
-    }
- 
-    # Print results
-    print("Monte Carlo Results:")
-    print(results)
-    
-    # Create PDF file
-    pdf("results/pCDDM_testing.pdf", width=10, height=5)
-    
-    # Set up side-by-side plots
-    par(mfrow=c(1,2))
-    
-    # Plot 1: Convergence of values
-    plot(results$n_points, results$mean_value, type="l",
-         xlab="Number of Points", ylab="CDF Value",
-         main="Monte Carlo Convergence", 
-         ylim=range(c(results$mean_value + c(-results$sd_value, results$sd_value))))
-    # Add error bands
-    polygon(c(results$n_points, rev(results$n_points)),
-           c(results$mean_value + results$sd_value,
-             rev(results$mean_value - results$sd_value)),
-           col=rgb(0,0,0,0.2), border=NA)
-    lines(results$n_points, results$mean_value, lwd=2)
-    
-    # Plot 2: Execution time
-    plot(results$n_points, results$mean_time, type="l",
-         xlab="Number of Points", ylab="Time (seconds)",
-         main="Execution Time")
-    # Add error bands
-    polygon(c(results$n_points, rev(results$n_points)),
-           c(results$mean_time + results$sd_time,
-             rev(results$mean_time - results$sd_time)),
-           col=rgb(0,0,0,0.2), border=NA)
-    lines(results$n_points, results$mean_time, lwd=2)
-    
-    # Reset plot parameters and close PDF
-    par(mfrow=c(1,1))
-    dev.off()
-}
-
