@@ -108,36 +108,6 @@ pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo",
 
 
 
-# Example usage:
-if(!exists("test")) { test <- TRUE }
-if(test) {
-    # Test parameters
-    drift <- 1;  theta <- pi/4; tzero <- 0.1; boundary <- 4
-
-    # Test full CDF
-    start_time <- Sys.time()
-    p1a <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="grid")
-    end_time <- Sys.time()
-    print(end_time - start_time)
-    start_time2 <- Sys.time()
-    p2 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="monte_carlo", n_points=2000)
-    end_time2 <- Sys.time()
-    print(end_time2 - start_time2)
-    start_time3 <- Sys.time()
-    p3 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="monte_carlo", n_points=2000, show=TRUE)
-    end_time3 <- Sys.time()
-    print(end_time3 - start_time3)
-    
-    # Test marginal CDFs
-    p_rt <- pCDDM(c(2, 1), drift, theta, tzero, boundary, type="RT")
-    p_rad <- pCDDM(c(pi, 0.1), drift, theta, tzero, boundary, type="rad")
-    
-    # Print results
-    cat("Grid method:", p1, "\n")
-    cat("Monte Carlo method:", p2, "\n")
-    cat("RT marginal CDF:", p_rt, "\n")
-    cat("Rad marginal CDF:", p_rad, "\n")
-}
 
 # Test Monte Carlo convergence and timing
 if(!exists("test")) { test <- TRUE }
