@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libxml2-dev \
     bash \
-    openssh-server
+    openssh-server \ 
+    git
 
 # Create SSH directory and set root password
 RUN mkdir /var/run/sshd && \
@@ -27,11 +28,8 @@ RUN R -e "install.packages(c(\
     'mvtnorm' \
     ), repos='https://cran.rstudio.com/')"
 
-# Create a working directory
-WORKDIR /app
-
-# Copy your R code into the container
-COPY code/cddm /app/code/cddm
+# Clone the repository
+RUN git clone git@github.com:Adrifelcha/cddm-simulationMethods.git
 
 EXPOSE 22
 
