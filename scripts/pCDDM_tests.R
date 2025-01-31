@@ -12,7 +12,6 @@ cat("Running pCDDM_tests.R\n\n")
 cat("Loading R libraries...\n")
 library("scatterplot3d")
 library("plot3D")
-library("mvtnorm")
 library("here")
 
 cat("Loading custom function scripts from /code/cddm...\n\n")
