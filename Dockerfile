@@ -19,7 +19,12 @@ RUN mkdir /var/run/sshd && \
 # Install required R packages
 RUN R -e "install.packages(c(\
     'scatterplot3d', \
-    'plot3D' \
+    'plot3D', \
+    'circular', \
+    'grid', \
+    'shape', \
+    'geostats', \
+    'mvtnorm' \
     ), repos='https://cran.rstudio.com/')"
 
 # Create a working directory
