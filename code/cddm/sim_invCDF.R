@@ -4,10 +4,6 @@
 #####   INVERSE PROBABILITY TRANSFORM ALGORITHM with a grid approximation
 ###############################################################################
 ########################################################   by Adriana F. Chavez 
-if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ 
-      source("./pCDDM.R") 
-      source("./sim_auxiliarFunctions.R")}
 library(scatterplot3d) 
 
 sample.invCDF.cddm <- function(n, par, plot=FALSE, color = NA){
@@ -80,7 +76,10 @@ if(test){
     
     max.RT=NA
     n <- 5000
+    time1 <- Sys.time()
     data <- sample.invCDF.cddm(n,par)
+    time2 <- Sys.time()
+    difftime(time2, time1, units = "secs")
     hist(data[,2], main="Histogram of RTs", xlab="RT")
     
     eCDF.RT <- myECDF(data[,2])
