@@ -30,7 +30,7 @@ RUN R -e "install.packages(c(\
     ), repos='https://cran.rstudio.com/')"
 
 # Clone the repository
-RUN git clone git@github.com:Adrifelcha/cddm-simulationMethods.git
+RUN git clone https://github.com/Adrifelcha/cddm-simulationMethods.git
 
 EXPOSE 22
 
