@@ -7,6 +7,178 @@ makeaplot <- function(){
   plot(1:5,1:5)
 }
 
+embedded_plot <- function(bin.C, bin.RT, kappa, kappa.RT, total, rad,
+                          rt, tzero, theta, drift, boundary,density_matrix, 
+                          rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7)){
+   par(mfrow=c(1,2),mar = c(0, 0, 0, 0)) 
+   # Plot 1 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # Base plot: Sketch the bivariate density curve
+         # Define line positions over the X and Y dimensions
+         nLines <- 30
+         x.C <- seq(0,2*pi,length.out=nLines)            # X: Choices
+         y.RT <- seq(tzero,max(rt,5),length.out=nLines) # Y: RT
+         x.theta <- rep(theta,nLines)                    # Make sure to add theta
+         # Compute the density at each intersection point
+         z.Dens <- matrix(NA, nrow=nLines, ncol=nLines)
+         for(c in 1:nLines){ for(t in 1:nLines){
+           z.Dens[c,t] <- dCDDM(c(x.C[c],y.RT[t]),drift,theta,tzero,boundary)
+         }}
+         # Compute the density at Choice = theta
+         theta.Dens <- dCDDM(cbind(x.theta,y.RT),drift,theta,tzero,boundary)
+         # Draw bivariate density curve
+         baseColor <- rgb(0,0,0,0.2)
+         a <- scatterplot3d(x.C, y.RT, diag(z.Dens), zlab="Density", color = baseColor, type="l",
+                            xlab="Choices", ylab="RT", zlim = c(0, max(z.Dens, theta.Dens)))
+         a$points3d(x.C,rev(y.RT), diag(z.Dens[,c(nLines:1)]),type="l", col = baseColor)
+         for(i in 1:nLines){  
+           a$points3d(rep(x.C[i],nLines), y.RT, z.Dens[i,], type="l", col = baseColor)
+           a$points3d(x.C, rep(y.RT[i],nLines), z.Dens[,i],  col = baseColor, type="l")
+         }
+         # Add a density line corresponding to Choice = Theta
+         a$points3d(x.theta, y.RT, theta.Dens, col = "red", type="l")
+         legend("topright", c("p( RT | theta )"), col="red", cex=0.6, lwd=1, bty = "n")
+   #  plot: Color the density area 
+         nLines2 <- nLines*2
+         k.C  <- floor(seq(1,kappa,length.out=nLines2))
+         k.RT <- floor(seq(1,kappa.RT,length.out=nLines2))  
+         for(i in k.C){  a$points3d(rep(bin.C[i],nLines2), bin.RT[k.RT], type="l", 
+                                    density_matrix[i,k.RT], col = rgb(rgb1[1],rgb1[2],rgb1[3],0.5))
+         }
+         for(i in k.RT){ a$points3d(bin.C[k.C], rep(bin.RT[i],nLines2), type="l",
+                                    density_matrix[k.C,i], col = rgb(rgb1[1],rgb1[2],rgb1[3],0.5))
+         }
+         for(i in 1:length(rt)){
+           row <- which.min(abs(bin.C-rad[i]))-1
+           col <- which.min(abs(bin.RT-rt[i]))-1
+           a$points3d(rad[i], rt[i], density_matrix[row,col], pch=16, cex=0.3,
+                      col=rgb(rgb2[1],rgb2[2],rgb2[3],1))
+         }
+         mtext(paste("Total =", round(max(total),4)),3, adj = 1, cex=0.8)  
+   # Plot 2  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   # Base plot: Sketch the bivariate density curve
+         b <- scatterplot3d(rad, rt, total,  pch=16, xlab = "", ylab = "", zlab = "",
+                            color = rgb(rgb2[1],rgb2[2],rgb2[3],0.5), cex.symbols = 0.5)
+         mtext("Approximate CDF: Area under curve", f=2)
+         mtext("Choices", side=1, line=0.5)
+         mtext("RTs", side=4, line=-1, adj=0)
+}
+
+
+# Base function, compute the volume for each bin
+binsVolume_3Dhist <- function(space.C, space.RT,
+                       drift, theta, tzero, boundary){
+      n.C  <- length(space.C)
+      n.RT <- length(space.RT)
+      ##############################
+      # All bins have the same length on both direction
+      sidesLength.C <- space.C[2]-space.C[1]
+      sidesLength.RT <- space.RT[2]-space.RT[1]
+      # Compute the base area of all bins
+      binBase.area <- sidesLength.C*sidesLength.RT
+      
+      # ~~ Compute the density at every vertex ~~ #
+      #############################################
+      # Part 1: Start empty storing objects
+      density_matrix <- matrix(NA, nrow=n.C, ncol=n.RT)
+      # Part 2: Compute densities
+      for(c in 1:n.C){ for(t in 1:n.RT){
+        vertex <- c(space.C[c],space.RT[t])
+        v.density <- dCDDM(vertex,drift,theta,tzero,boundary)
+        density_matrix[c,t] <- v.density
+      }}
+      # Part 3: Densities computed from RT close to tzero are problematic 
+      #         we locate them and remove them
+      problem <- which(density_matrix < 0, arr.ind = T)
+      if(length(problem)!=0){
+        bad.RT <- as.numeric(unique(problem[,2]))
+        density_matrix <- density_matrix[,-bad.RT]
+        space.RT <- space.RT[-bad.RT]
+      }
+      n.RT <- ncol(density_matrix)
+      
+      # ~~ Compute the height of each bin ~~ #
+      ########################################
+      # Part 1: Empty objects for storage
+      sumHeight_per_bin <- matrix(NA, nrow=n.C-1, ncol=n.RT-1)
+      thisC <- 1
+      # Part 2: Fill height_per_bin matrix
+      for(b.c in 2:n.C){  # Move along radian dimension
+        thisRT <- 1
+        for(b.rt in 2:n.RT){  # Move along rt dimension
+          sumHeight_per_bin[thisC,thisRT] <- sum(c(density_matrix[b.c,b.rt],
+                                                   density_matrix[b.c-1,b.rt],
+                                                   density_matrix[b.c,b.rt-1],
+                                                   density_matrix[b.c-1,b.rt-1]))
+          thisRT <- thisRT + 1
+        }
+        thisC <- thisC +1
+      }
+      # ~~ Compute the volume of each bin ~~ #
+      ########################################
+      volume_per_bin <- sumHeight_per_bin*binBase.area*0.25
+return(list("volume_per_bin" = volume_per_bin,
+            "density_matrix" = density_matrix))
+}
+
+
+# Main function: We write a 2D Trapezoid N.I. algorithm
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE,
+                            bin.RT = NA, bin.C = NA){
+    # ~~ Set up ~~ #
+    ################
+    # Load up CDDM parameters
+    drift <- cddm.par$drift;     theta <- cddm.par$theta
+    tzero <- cddm.par$tzero;     boundary <- cddm.par$boundary
+    # Identify number of data points
+    n <- length(rad)
+    # Make sure radians are in 0-2pi scale
+    rad <- rad %% (2*pi)
+    # Since 2pi = 0pi, we use 2*pi for simplicity ****
+    if(sum(rad==0)>0){ rad[which(rad==0)] <- 2*pi}
+    # Define the bins' cut points across the Choice dimension
+    if(sum(is.na(bin.C))>0){
+          kappa.C <- 315
+          bin.C <- seq(0,max(rad),length.out=kappa.C)
+    }else{
+          kappa.C <- length(bin.C)
+    }
+    # Define the bins' cut points across the RT dimension
+    if(sum(is.na(bin.RT))>0){
+          test.Density <- keyDensityPoints(par)
+          min.RT <- test.Density$min.RT
+          bin.RT <- seq(min.RT,max(rt),0.01)
+          kappa.RT <- length(bin.RT)
+          if(kappa.RT<300){ 
+            bin.RT <- seq(min.RT,max(rt),0.005)
+            kappa.RT <- length(bin.RT)
+          }
+    }else{
+          kappa.RT <- length(bin.RT)
+    }
+
+    Histogram3D <- binsVolume_3Dhist(bin.C, bin.RT,
+                                     drift, theta, tzero, boundary)
+    volume_per_bin <- Histogram3D$volume_per_bin
+    density_matrix <- Histogram3D$density_matrix
+    
+    # ~~ Compute the volume under each data point ~~ #
+    ##################################################
+    total <- rep(NA, n)
+    for(i in 1:n){
+        row <- which.min(abs(bin.C-rad[i]))-1
+        col <- which.min(abs(bin.RT-rt[i]))-1
+        total[i] <- sum(volume_per_bin[1:row,1:col])
+    }
+    total <- total
+    
+    if(plot){   
+        embedded_plot(bin.C, bin.RT, kappa.C, kappa.RT, total, rad,
+                      rt, tzero, theta, drift, boundary,density_matrix, 
+                      rgb1 = c(0.2,0.5,0.6), rgb2 = c(0.3,0.4,0.7))
+      }
+return(total)
+}
 
 # Write Trapezoid N.I. algorithm
 numInt.tpz.cddm <- function(rad,rt, cddm.par, plot=FALSE){
