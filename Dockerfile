@@ -25,6 +25,7 @@ RUN R -e "install.packages(c(\
     'grid', \
     'shape', \
     'geostats', \
+    'here', \
     'mvtnorm' \
     ), repos='https://cran.rstudio.com/')"
 
