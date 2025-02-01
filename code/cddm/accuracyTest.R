@@ -4,11 +4,6 @@
 #####   A comparison between the bivariate empirical CDF and theoretical CDF
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-test <- FALSE # Turn-off built-in examples.
-if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){       
-      source("../cddm/pCDDM.R")}
-
 accuracyTest.cddm <- function(data, par){
       drift <- par$drift
       theta <- par$theta
