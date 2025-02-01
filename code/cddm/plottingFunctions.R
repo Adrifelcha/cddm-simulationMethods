@@ -2,11 +2,11 @@
 #####                    Customized plotting functions
 ###############################################################################
 ########################################################   by Adriana F. Chavez   
-if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ 
-  source("./sim_randomWalk.R") 
-  source("../general_functions/eCDF.R")
-}
+#if(!exists("superCalled")){superCalled <- FALSE}
+#if(!superCalled){ 
+#  source("./sim_randomWalk.R") 
+#  source("../general_functions/eCDF.R")
+#}
 library(grid)
 library(shape)
 library(geostats)
@@ -255,17 +255,17 @@ myRThistogram <- function(rt.vector, color=NA, maxY=NA){
 }
 
 # Test function
-if(!exists("test")){    test <- TRUE                           }
-if(test){
-  par <- list("drift" = 1, 
-              "theta" = pi,
-              "tzero" = 0.1,
-              "boundary" = 7)
-  n <- 5000
-  C <- runif(n,0,2*pi)
-  RT <- rexp(n,3)
-  data <- cbind(C,RT)
-  plot.CDDM(data, par, choice.col.RGB = c(0.15,.29,.80))       
-  plot.CDDM_Fig1()
-}
+#if(!exists("test")){    test <- TRUE                           }
+#if(test){
+#  par <- list("drift" = 1, 
+#              "theta" = pi,
+#              "tzero" = 0.1,
+#              "boundary" = 7)
+#  n <- 5000
+#  C <- runif(n,0,2*pi)
+#  RT <- rexp(n,3)
+#  data <- cbind(C,RT)
+#  plot.CDDM(data, par, choice.col.RGB = c(0.15,.29,.80))       
+#  plot.CDDM_Fig1()
+#}
 
