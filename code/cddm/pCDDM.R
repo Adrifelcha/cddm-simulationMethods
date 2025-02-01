@@ -46,7 +46,7 @@ pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo",
     if(method == "monte_carlo") {
         if(is.na(n_points)) { 
             if(nrow(data) > 1) { n_points <- 50000 }
-            else { n_points <- 5000 }
+            else { n_points <- 7000 }
         }
         
         # Find the maximum boundaries from all valid observations
