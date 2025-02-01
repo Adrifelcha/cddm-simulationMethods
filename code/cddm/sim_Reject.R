@@ -4,11 +4,11 @@
 #####                      REJECTION  ALGORITHM
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez 
-if(!exists("superCalled")){superCalled <- FALSE}
-if(!superCalled){ 
-      source("./dCDDM.R") 
-      source("./sim_auxiliarFunctions.R")
-}
+#if(!exists("superCalled")){superCalled <- FALSE}
+#if(!superCalled){ 
+#      source("./dCDDM.R") 
+#      source("./sim_auxiliarFunctions.R")
+#}
 library(scatterplot3d) 
 
 # Write a simple Rejection algorithm for the CDDM pdf
@@ -78,11 +78,11 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
 }
 
 # Test function
-if(!exists("test")){    test <- TRUE                           }
-if(test){
-          par <- list("drift" = 1, 
-                      "theta" = pi,
-                      "tzero" = 0.1,
-                      "boundary" = 7)
-          n <- 5000
-          sample.Reject.cddm(1000,par, plot=TRUE)  }
+#if(!exists("test")){    test <- TRUE                           }
+#if(test){
+#          par <- list("drift" = 1, 
+#                      "theta" = pi,
+#                      "tzero" = 0.1,
+#                      "boundary" = 7)
+#          n <- 5000
+#          sample.Reject.cddm(1000,par, plot=TRUE)  }
