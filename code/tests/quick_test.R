@@ -5,11 +5,14 @@ method_tested <- "RandomWalk"
 # 2) "RandomWalk"
 # 3) "inverseCDF"
 # 4) "Rejection"
+cat("Simulation algorithm to be tested:", method_tested, "\n\n")
 #############################################################
+
+library("here")
 superCalled <- TRUE
-source("code/cddm/sim_randomWalk.R")
+source(here("code", "cddm", "sim_randomWalk.R"))        
 # Load all R files from code/cddm folder
-r_files <- list.files(path = "code/cddm", 
+r_files <- list.files(path = here("code", "cddm"), 
                       pattern = "\\.R$", 
                       full.names = TRUE)
 for(file in r_files) {
@@ -54,7 +57,7 @@ for(param_name in names(param_sets)) {
                 param_name, n_trials, rep))
             
             # Run test
-            bench <- run_simple_test(param_sets[[param_name]], n_trials, method_tested)
+            bench <- single_algorithm_test(param_sets[[param_name]], n_trials, method_tested)
             # Process results
             results <- rbind(results, 
                              data.frame(param_set = param_name,
