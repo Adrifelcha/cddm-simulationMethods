@@ -67,22 +67,20 @@ return(data)
 
 
 # Test function
-if(!exists("test")){    test <- TRUE                           }
-if(test){
-    par <- list("drift" = 3.5, 
-                "theta" = pi,
-                "tzero" = 0.2,
-                "boundary" = 2)
-    
-    max.RT=NA
-    n <- 5000
-    time1 <- Sys.time()
-    data <- sample.invCDF.cddm(n,par)
-    time2 <- Sys.time()
-    difftime(time2, time1, units = "secs")
-    hist(data[,2], main="Histogram of RTs", xlab="RT")
-    
-    eCDF.RT <- myECDF(data[,2])
-    plot(data[,2],eCDF.RT)
-
-}
+#if(!exists("test")){    test <- TRUE                           }
+#if(test){
+#    par <- list("drift" = 3.5, 
+#                "theta" = pi,
+#                "tzero" = 0.2,
+#                "boundary" = 2)
+#    max.RT=NA
+#    max.RT=NA
+#    n <- 5000
+#    time1 <- Sys.time()
+#    data <- sample.invCDF.cddm(n,par)
+#    time2 <- Sys.time()
+#    difftime(time2, time1, units = "secs")
+#    hist(data[,2], main="Histogram of RTs", xlab="RT")
+#    eCDF.RT <- myECDF(data[,2])
+#    plot(data[,2],eCDF.RT)
+#}
