@@ -30,15 +30,15 @@ dCDDM <- function(data, drift, theta, tzero, boundary) {
 # Test/Examples
 #################
 # Test function
-if(!exists("test")){  test <- TRUE     }
-if(test){
-  n <- 10
-  A <- runif(n, 0, 2*pi)
-  B <- rexp(n,2)
-  data <- cbind(A,B)
-  drift <- 1
-  theta <- pi
-  tzero <- 0.1
-  boundary <- 7
-  dCDDM(data, drift, theta, tzero, boundary)
-  dCDDM(data[1,], drift, theta, tzero, boundary)}
+#if(!exists("test")){  test <- TRUE     }
+#if(test){
+#  n <- 10
+#  A <- runif(n, 0, 2*pi)
+#  B <- rexp(n,2)
+#  data <- cbind(A,B)
+#  drift <- 1
+#  theta <- pi
+#  tzero <- 0.1
+#  boundary <- 7
+#  dCDDM(data, drift, theta, tzero, boundary)
+#  dCDDM(data[1,], drift, theta, tzero, boundary)}
