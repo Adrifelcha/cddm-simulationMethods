@@ -53,7 +53,8 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
         mean_angle = abs(as.numeric(mean_angle - theoretical_theta)),        
         sd_angle = sd.circular(angles),
         prop_negative_rt = prop_negative_rt,
-        angular_error = angular_error)
+        angular_error = angular_error,
+        data = result)
 
     if(method_tested == "RandomWalk") {
         # Calculate distance from boundary for each trial
