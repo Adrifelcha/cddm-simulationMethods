@@ -46,17 +46,17 @@ param_sets <- list( fast = list(par = list(
                                  mu1 = 0.5,  mu2 = 0.5,  # (weak drift)
                                  boundary = 5, tzero = 0.1
                                )))
-cat("Easy drift length:", sqrt(sum(rep(param_sets$easy$par$mu1, 2)^2)), "\n")
-cat("Hard drift length:", sqrt(sum(rep(param_sets$hard$par$mu1, 2)^2)), "\n")
-cat("Boundary:", param_sets$easy$par$boundary, "\n")
-cat("Tzero:", param_sets$easy$par$tzero, "\n")
-cat("Theta:", atan2(param_sets$easy$par$mu2, param_sets$easy$par$mu1), "\n\n")
+cat("Fast drift length:", sqrt(sum(rep(param_sets$fast$par$mu1, 2)^2)), "\n")
+cat("Slow drift length:", sqrt(sum(rep(param_sets$slow$par$mu1, 2)^2)), "\n")
+cat("Boundary:", param_sets$fast$par$boundary, "\n")
+cat("Tzero:", param_sets$fast$par$tzero, "\n")
+cat("Theta:", atan2(param_sets$fast$par$mu2, param_sets$fast$par$mu1), "\n\n")
 # Different trial sizes to test
 cat("Setting trial sizes to test...\n")
 trial_sizes <- c(100, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 10
+n_reps <- 5
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -135,31 +135,7 @@ plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_test
 
 if(method_tested == "RandomWalk") {
     figname_circPrecision <- sprintf(here("results", "quickTest_%s_%s_circPrecision.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-    pdf(figname_circPrecision, width=10, height=8)
-   # Plot circumference precision
-        y_range <- range(results$circumference_precision)
-        y_mid <- mean(y_range)
-        y_values <- c(y_range[1], y_mid, y_range[2])
-        circ_means <- tapply(results$circumference_precision, results$group, mean)
-        # Set up plotting parameters
-        par(mfrow=c(1,1), mar=c(5,5,3,2),
-        cex.main=1.8, cex.lab=1.2, cex.axis=1.1)
-
-        # Plot circumference precision
-        plot(jitter(x_positions, amount=0.2), results$circumference_precision,
-            col=point_colors, pch=19, main="Circumference Precision Distribution",
-            xlab="Number of Trials", ylab="Average Distance from Boundary", xaxt="n",
-            yaxt="n", xlim=c(0.5, 6.5))
-        axis(2, at=y_values, labels=sprintf("%.2e", y_values), las=2)
-        segments(1:length(circ_means) - 0.25, circ_means,
-                1:length(circ_means) + 0.25, circ_means,
-                lwd=2, col="black")
-        text(1:length(circ_means) + 0.3, circ_means, sprintf("%.4f", circ_means),
-            adj=0, cex=0.8)
-        axis(1, at=seq_along(levels(results$group)), labels=levels(results$group))
-
-        # Close pdf
-        dev.off()
+    plot_circumference_precision(results, param_sets, trial_sizes, method_tested, filename = figname_circPrecision)
 }
 
 # Print summary
