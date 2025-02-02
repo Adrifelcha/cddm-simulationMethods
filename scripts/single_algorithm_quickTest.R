@@ -22,6 +22,7 @@ cat("-----------------------------------------------------------\n")
 #############################################################
 cat("Loading R libraries...\n")
 library("here")
+library("circular")
 
 cat("\nLoading custom function scripts from /code/cddm...\n\n")
 source(here("code", "cddm", "sim_randomWalk.R"))        
@@ -37,11 +38,11 @@ for(file in r_files) {
 #############################################################
 # Define parameter sets to test
 cat("Setting parameter sets to test...\n")
-param_sets <- list( easy = list(par = list(
+param_sets <- list( fast = list(par = list(
                                  mu1 = 2.0,  mu2 = 2.0,  # (strong drift)
                                  boundary = 5, tzero = 0.1
                                )),
-                    hard = list(par = list(
+                    slow = list(par = list(
                                  mu1 = 0.5,  mu2 = 0.5,  # (weak drift)
                                  boundary = 5, tzero = 0.1
                                )))
@@ -98,176 +99,38 @@ for(param_name in names(param_sets)) {
     }
 }
 
-# Fix the order in which cells will be displayed
-plot_order <- paste(rep(trial_sizes, each=2), 
-                    rep(c("easy", "hard"), length(trial_sizes)))           
-
-# Prepare results
-results$group <- factor(paste(results$n_trials, results$param_set),
-                       levels = plot_order)
-# Save results! 
-filename <- sprintf(here("results", "quickTest_%s_%s_execTime.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
-save(results,file = filename)
-cat("Saving results to:", filename, "\n\n")
 #############################################################
 #### G E T     R E S U L T S ################################
 #############################################################
 # Analyze results
 summary_stats <- aggregate(
-    cbind(execution_time, completion, circumference_precision) 
+    cbind(execution_time, angular_error, prop_negative_rt, completion) 
     ~ param_set + n_trials, 
     data = results,
-    FUN = function(x) c(mean = mean(x), sd = sd(x))
+    FUN = function(x) c(mean = mean(x))
 )
+colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_difference", "prop_neg_rt", "completion_rate")
+
+# Fix the order in which cells will be displayed
+plot_order <- paste(rep(trial_sizes, each=2), 
+                    rep(c("fast", "slow"), length(trial_sizes)))           
+
+# Prepare results
+results$group <- factor(paste(results$n_trials, results$param_set),
+                       levels = plot_order)
+# Save results! 
+filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
+save(results,file = filename)
+cat("Saving results to:", filename, "\n\n")
 
 #############################################################
 #### P L O T T I N G     R E S U L T S ######################
 #############################################################
+
+# Plot algorithm performance per trial size and parameter set
+# (1) execution time, (2) mean angle - theta error, (3) mean RT
 figname_results <- sprintf(here("results", "quickTest_%s_%s.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-
-# Create color vector based on parameter set
-point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
-# Add transparency to point colors
-point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)  # 0.3 for 70% transparency
-# Define plotting space variables   
-x_positions <- as.numeric(results$group)
-# Calculate means for each group
-exec_means <- tapply(results$execution_time, results$group, mean)
-
-
-pdf(figname_results, width=12, height=10)
-
-# Set up 2x2 plotting layout
-par(mfrow=c(2,2), oma=c(2,2,2,2), mar=c(4,4,3,1), mgp=c(2,0.7,0),
-    cex.main=1.5, cex.lab=1.2, cex.axis=1.1)
-
-# Calculate means for plotting
-exec_means <- tapply(results$execution_time, results$group, mean)
-circ_means <- tapply(results$angular_error, results$group, mean)
-rt_means <- tapply(results$mean_rt, results$group, mean)
-compl_means <- tapply(results$completion, results$group, mean)
-cex.axis = 0.9
-xlim <- c(1, length(levels(results$group)))
-
-
-# Function to add mean lines and labels
-add_means <- function(means) {
-    segments(1:length(means) - 0.25, means,
-             1:length(means) + 0.25, means,
-             lwd=3, col="black")
-}
-
-
-# Define four light colors for the stripes
-stripe_colors <- c("lavender", "azure", "honeydew", "cornsilk")
-
-# Function to add background stripes with different colors
-add_background_stripes <- function(stripe_colors) {    
-    # Add each colored stripe
-    for(i in 1:4) {
-        rect(xleft = seq(0.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20),
-             ybottom = par("usr")[3],
-             xright = seq(5.5 + (i-1)*5, max(as.numeric(results$group)) + 0.5, by=20),
-             ytop = par("usr")[4],
-             col = stripe_colors[i],
-             border = NA)
-        
-        # Add trial size text
-        text(x = 2.5 + (i-1)*5,  # Center of each stripe
-             y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.6,  # Middle of plot
-             labels = paste(trial_sizes[i], "trials"),
-             col = "gray50",  # Subtle gray color
-             cex = 0.8,       # Smaller text
-             srt = 0)        # Rotate text 90 degrees
-    }
-}
-
-# Define speed labels
-speed_labels <- c("Very Fast", "Fast", "Medium", "Slow", "Very Slow")
-
-# 1. Execution Time Plot
-plot(1, type="n", axes=FALSE,
-     xlim=xlim,
-     ylim=range(results$execution_time),
-     xlab="", ylab="Time (seconds)",
-     main="Execution Time Distribution",
-     xaxt="n", yaxt="n")
-mtext(paste0(method_tested, "\n", format(Sys.Date(), "%Y-%m-%d")), 
-      side=3, line=0, adj=0, cex=0.8, outer=TRUE)
-add_background_stripes(stripe_colors)
-points(jitter(as.numeric(results$group), amount=0.2), results$execution_time,
-       col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis, line=-0.3)
-axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
-add_means(exec_means)
-
-# 2. Angular Error Plot
-plot(1, type="n", axes=FALSE,
-     xlim=xlim,
-     ylim=range(results$angular_error),
-     xlab="", ylab="Angular Distance (radians)",
-     main=expression(bold(paste("Distance between mean angle and ", theta))),
-     xaxt="n", yaxt="n")
-add_background_stripes(stripe_colors)
-points(jitter(as.numeric(results$group), amount=0.2), results$angular_error,
-       col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis, line=-0.3)
-axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
-add_means(circ_means)
-
-# 3. Mean RT Plot
-plot(1, type="n", axes=FALSE,
-     xlim=xlim,
-     ylim=range(results$mean_rt),
-     xlab="", ylab="Time (seconds)",
-     main="Mean Response Time",
-     xaxt="n", yaxt="n")
-add_background_stripes(stripe_colors)
-points(jitter(as.numeric(results$group), amount=0.2), results$mean_rt,
-       col=point_colors_transparent, pch=19)
-axis(2, las=2, cex.axis=cex.axis, line=-0.3)
-axis(1, at=1:length(levels(results$group)), labels=rep(speed_labels, length.out=length(levels(results$group))), las=2, cex.axis=cex.axis)
-add_means(rt_means)
-
-# 4. Legend Panel with both parameter sets and trial size legends
-plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)
-
-# First legend for parameter sets (moved up)
-legend("top", 
-       legend=c(
-           expression(paste("Very Fast (", delta, " = 4.24)")),
-           expression(paste("Fast (", delta, " = 2.83)")),
-           expression(paste("Medium (", delta, " = 1.41)")),
-           expression(paste("Slow (", delta, " = 0.71)")),
-           expression(paste("Very Slow (", delta, " = 0.28)"))
-       ),
-       col=adjustcolor(unique(point_colors), alpha=0.5),
-       pch=19,
-       pt.cex=2,
-       title=expression(bold("Parameter Sets")),
-       cex=1.5,
-       bty="n",
-       inset=c(0, 0.075))
-
-# Second legend for trial sizes
-legend("bottom", 
-       legend=paste(trial_sizes, "trials"),
-       fill=stripe_colors,
-       title=expression(bold("Trial Sizes")),
-       cex=1.5,
-       bty="n",
-       ncol=2,
-       inset=c(0, 0.15))
-
-# Second legend for trial sizes
-legend("bottom", 
-       legend=bquote(bold("Repetitions: ") * .(n_reps)),
-       cex=1.5,
-       bty="n",       
-       inset=c(0, 0.015))
-
-dev.off()
-
+plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_results)    
 
 
 if(method_tested == "RandomWalk") {
@@ -299,11 +162,10 @@ if(method_tested == "RandomWalk") {
         dev.off()
 }
 
-
-cat("\nFigures saved to:", figname_execTime, "and", figname_circPrecision, "\n\n")
-
 # Print summary
 cat("\nSummary of results:\n")
 print(summary_stats)
+
+cat("\n Figures created:", figname_results, "\n\n")
 
 cat("\n\nDone!\n\n")
