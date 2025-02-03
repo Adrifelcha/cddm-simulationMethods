@@ -66,22 +66,22 @@ myECDF.Plot <- function(data, color="forestgreen"){
 # Test/Examples
 #################
 # Test function
-if(!exists("test")){  test <- TRUE     }
-if(test){
+#if(!exists("test")){  test <- TRUE     }
+#if(test){
     # Data comes from Normal
-    true.mean <- 10
-    true.sd <- 1
-    x <- rnorm(1000,true.mean,true.sd)
-    x.eCDF <- myECDF(x)
-    myECDF.Plot(x)
-    x.tCDF <- pnorm(x,true.mean,true.sd)
-    getDifferences(x.eCDF,x.tCDF)
+#    true.mean <- 10
+#    true.sd <- 1
+#    x <- rnorm(1000,true.mean,true.sd)
+#    x.eCDF <- myECDF(x)
+#    myECDF.Plot(x)
+#    x.tCDF <- pnorm(x,true.mean,true.sd)
+#    getDifferences(x.eCDF,x.tCDF)
     # Data comes from bivariate normal
-    true.means <- c(10,10)
-    true.sds <- diag(length(true.means))
-    y <- mvtnorm::rmvnorm(1000,true.means,true.sds)
-    y.eCDF <- myECDF(y)
-    myECDF.Plot(y)
+#    true.means <- c(10,10)
+#    true.sds <- diag(length(true.means))
+#    y <- mvtnorm::rmvnorm(1000,true.means,true.sds)
+#    y.eCDF <- myECDF(y)
+#    myECDF.Plot(y)
     #y.tCDF <- mvtnorm::pmvnorm(lower = c(-Inf, -Inf), upper = y, mean = true.means, sigma = true.sds)
     #getDifferences(y.eCDF,y.tCDF)
-}
+#}
