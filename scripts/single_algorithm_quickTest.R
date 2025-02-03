@@ -56,7 +56,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(100, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 5
+n_reps <- 50
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -122,16 +122,11 @@ for(param_name in names(param_sets)) {
     }
 }
 
-#data_arrays$fast$`100`[,,5]
-
-# Save both summary results and data arrays
-filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
-save(results, data_arrays, file = filename)
-cat("Saving results to:", filename, "\n\n")
 #############################################################
-#### G E T     R E S U L T S ################################
+#### P R O C E S S     R E S U L T S  #######################
 #############################################################
-# Analyze results
+# Get summary statistics and metrics
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 summary_stats <- aggregate(
     cbind(execution_time, angular_error, prop_negative_rt, completion) 
     ~ param_set + n_trials, 
@@ -140,14 +135,22 @@ summary_stats <- aggregate(
 )
 colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_difference", "prop_neg_rt", "completion_rate")
 
-# Fix the order in which cells will be displayed
+# Prepare for plotting
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 plot_order <- paste(rep(trial_sizes, each=2), 
                     rep(c("fast", "slow"), length(trial_sizes)))           
-
-# Prepare results
 results$group <- factor(paste(results$n_trials, results$param_set),
                        levels = plot_order)
 
+# Add CDFs to data arrays
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+data_arrays <- add_cdfs_to_arrays(data_arrays, param_sets)
+
+# Save both summary results and data arrays
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
+save(results, data_arrays, file = filename)
+cat("Saving results to:", filename, "\n\n")
 #############################################################
 #### P L O T T I N G     R E S U L T S ######################
 #############################################################
