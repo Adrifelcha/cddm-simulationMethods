@@ -66,6 +66,10 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     return(output)
 }
 
+
+
+
+
 plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {
     # At the start of the function
     if(nrow(results) == 0) stop("No results to plot")
@@ -84,7 +88,9 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     # Create color vector based on number of parameter sets
     point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)    
-    stripe_colors <- colorRampPalette(c("lavender", "azure", "honeydew", "cornsilk"))(length(trial_sizes))
+    #stripe_colors <- colorRampPalette(c("lavender", "azure", "honeydew", "cornsilk"))(length(trial_sizes))
+    shade_change <- c((1:length(trial_sizes)*10))
+    stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
     
     # Helper functions
     add_means <- function(means) {
@@ -256,8 +262,81 @@ plot_circumference_precision <- function(results, param_sets, trial_sizes, metho
     }
 }
 
-# After running your simulations and getting results
-#plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_tested, figname_results)
 
-# After running your simulations
-#plot_circumference_precision(results, param_sets, trial_sizes, method_tested)
+add_cdfs_to_arrays <- function(data_arrays, param_sets) {    
+    # Progress counter
+    # Total iterations = number of parameter sets * number of trial sizes * number of repetitions
+    total_iterations <- length(data_arrays) * length(data_arrays[[1]]) * dim(data_arrays[[1]][[1]])[3]
+    current_iteration <- 0
+    
+    # For each parameter set
+    for(param_name in names(data_arrays)) {
+        mu1 <- param_sets[[param_name]]$par$mu1
+        mu2 <- param_sets[[param_name]]$par$mu2
+        drift <- sqrt(mu1^2 + mu2^2)
+        theta <- atan2(mu2, mu1)
+        tzero <- param_sets[[param_name]]$par$tzero
+        boundary <- param_sets[[param_name]]$par$boundary
+        
+        # Combine all bivariate data for this parameter set
+        all_bivariate_data <- do.call(rbind, lapply(data_arrays[[param_name]], function(arr) {
+            # Combine all repetitions for this trial size
+            do.call(rbind, lapply(1:dim(arr)[3], function(rep) arr[,1:2,rep]))
+        }))
+        
+        # Compute theoretical CDF for all data at once
+        cat(sprintf("\nComputing theoretical CDFs for %s (δ = %.2f)....\n", param_name, drift))
+        all_tcdf <- pCDDM(all_bivariate_data, drift, theta, tzero, boundary, method="monte_carlo", n_points=100000)
+        cat("...done!\n")
+        
+        # Current position in the all_tcdf vector
+        current_pos <- 1
+        
+        # For each trial size
+        for(n_trials_char in names(data_arrays[[param_name]])) {
+            n_trials <- as.numeric(n_trials_char)  # Convert to numeric
+            n_reps <- dim(data_arrays[[param_name]][[n_trials_char]])[3]
+            current_array <- data_arrays[[param_name]][[n_trials_char]]
+            
+            # Create new array with extra columns for eCDF and tCDF
+            new_array <- array(NA, 
+                             dim = c(dim(current_array)[1], 4, dim(current_array)[3]),
+                             dimnames = list(
+                                 NULL,
+                                 c("Choice", "RT", "eCDF", "tCDF"),
+                                 dimnames(current_array)[[3]]
+                             ))
+            
+            # Copy existing Choice and RT data
+            new_array[, 1:2, ] <- current_array[, 1:2, ]
+            
+            # For each repetition
+            for(rep in 1:n_reps) {
+                current_iteration <- current_iteration + 1
+                cat(sprintf("\rComputing eCDFs: Progress %d/%d (%.1f%%) - trials=%d, rep=%d",
+                    current_iteration, total_iterations,
+                    100 * current_iteration/total_iterations,
+                    n_trials, rep))
+                
+                # Extract bivariate data for this repetition
+                bivariate_data <- current_array[, 1:2, rep]
+                
+                # Compute empirical CDF
+                new_array[, 3, rep] <- myECDF(bivariate_data)
+                
+                # Extract corresponding theoretical CDF values
+                new_array[, 4, rep] <- all_tcdf[current_pos:(current_pos + n_trials - 1)]
+                current_pos <- current_pos + n_trials
+            }
+            
+            # Store updated array
+            data_arrays[[param_name]][[n_trials_char]] <- new_array
+        }
+        cat("  (Done!)\n")
+    }
+    
+    return(data_arrays)
+}
+
+# Usage:
+ x <- add_cdfs_to_arrays(data_arrays, param_sets)
