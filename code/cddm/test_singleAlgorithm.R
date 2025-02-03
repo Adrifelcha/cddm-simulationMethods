@@ -473,7 +473,8 @@ plot_cdf_differences <- function(data_arrays, filename = NA) {
     })
 
     # Prepare results list
-    results <- list()    
+    results <- data.frame()    
+    all_differences <- list()
     # Calculate metrics for each parameter set and trial size
     for(param_name in names(data_arrays)) {
         for(n_trials_char in names(data_arrays[[param_name]])) {
@@ -481,10 +482,11 @@ plot_cdf_differences <- function(data_arrays, filename = NA) {
             n_trials <- as.numeric(n_trials_char)
             n_reps <- dim(array_data)[3]
             group_name <- sprintf("%s\n%d trials", param_name, n_trials)
-            
+            point_diffs <- data.frame()
             for(rep in 1:n_reps) {
                 differences <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
-                results[[length(results) + 1]] <- list(
+                point_diffs <- cbind(point_diffs, differences)
+                output <- data.frame(
                     point_diff = differences,
                     ssd = sum(differences^2),
                     ks_stat = max(abs(differences)),
@@ -493,7 +495,9 @@ plot_cdf_differences <- function(data_arrays, filename = NA) {
                     trial_size = n_trials,
                     rep = rep
                 )
+                results <- rbind(results, output)
             }
+            all_differences[[length(all_differences) + 1]] <- point_diffs
         }
     }
     
