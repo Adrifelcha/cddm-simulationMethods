@@ -7,34 +7,32 @@
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Part 1: Code to compute the empirical CDF from different types of data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-myECDF <- function(data){
-  # Check if data is contained in a vector
-  if(is.vector(data)){
-        n <- length(data)
-        cdf <- NA
+myECDF <- function(data){    
+    # Input validation
+    if(!is.vector(data) && !is.matrix(data)) {
+        stop("Input must be a vector or matrix")
+    }
+    if(is.matrix(data) && ncol(data) != 2) {
+        stop("Matrix input must have exactly 2 columns")
+    }
+    
+    # Case 1: Univariate data (vector input; P(X > x))
+    if(is.vector(data)){
+        n <- length(data)        
+        cdf <- colMeans(outer(data, data, ">"))        
+    # Case 2: Bivariate data (2-column matrix input; P(X1 > x1 AND X2 > x2))
+    } else {
+        n <- nrow(data)
+        cdf <- numeric(n)  # Pre-allocate vector
+        
+        # For each observation, compute joint probability
         for(i in 1:n){
-          cdf[i] <- mean(data[i] > data)
+            # Vectorized comparison across both dimensions
+            greater_than <- (data[i,1] > data[,1]) & (data[i,2] > data[,2])
+            cdf[i] <- mean(greater_than)
         }
-  # Otherwise, check if data is bivariate
-  }else{if(ncol(data)==2){
-        data.matrix.NxD <- data
-        no.Dim <- ncol(data.matrix.NxD)
-        n <- nrow(data.matrix.NxD)
-        count <- matrix(NA,nrow=n,ncol=no.Dim)
-        cdf <- rep(NA,n)
-        for(i in 1:nrow(data.matrix.NxD)){
-          X <- rep(TRUE, n)
-          for(j in 1:no.Dim){
-            count[,j] <- data[i,j] > data[,j]
-          }
-          for(j in 2:no.Dim){
-            Y <- count[,j-1] & count[,j]
-            X <- X & Y
-          }
-          cdf[i] <- mean(X)
-        }
-  }}
-  return(cdf)
+    }
+    return(cdf)
 }
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,6 +82,6 @@ if(test){
     y <- mvtnorm::rmvnorm(1000,true.means,true.sds)
     y.eCDF <- myECDF(y)
     myECDF.Plot(y)
-    y.tCDF <- pnorm(y,true.mean,true.sd)
-    getDifferences(y.eCDF,y.tCDF)
+    #y.tCDF <- mvtnorm::pmvnorm(lower = c(-Inf, -Inf), upper = y, mean = true.means, sigma = true.sds)
+    #getDifferences(y.eCDF,y.tCDF)
 }
