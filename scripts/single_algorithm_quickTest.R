@@ -32,6 +32,7 @@ r_files <- list.files(path = here("code", "cddm"),
 for(file in r_files) {
     source(file)
 }
+source(here("code", "general_functions", "eCDF.R"))
 
 #############################################################
 #### S E T T I N G S ########################################
@@ -56,7 +57,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(100, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 50
+n_reps <- 10
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -173,3 +174,10 @@ print(summary_stats)
 cat("\n Figures created:", figname_results, "\n\n")
 
 cat("\n\nDone!\n\n")
+
+
+# Usage example:
+figure_cdf <- sprintf(here("results", "quickTest_%s_%s_cdfs.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
+pdf(figure_cdf, width=10, height=8)
+ plot_cdfs(data_arrays)
+dev.off()
