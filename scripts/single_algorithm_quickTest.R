@@ -64,9 +64,28 @@ cat("Setting number of replications:", n_reps, "\n\n")
 #############################################################
 cat("Running tests...\n")
 results <- data.frame()
+
+# Create 3D arrays for each parameter set to store bivariate data
+data_arrays <- list()
+for(param_name in names(param_sets)) {
+    data_arrays[[param_name]] <- list()
+    for(n_trial in trial_sizes) {
+        data_arrays[[param_name]][[as.character(n_trial)]] <- array(
+            NA, 
+            dim = c(n_trial, 2, n_reps),
+            dimnames = list(
+                NULL,
+                c("Choice", "RT"),
+                paste0("rep", 1:n_reps)
+            )
+        )
+    }
+}
+
 # Progress counter
 total_iterations <- length(names(param_sets)) * length(trial_sizes) * n_reps
 current_iteration <- 0
+
 for(param_name in names(param_sets)) {
     for(n_trials in trial_sizes) {
         for(rep in 1:n_reps) {                       
@@ -80,25 +99,35 @@ for(param_name in names(param_sets)) {
             # Run test
             bench <- single_algorithm_test(param_sets[[param_name]], n_trials, method_tested)
             
-            # Process results            
+            # Store bivariate data in 3D array
+            data_arrays[[param_name]][[as.character(n_trials)]][,1,rep] <- bench$data$Choice
+            data_arrays[[param_name]][[as.character(n_trials)]][,2,rep] <- bench$data$RT
+            
+            # Process summary results            
             output <- data.frame(param_set = param_name,
-                                 n_trials = n_trials,
-                                 replication = rep,
-                                 execution_time = bench$execution_time,
-                                 completion = bench$completion,
-                                 prop_negative_rt = bench$prop_negative_rt,                                        
-                                 mean_rt = bench$mean_rt,
-                                 mean_angle = bench$mean_angle,
-                                 angular_error = bench$angular_error)            
+                               n_trials = n_trials,
+                               replication = rep,
+                               execution_time = bench$execution_time,
+                               completion = bench$completion,
+                               prop_negative_rt = bench$prop_negative_rt,                                        
+                               mean_rt = bench$mean_rt,
+                               mean_angle = bench$mean_angle,
+                               angular_error = bench$angular_error)            
             # Add circumference precision if method is RandomWalk
             if(method_tested == "RandomWalk") {
                 output$circumference_precision <- bench$circumference_precision
             }            
-            results <- rbind(results, output)
+            results <- rbind(results, output)            
         }
     }
 }
 
+#data_arrays$fast$`100`[,,5]
+
+# Save both summary results and data arrays
+filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
+save(results, data_arrays, file = filename)
+cat("Saving results to:", filename, "\n\n")
 #############################################################
 #### G E T     R E S U L T S ################################
 #############################################################
@@ -118,10 +147,6 @@ plot_order <- paste(rep(trial_sizes, each=2),
 # Prepare results
 results$group <- factor(paste(results$n_trials, results$param_set),
                        levels = plot_order)
-# Save results! 
-filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
-save(results,file = filename)
-cat("Saving results to:", filename, "\n\n")
 
 #############################################################
 #### P L O T T I N G     R E S U L T S ######################
