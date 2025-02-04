@@ -165,7 +165,6 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
         for(i in 1:n_trials) {
             rect(xleft = seq(0.5 + (i-1)*length(param_sets), 
                            max(as.numeric(results$group)) + 0.5, 
-                           by=n_trials*length(param_sets)),
                  ybottom = par("usr")[3],
                  xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
                             max(as.numeric(results$group)) + 0.5, 
@@ -175,7 +174,7 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
                  border = NA)
             
             text(x = (length(param_sets)/2) + 0.5 + (i-1)*length(param_sets),
-                 y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.6,
+                 y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.8,
                  labels = paste(trial_sizes[i], "trials"),
                  col = "gray50",
                  cex = 0.8)
@@ -493,14 +492,62 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
     # Setup colors
     point_colors <- rainbow(length(param_sets))
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)    
+    indivPoint_colors_transparent <- adjustcolor(point_colors, alpha=0.1)
     shade_change <- c((1:length(trial_sizes)*10))
     stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
 
-    # Create plots for different metrics
+    # Collect all differences and group information
+    all_diffs <- c()
+    all_param_sets <- c()
+    group_labels <- c()
+    
+    for(param_name in names(data_arrays)) {
+        for(n_trials_char in names(data_arrays[[param_name]])) {
+            array_data <- data_arrays[[param_name]][[n_trials_char]]
+            n_trials <- as.numeric(n_trials_char)
+            
+            for(rep in 1:dim(array_data)[3]) {
+                diffs <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
+                all_diffs <- c(all_diffs, diffs)
+                all_param_sets <- c(all_param_sets, rep(param_name, length(diffs)))
+                group_labels <- c(group_labels, rep(paste(n_trials, param_name), length(diffs)))
+            }
+        }
+    }
+    
+    # Use the same group factor as results_cdfs for consistent ordering
+    all_groups <- factor(group_labels, levels = levels(results_cdfs$group))
+    
+    # First plot: All differences
+    means <- tapply(all_diffs, all_groups, mean)
+    
+    plot(1, type="n", axes=FALSE, 
+         xlim=c(1, length(levels(all_groups))),
+         ylim=range(all_diffs), 
+         xlab="", ylab="", 
+         main="CDF Differences Distribution",
+         xaxt="n", yaxt="n")
+    add_background_stripes(stripe_colors)    
+    # Add points and reference line
+    mtext("CDF Difference (eCDF - tCDF)", side=2, line=3)
+    points(jitter(as.numeric(all_groups), amount=0.2), all_diffs,
+           col=indivPoint_colors_transparent[as.numeric(factor(all_param_sets))], 
+           pch=19, cex=0.5)  # Smaller points due to larger number
+    axis(2, las=2, cex.axis=0.9)
+    axis(1, at=1:length(levels(all_groups)), 
+         labels=levels(all_groups),
+         las=2, cex.axis=0.9)
+    
+    # Add means
+    segments(1:length(means) - 0.25, means,
+            1:length(means) + 0.25, means,
+            lwd=2, col="black")
+    
+    # Add reference line at zero
+    abline(h=0, lty=2, col="gray")
+    
+    # Create remaining plots for summary metrics
     plot_metrics <- list(
-        list(data = results_cdfs$mean_diff, 
-             ylab = "Mean Difference", 
-             main = "Mean CDF Difference"),
         list(data = results_cdfs$ssd, 
              ylab = "Sum of Squared Differences", 
              main = "CDF Squared Error"),
@@ -509,7 +556,7 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
              main = "Kolmogorov-Smirnov Statistic")
     )
     
-    # Create the three metric plots
+    # Create the remaining metric plots
     for(plot_info in plot_metrics) {
         means <- tapply(plot_info$data, results_cdfs$group, mean)
         
@@ -517,10 +564,8 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
              xlim=c(1, length(levels(results_cdfs$group))),
              ylim=range(plot_info$data), 
              xlab="", ylab="", main=plot_info$main,
-             xaxt="n", yaxt="n")
-        
-        add_background_stripes(stripe_colors)
-        
+             xaxt="n", yaxt="n")        
+        add_background_stripes(stripe_colors)        
         # Add points and axes
         mtext(plot_info$ylab, side=2, line=3)
         points(jitter(as.numeric(results_cdfs$group), amount=0.2), 
@@ -538,20 +583,20 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
                 lwd=2, col="black")
     }
     
-    # Calculate drift lengths for each parameter set
     drift_lengths <- sapply(param_sets, function(ps) {
         mu1 <- ps$par$mu1
         mu2 <- ps$par$mu2
         sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
     })
-     # Create legend labels with expression for delta
+    
+    # Create legend labels with expression for delta
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
                            names(param_sets)[i], 
                            drift_lengths[i]))
     })
-    
-    # Create legend panel
+
+     # Create legend panel
     plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)    
     # Parameter sets legend
     legend("top", legend=legend_labels,
