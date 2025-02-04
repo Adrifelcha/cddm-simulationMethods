@@ -160,18 +160,18 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
                 lwd=3, col="black")
     }
     
-    add_background_stripes <- function(stripe_colors) {
+    add_background_stripes <- function(stripe_colors, trial_sizes, param_sets, results) {
         n_trials <- length(trial_sizes)
         for(i in 1:n_trials) {
             rect(xleft = seq(0.5 + (i-1)*length(param_sets), 
                            max(as.numeric(results$group)) + 0.5, 
-                 ybottom = par("usr")[3],
-                 xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
-                            max(as.numeric(results$group)) + 0.5, 
-                            by=n_trials*length(param_sets)),
-                 ytop = par("usr")[4],
-                 col = stripe_colors[i],
-                 border = NA)
+                         ybottom = par("usr")[3],
+                         xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
+                                    max(as.numeric(results$group)) + 0.5, 
+                                    by=n_trials*length(param_sets)),
+                         ytop = par("usr")[4],
+                         col = stripe_colors[i],
+                         border = NA)
             
             text(x = (length(param_sets)/2) + 0.5 + (i-1)*length(param_sets),
                  y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.8,
@@ -244,7 +244,7 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         plot(1, type="n", axes=FALSE, xlim=c(1, length(levels(results$group))),
              ylim=range(plot_info$data), xlab="", ylab="", main=plot_info$main,
              xaxt="n", yaxt="n")
-        add_background_stripes(stripe_colors)
+        add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
         mtext(plot_info$ylab, side=2, line=3)
         points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
                col=point_colors_transparent, pch=19)
@@ -293,6 +293,8 @@ plot_circumference_precision <- function(results, param_sets, trial_sizes, metho
     # Create color vector based on parameter sets
     point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
+    shade_change <- c((1:length(trial_sizes)*10))
+    stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
     
     # Set up plotting parameters
     par(mfrow=c(1,1), 
@@ -311,7 +313,7 @@ plot_circumference_precision <- function(results, param_sets, trial_sizes, metho
     
     # Add y-axis with scientific notation
     axis(2, at=y_values, labels=sprintf("%.2e", y_values), las=2)
-    
+    add_background_stripes(stripe_colors, trial_sizes, param_sets, results_cdfs) 
     mtext("Average Distance from Boundary", side=2, line=5.5)
 
     # Add mean lines
@@ -527,7 +529,7 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
          xlab="", ylab="", 
          main="CDF Differences Distribution",
          xaxt="n", yaxt="n")
-    add_background_stripes(stripe_colors)    
+    add_background_stripes(stripe_colors, trial_sizes, param_sets, results_cdfs)    
     # Add points and reference line
     mtext("CDF Difference (eCDF - tCDF)", side=2, line=3)
     points(jitter(as.numeric(all_groups), amount=0.2), all_diffs,
@@ -565,7 +567,7 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
              ylim=range(plot_info$data), 
              xlab="", ylab="", main=plot_info$main,
              xaxt="n", yaxt="n")        
-        add_background_stripes(stripe_colors)        
+        add_background_stripes(stripe_colors, trial_sizes, param_sets, results_cdfs)        
         # Add points and axes
         mtext(plot_info$ylab, side=2, line=3)
         points(jitter(as.numeric(results_cdfs$group), amount=0.2), 
@@ -618,5 +620,5 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
 }
 
 # Usage example:
-figure_cdf_differences <- sprintf(here("results", "quickTest_%s_%s_cdfs_differences.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-plot_cdf_differences(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = figure_cdf_differences)
+#figure_cdf_differences <- sprintf(here("results", "quickTest_%s_%s_cdfs_differences.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
+#plot_cdf_differences(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = figure_cdf_differences)
