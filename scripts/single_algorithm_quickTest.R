@@ -126,6 +126,20 @@ for(param_name in names(param_sets)) {
 #############################################################
 #### P R O C E S S     R E S U L T S  #######################
 #############################################################
+# Add CDFs to data arrays
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+data_arrays <- add_cdfs_to_arrays(data_arrays, param_sets)
+results_cdfs <- calculate_cdf_metrics(data_arrays)
+
+# Prepare for plotting
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+plot_order <- paste(rep(trial_sizes, each=2), 
+                    rep(c("fast", "slow"), length(trial_sizes)))           
+results$group <- factor(paste(results$n_trials, results$param_set),
+                       levels = plot_order)
+results_cdfs$group <- factor(paste(results_cdfs$trial_size, results_cdfs$param_set),
+                       levels = plot_order)
+
 # Get summary statistics and metrics
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 summary_stats <- aggregate(
@@ -136,16 +150,6 @@ summary_stats <- aggregate(
 )
 colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_difference", "prop_neg_rt", "completion_rate")
 
-# Prepare for plotting
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-plot_order <- paste(rep(trial_sizes, each=2), 
-                    rep(c("fast", "slow"), length(trial_sizes)))           
-results$group <- factor(paste(results$n_trials, results$param_set),
-                       levels = plot_order)
-
-# Add CDFs to data arrays
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-data_arrays <- add_cdfs_to_arrays(data_arrays, param_sets)
 
 # Save both summary results and data arrays
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
