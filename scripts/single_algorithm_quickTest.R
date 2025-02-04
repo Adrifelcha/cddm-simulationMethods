@@ -57,7 +57,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(100, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 10
+n_reps <- 30
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -185,3 +185,12 @@ figure_cdf <- sprintf(here("results", "quickTest_%s_%s_cdfs.pdf"), method_tested
 pdf(figure_cdf, width=10, height=8)
  plot_cdfs(data_arrays)
 dev.off()
+
+
+# Generate the plots
+filename_prefix <- here("results", 
+                       sprintf("quickTest_%s_%s_metrics", 
+                              method_tested, 
+                              format(Sys.Date(), "%Y%m%d")))
+plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
+                        filename_prefix)
