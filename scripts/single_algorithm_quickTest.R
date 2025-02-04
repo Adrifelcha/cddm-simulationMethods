@@ -54,10 +54,10 @@ cat("Tzero:", param_sets$fast$par$tzero, "\n")
 cat("Theta:", atan2(param_sets$fast$par$mu2, param_sets$fast$par$mu1), "\n\n")
 # Different trial sizes to test
 cat("Setting trial sizes to test...\n")
-trial_sizes <- c(100, 500, 1000)
+trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 30
+n_reps <- 100
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -181,10 +181,10 @@ cat("\n\nDone!\n\n")
 
 
 # Usage example:
-figure_cdf <- sprintf(here("results", "quickTest_%s_%s_cdfs.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-pdf(figure_cdf, width=10, height=8)
- plot_cdfs(data_arrays)
-dev.off()
+#figure_cdf <- sprintf(here("results", "quickTest_%s_%s_cdfs.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
+#pdf(figure_cdf, width=10, height=8)
+# plot_cdfs(data_arrays)
+#dev.off()
 
 
 # Generate the plots
