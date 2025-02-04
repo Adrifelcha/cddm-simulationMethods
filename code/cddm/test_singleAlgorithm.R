@@ -622,3 +622,112 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
 # Usage example:
 #figure_cdf_differences <- sprintf(here("results", "quickTest_%s_%s_cdfs_differences.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
 #plot_cdf_differences(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = figure_cdf_differences)
+
+plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_sizes, n_reps, filename_prefix) {
+    # Define metrics to plot
+    metrics <- list(
+        list(data_cdfs = results_cdfs$ssd,
+             name = "ssd",
+             title = "Sum-Squared Error Distribution",
+             ylab = "Sum of Squared Differences",
+             filename = paste0(filename_prefix, "_SSE.pdf")),
+        list(data_cdfs = results_cdfs$ks_stat,
+             name = "ks",
+             title = "Kolmogorov-Smirnov Statistic Distribution",
+             ylab = "KS Statistic",
+             filename = paste0(filename_prefix, "_KS.pdf")),
+        list(data_exec = results$execution_time,
+             name = "exec",
+             title = "Execution Time Distribution",
+             ylab = "Time (seconds)",
+             filename = paste0(filename_prefix, "_execTime.pdf"))
+    )
+    
+    # Create each plot
+    for(metric in metrics) {
+        # Start PDF device
+        pdf(metric$filename, width=10, height=8)        
+        # Calculate number of rows and columns for subplot layout
+        n_param_sets <- length(param_sets)
+        n_cols <- min(2, n_param_sets)
+        n_rows <- ceiling(n_param_sets / n_cols)
+        
+        # Set up the plotting layout
+        par(mfrow=c(n_rows, n_cols), mar=c(4,4,3,1), 
+            oma=c(0,0,2,0), mgp=c(2.5,1,0))
+        
+        # Create one subplot per parameter set
+        for(param_name in names(param_sets)) {
+            # Get data for this parameter set
+            if(metric$name %in% c("ssd", "ks")) {
+                param_data <- metric$data_cdfs[results_cdfs$param_set == param_name]
+                trial_sizes_data <- results_cdfs$trial_size[results_cdfs$param_set == param_name]
+            } else {
+                param_data <- metric$data_exec[results$param_set == param_name]
+                trial_sizes_data <- results$n_trials[results$param_set == param_name]
+            }
+            
+            # Calculate drift for title
+            drift <- sqrt(param_sets[[param_name]]$par$mu1^2 + 
+                        param_sets[[param_name]]$par$mu2^2)
+            
+            # Create empty plot
+            plot(1, type="n", 
+                 xlim=range(trial_sizes) + c(-50, 50),
+                 ylim=range(param_data),
+                 xlab="Number of Trials",
+                 ylab=metric$ylab,
+                 main=parse(text = sprintf('"%s" * "\\n(" * delta * " = " * %.2f * ")"', 
+                                         param_name, 
+                                         drift)),
+                 xaxt="n")  # Suppress default x-axis
+            
+            # Add custom x-axis with only the trial sizes
+            axis(1, at=trial_sizes, labels=trial_sizes)
+            
+            # Store mean values for connecting line
+            mean_values <- numeric(length(unique(trial_sizes_data)))
+            trial_sizes_unique <- sort(unique(trial_sizes_data))
+            
+            # Add points for each trial size
+            for(i in seq_along(trial_sizes_unique)) {
+                n_trials <- trial_sizes_unique[i]
+                data_points <- param_data[trial_sizes_data == n_trials]
+                x_jittered <- jitter(rep(n_trials, length(data_points)), amount=20)
+                points(x_jittered, data_points, 
+                      col=adjustcolor("#4D9DE0", alpha=0.3),
+                      pch=19)
+                
+                # Store mean value
+                mean_values[i] <- mean(data_points)
+                
+                # Add mean line - black and thick, with wider span
+                segments(n_trials-80, mean_values[i],
+                        n_trials+80, mean_values[i],
+                        col="black", lwd=3)
+            }
+            
+            # Add connected mean points
+            lines(trial_sizes_unique, mean_values, type="b",
+                  lwd=3, pch=21, cex=1.5,
+                  bg="white", col="black",
+                  lty="dotted")  # Changed to dotted line
+            
+            # Add grid
+            grid(nx=NA, ny=NULL, col="gray", lty="dotted")
+        }        
+        # Add overall title
+        mtext(metric$title, outer=TRUE, line=0.5,cex=1.2,font=2)
+        
+        # Close PDF device
+        dev.off()
+    }
+}
+
+# Generate the plots
+filename_prefix <- here("results", 
+                       sprintf("quickTest_%s_%s_metrics", 
+                              method_tested, 
+                              format(Sys.Date(), "%Y%m%d")))
+plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
+                        filename_prefix)
