@@ -441,7 +441,40 @@ plot_cdfs <- function(data_arrays) {
 ######################################################################
 # Plot the differences between the empirical and theoretical CDFs ####
 ######################################################################
-plot_cdf_differences <- function(data_arrays, filename = NA) {    
+calculate_cdf_metrics <- function(data_arrays) {
+    # Initialize empty results dataframe
+    results <- data.frame()
+    
+    # Calculate metrics for each parameter set and trial size
+    for(param_name in names(data_arrays)) {
+        for(n_trials_char in names(data_arrays[[param_name]])) {
+            array_data <- data_arrays[[param_name]][[n_trials_char]]
+            n_trials <- as.numeric(n_trials_char)
+            n_reps <- dim(array_data)[3]            
+            
+            for(rep in 1:n_reps) {
+                # Calculate differences between empirical and theoretical CDFs
+                differences <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
+                
+                # Calculate summary statistics
+                output <- data.frame(
+                    mean_diff = mean(differences),
+                    median_diff = median(differences),
+                    ssd = sum(differences^2),  # Sum of squared differences
+                    ks_stat = max(abs(differences)),  # Kolmogorov-Smirnov statistic                    
+                    param_set = param_name,
+                    trial_size = n_trials,
+                    rep = rep
+                )
+                results <- rbind(results, output)
+            }
+        }
+    }
+    
+    return(results)
+}
+
+plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = NA) {    
     if(!is.na(filename)) {    
         pdf(filename, width=12, height=10)
     }
@@ -450,104 +483,73 @@ plot_cdf_differences <- function(data_arrays, filename = NA) {
     par(mfrow=c(2,2), oma=c(2,2,2,0), mar=c(4,4,3,3), mgp=c(2,0.7,0),
         cex.main=1.5, cex.lab=1.2, cex.axis=1.1)
     
-    point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
+    # Calculate drift information for parameter sets
+    drift_info <- lapply(param_sets, function(ps) {
+        magnitude <- sqrt(ps$par$mu1^2 + ps$par$mu2^2)
+        angle_rad <- atan2(ps$par$mu2, ps$par$mu1)
+        list(magnitude = magnitude, angle = angle_rad)
+    })
+    
+    # Setup colors
+    point_colors <- rainbow(length(param_sets))
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)    
-    #stripe_colors <- colorRampPalette(c("lavender", "azure", "honeydew", "cornsilk"))(length(trial_sizes))
     shade_change <- c((1:length(trial_sizes)*10))
     stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
 
-    # Generate parameter set labels based on drift values
-    param_labels <- names(param_sets)    
+    # Create plots for different metrics
+    plot_metrics <- list(
+        list(data = results_cdfs$mean_diff, 
+             ylab = "Mean Difference", 
+             main = "Mean CDF Difference"),
+        list(data = results_cdfs$ssd, 
+             ylab = "Sum of Squared Differences", 
+             main = "CDF Squared Error"),
+        list(data = results_cdfs$ks_stat,
+             ylab = "Maximum Absolute Difference", 
+             main = "Kolmogorov-Smirnov Statistic")
+    )
+    
+    # Create the three metric plots
+    for(plot_info in plot_metrics) {
+        means <- tapply(plot_info$data, results_cdfs$group, mean)
+        
+        plot(1, type="n", axes=FALSE, 
+             xlim=c(1, length(levels(results_cdfs$group))),
+             ylim=range(plot_info$data), 
+             xlab="", ylab="", main=plot_info$main,
+             xaxt="n", yaxt="n")
+        
+        add_background_stripes(stripe_colors)
+        
+        # Add points and axes
+        mtext(plot_info$ylab, side=2, line=3)
+        points(jitter(as.numeric(results_cdfs$group), amount=0.2), 
+               plot_info$data,
+               col=point_colors_transparent[as.numeric(factor(results_cdfs$param_set))], 
+               pch=19)
+        axis(2, las=2, cex.axis=0.9)
+        axis(1, at=1:length(levels(results_cdfs$group)), 
+             labels=levels(results_cdfs$group),
+             las=2, cex.axis=0.9)
+        
+        # Add means
+        segments(1:length(means) - 0.25, means,
+                1:length(means) + 0.25, means,
+                lwd=2, col="black")
+    }
+    
     # Calculate drift lengths for each parameter set
     drift_lengths <- sapply(param_sets, function(ps) {
         mu1 <- ps$par$mu1
         mu2 <- ps$par$mu2
         sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
     })
-
-    # Create legend labels with expression for delta
+     # Create legend labels with expression for delta
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
                            names(param_sets)[i], 
                            drift_lengths[i]))
     })
-
-    # Prepare results list
-    results <- data.frame()    
-    all_differences <- list()
-    # Calculate metrics for each parameter set and trial size
-    for(param_name in names(data_arrays)) {
-        for(n_trials_char in names(data_arrays[[param_name]])) {
-            array_data <- data_arrays[[param_name]][[n_trials_char]]
-            n_trials <- as.numeric(n_trials_char)
-            n_reps <- dim(array_data)[3]
-            group_name <- sprintf("%s\n%d trials", param_name, n_trials)
-            point_diffs <- data.frame()
-            for(rep in 1:n_reps) {
-                differences <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
-                point_diffs <- cbind(point_diffs, differences)
-                output <- data.frame(
-                    point_diff = differences,
-                    ssd = sum(differences^2),
-                    ks_stat = max(abs(differences)),
-                    group = group_name,
-                    param_set = param_name,
-                    trial_size = n_trials,
-                    rep = rep
-                )
-                results <- rbind(results, output)
-            }
-            all_differences[[length(all_differences) + 1]] <- point_diffs
-        }
-    }
-    
-    # Convert results to data frames
-    point_diffs <- data.frame(
-        value = unlist(lapply(results, function(x) x$point_diff)),
-        group = factor(rep(sapply(results, function(x) x$group), 
-                         sapply(results, function(x) length(x$point_diff)))),
-        param_set = rep(sapply(results, function(x) x$param_set), 
-                       sapply(results, function(x) length(x$point_diff)))
-    )
-    
-    ssd_data <- data.frame(
-        value = unlist(lapply(results, function(x) x$ssd)),
-        group = factor(sapply(results, function(x) x$group)),
-        param_set = sapply(results, function(x) x$param_set)
-    )
-    
-    ks_data <- data.frame(
-        value = unlist(lapply(results, function(x) x$ks_stat)),
-        group = factor(sapply(results, function(x) x$group)),
-        param_set = sapply(results, function(x) x$param_set)
-    )
-    
-    # Create plots
-    plot_metrics <- list(
-        list(data=results$execution_time, means=exec_means, 
-             ylab="Time (seconds)", main="Execution Time Distribution"),
-        list(data=results$angular_error, means=circ_means,
-             ylab="Angular Distance (radians)", 
-             main=expression(bold(paste("Distance between mean angle and ", theta)))),
-        list(data=results$mean_rt, means=rt_means,
-             ylab="Time (seconds)", main="Mean Response Time")
-    )
-    
-    # Create the three metric plots
-    for(plot_info in plot_metrics) {
-        plot(1, type="n", axes=FALSE, xlim=c(1, length(levels(results$group))),
-             ylim=range(plot_info$data), xlab="", ylab="", main=plot_info$main,
-             xaxt="n", yaxt="n")
-        add_background_stripes(stripe_colors)
-        mtext(plot_info$ylab, side=2, line=3)
-        points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
-               col=point_colors_transparent, pch=19)
-        axis(2, las=2, cex.axis=0.9, line=-0)
-        axis(1, at=1:length(levels(results$group)), 
-             labels=rep(param_labels, length(trial_sizes)), 
-             las=2, cex.axis=0.9)
-        add_means(plot_info$means)
-    }
     
     # Create legend panel
     plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)    
@@ -565,9 +567,11 @@ plot_cdf_differences <- function(data_arrays, filename = NA) {
     legend("bottom",  legend=bquote(bold("Repetitions: ") * .(n_reps)),
            cex=1.5, bty="n", inset=c(0, 0.15))
 
-    if(!is.na(filename)) {    dev.off()     }
+    if(!is.na(filename)) {    
+        dev.off()     
+    }
 }
 
 # Usage example:
 figure_cdf_differences <- sprintf(here("results", "quickTest_%s_%s_cdfs_differences.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-plot_cdf_differences(data_arrays, filename = figure_cdf_differences)
+plot_cdf_differences(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = figure_cdf_differences)
