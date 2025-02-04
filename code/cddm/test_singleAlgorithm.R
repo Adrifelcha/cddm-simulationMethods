@@ -164,7 +164,7 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
         n_trials <- length(trial_sizes)
         for(i in 1:n_trials) {
             rect(xleft = seq(0.5 + (i-1)*length(param_sets), 
-                           max(as.numeric(results$group)) + 0.5, 
+                           max(as.numeric(results$group)) + 0.5), 
                          ybottom = par("usr")[3],
                          xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
                                     max(as.numeric(results$group)) + 0.5, 
