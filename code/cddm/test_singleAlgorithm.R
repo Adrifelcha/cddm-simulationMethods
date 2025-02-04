@@ -626,36 +626,30 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
 plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_sizes, n_reps, filename_prefix) {
     # Define metrics to plot
     metrics <- list(
-        list(data_cdfs = results_cdfs$ssd,
-             name = "ssd",
+        list(data_cdfs = results_cdfs$ssd, name = "ssd",
              title = "Sum-Squared Error Distribution",
              ylab = "Sum-Squared Differences"),
-        list(data_cdfs = results_cdfs$ks_stat,
-             name = "ks",
+        list(data_cdfs = results_cdfs$ks_stat, name = "ks",
              title = "Kolmogorov-Smirnov Statistic Distribution",
              ylab = "KS Statistic"),
-        list(data_exec = results$execution_time,
-             name = "exec",
+        list(data_exec = results$execution_time, name = "exec",
              title = "Execution Time Distribution",
              ylab = "Time (seconds)")
     )
     
     # Start PDF device
-    pdf(paste0(filename_prefix, "_allMetrics.pdf"), width=12, height=10)
-    
+    pdf(paste0(filename_prefix, "_allMetrics.pdf"), width=12, height=10)        
     # Calculate layout dimensions
     n_metrics <- length(metrics)
-    n_param_sets <- length(param_sets)
-    
+    n_param_sets <- length(param_sets)    
     # Set up the plotting layout with n_metrics rows and n_param_sets columns
     layout_matrix <- matrix(1:(n_metrics * n_param_sets), 
                           nrow=n_metrics, 
                           ncol=n_param_sets, 
                           byrow=TRUE)
-    layout(layout_matrix)
-    
+    layout(layout_matrix)    
     # Reduce vertical spacing by adjusting margins
-    par(mar=c(1,2,1,1),  # Reduced top and bottom margins
+    par(mar=c(1,3,1,1),  # Reduced top and bottom margins
         oma=c(4,3,3,1),  # Keep outer margins the same
         mgp=c(2.5,1,0))  # Keep axis label positioning the same
     
@@ -663,8 +657,7 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     for(metric_idx in seq_along(metrics)) {
         metric <- metrics[[metric_idx]]
         for(param_idx in seq_along(names(param_sets))) {
-            param_name <- names(param_sets)[param_idx]
-            
+            param_name <- names(param_sets)[param_idx]            
             # Get data for this parameter set
             if(metric$name %in% c("ssd", "ks")) {
                 param_data <- metric$data_cdfs[results_cdfs$param_set == param_name]
@@ -672,24 +665,21 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
             } else {
                 param_data <- metric$data_exec[results$param_set == param_name]
                 trial_sizes_data <- results$n_trials[results$param_set == param_name]
-            }
-            
+            }            
             # Calculate drift for title
             drift <- sqrt(param_sets[[param_name]]$par$mu1^2 + 
-                        param_sets[[param_name]]$par$mu2^2)
-            
+                        param_sets[[param_name]]$par$mu2^2)            
             # Create empty plot
-            plot(1, type="n", 
-                 xlim=range(trial_sizes) + c(-50, 50),
-                 ylim=range(param_data),
-                 xlab="",
-                 ylab="",
-                 main="",
-                 xaxt="n")
-            
+            plot(1, type="n", xlim=range(trial_sizes) + c(-50, 50), yaxt="n",
+                 ylim=range(param_data), xlab="", ylab="", main="", xaxt="n")  
+
+            # Add y-axis with exactly 7 ticks
+            y_range <- range(as.vector(param_data))
+            y_ticks <- seq(y_range[1], y_range[2], length.out=7)  # Generate ~7 evenly spaced values
+            axis(2, at=y_ticks, labels=round(y_ticks, 2), las=2, cex.axis=1.1)                                       
             # Add x-axis with values only for bottom row plots
             if(metric_idx == length(metrics)) {
-                axis(1, at=trial_sizes, labels=trial_sizes)  # Show values on bottom row
+                axis(1, at=trial_sizes, labels=trial_sizes, cex.axis=1.5)  # Show values on bottom row
                 mtext("Number of Trials", side=1, line=3.5)
             } else {
                 axis(1, at=trial_sizes, labels=FALSE)  # Show ticks but no values for other rows
@@ -698,17 +688,15 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
             if(param_idx == 1){
                 mtext(metric$ylab, side=2, line=3.5, cex=1, font=1)
             } 
-
             # Only show parameter set title on top row with larger font
             if(metric_idx == 1) {                
                 mtext(bquote(.(sub("δ", "", param_name)) * " " * (delta * " = " * .(sprintf("%.2f", drift)))),
                       line=0.2, cex=1)
             } 
-            
+
             # Store mean values for connecting line
             mean_values <- numeric(length(unique(trial_sizes_data)))
-            trial_sizes_unique <- sort(unique(trial_sizes_data))
-            
+            trial_sizes_unique <- sort(unique(trial_sizes_data))            
             # Add points for each trial size
             for(trial_idx in seq_along(trial_sizes_unique)) {
                 n_trials <- trial_sizes_unique[trial_idx]
@@ -716,26 +704,22 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
                 x_jittered <- jitter(rep(n_trials, length(data_points)), amount=20)
                 points(x_jittered, data_points, 
                       col=adjustcolor("#4D9DE0", alpha=0.3),
-                      pch=19)
-                
+                      pch=19)                
                 # Add vertical dotted line at the center
-                abline(v=n_trials, lty=3, col="gray50")
-                
+                abline(v=n_trials, lty=3, col="gray50")                
                 # Store mean value
-                mean_values[trial_idx] <- mean(data_points)
-                
+                mean_values[trial_idx] <- mean(data_points)                
                 # Add mean line
                 segments(n_trials-80, mean_values[trial_idx],
                         n_trials+80, mean_values[trial_idx],
                         col="black", lwd=3)
             }
             
-            # Add connected mean points
+            # Add connected mean points            
             lines(trial_sizes_unique, mean_values, type="b",
                   lwd=3, pch=21, cex=2.5,
-                  bg="white", col="black",
-                  lty="dotted")
-            
+                  bg="#008cff", col="black",
+                  lty="dotted")            
             # Add grid
             grid(nx=NA, ny=NULL, col="gray", lty="dotted")
         }
@@ -743,8 +727,7 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     
     # Add overall title
     mtext("Performance Metrics by Parameter Set and Trial Size", 
-          outer=TRUE, line=1.2, cex=1.2, font=2)
-    
+          outer=TRUE, line=1.2, cex=1.2, font=2)    
     # Close PDF device
     dev.off()
 }
