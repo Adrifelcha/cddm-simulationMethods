@@ -734,9 +734,9 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
 
 
 # Generate the plots
-filename_prefix <- here("results", 
-                       sprintf("quickTest_%s_%s_metrics", 
-                              method_tested, 
-                              format(Sys.Date(), "%Y%m%d")))
-plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
-                        filename_prefix)
+#filename_prefix <- here("results", 
+#                       sprintf("quickTest_%s_%s_metrics", 
+#                              method_tested, 
+#                              format(Sys.Date(), "%Y%m%d")))
+#plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
+#                        filename_prefix)
