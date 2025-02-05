@@ -7,7 +7,7 @@
 # This script is designed to be run from the command line with a 
 # single argument specifying the algorithm to test.
 #########################################################################
-method_tested <- "RandomWalk"
+method_tested <- "Rejection"
 # Possible methods:
 # 1) "Metropolis"
 # 2) "RandomWalk"
@@ -57,7 +57,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 100
+n_reps <- 10
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
