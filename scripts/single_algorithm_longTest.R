@@ -175,7 +175,7 @@ colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_dif
 
 # Save both summary results and data arrays
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-filename <- sprintf(here("results", "test_%sPS-%sRep_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
+filename <- sprintf(here("results", "test_%spnT%sRep%s_%s_%s.RData"), nParamSets, nTrials, n_reps,method_tested, format(Sys.Date(), "%Y%m%d"))
 save(results, data_arrays, file = filename)
 cat("Saving results to:", filename, "\n\n")
 #############################################################
