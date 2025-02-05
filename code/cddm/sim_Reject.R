@@ -10,12 +10,33 @@
 #      source("./sim_auxiliarFunctions.R")
 #}
 library(scatterplot3d) 
+library(here)
+source(here::here("code", "cddm", "dCDDM_aux.R"))
+source(here::here("code", "cddm", "dCDDM.R"))
+source(here::here("code", "cddm", "sim_auxiliarFunctions.R"))
+
 
 # Write a simple Rejection algorithm for the CDDM pdf
 sample.Reject.cddm <- function(n, par, plot=FALSE){
+  mu1 <- par$mu1;       mu2 <- par$mu2
   drift <- par$drift;   theta <- par$theta
-  tzero <- par$tzero;   boundary <- par$boundary
-  
+  tzero <- par$tzero;   boundary <- par$boundary 
+
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+  #               Defensive Coding                                         #
+  noPolar <- is.null(theta) & is.null(drift)
+  noRect <- is.null(mu1) & is.null(mu2)
+  if(noPolar){
+    if(noRect){
+      stop("Provide Cartesian or Polar coordinates", call. = FALSE)
+    }else{
+      Mu <- rectToPolar(mu1, mu2)
+      drift <- Mu$dLength;    par$drift <- drift
+      theta <- Mu$dAngle;     par$theta <- theta
+    }
+  }
+  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+
   test.Density <- keyDensityPoints(par)
   min.RT <- test.Density$min.RT
   max.RT <- test.Density$max.RT
@@ -50,7 +71,7 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
   }
   
   n.keep <- 0
-  samples <- matrix(NA, nrow=1, ncol=2)
+  samples <- data.frame()
   
   while(n.keep < n){
         cand <- matrix(NA, nrow=n, ncol=2)
@@ -80,9 +101,10 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
 # Test function
 #if(!exists("test")){    test <- TRUE                           }
 #if(test){
-#          par <- list("drift" = 1, 
+          #par <- list("drift" = 1, 
 #                      "theta" = pi,
 #                      "tzero" = 0.1,
 #                      "boundary" = 7)
-#          n <- 5000
-#          sample.Reject.cddm(1000,par, plot=TRUE)  }
+          #n <- 500
+          #sample.Reject.cddm(n,par, plot=TRUE)  
+#}
