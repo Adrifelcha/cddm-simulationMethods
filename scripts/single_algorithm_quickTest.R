@@ -57,7 +57,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 10
+n_reps <- 50
 cat("Setting number of replications:", n_reps, "\n\n")
 
 #############################################################
@@ -113,7 +113,8 @@ for(param_name in names(param_sets)) {
                                prop_negative_rt = bench$prop_negative_rt,                                        
                                mean_rt = bench$mean_rt,
                                mean_angle = bench$mean_angle,
-                               angular_error = bench$angular_error)            
+                               angular_error = bench$angular_error,
+                               stringsAsFactors = FALSE)           
             # Add circumference precision if method is RandomWalk
             if(method_tested == "RandomWalk") {
                 output$circumference_precision <- bench$circumference_precision
