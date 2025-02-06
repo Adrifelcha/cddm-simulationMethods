@@ -267,9 +267,17 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
            fill=stripe_colors, title=expression(bold("Trial Sizes")),
            cex=1.5, bty="n", ncol=min(2, length(trial_sizes)),
            inset=c(0, 0.6/length(param_sets)))    
-    # Repetitions info
-    legend("bottom",  legend=bquote(bold("Repetitions: ") * .(n_reps)),
-           cex=1.5, bty="n", inset=c(0, 0.15))
+    
+    # Create simulation info with only labels in bold
+    sim_info <- c(
+        substitute(bold("Algorithm:") ~ x, list(x = method_tested)),
+        substitute(bold("Repetitions:") ~ x, list(x = n_reps)),
+        substitute(bold("Date:") ~ x, list(x = format(Sys.Date(), "%Y-%m-%d")))
+    )
+    
+    # Add simulation information
+    legend("bottom", legend = parse(text = sapply(sim_info, deparse)), 
+           cex=1.5, bty="n", inset=c(0, 0))
 
     if(!is.na(filename)) {    dev.off()     }
 }
