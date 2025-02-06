@@ -205,10 +205,25 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     exec_means <- tapply(results$execution_time, results$group, mean)
     circ_means <- tapply(results$angular_error, results$group, mean)
     rt_means <- tapply(results$mean_rt, results$group, mean)    
-    # Create color vector based on number of parameter sets
-    point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
-    point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)    
-    #stripe_colors <- colorRampPalette(c("lavender", "azure", "honeydew", "cornsilk"))(length(trial_sizes))
+    
+    # Create color vector based on number of parameter sets and method tested    
+    if (method_tested == "RandomWalk") {
+        color_palette <- colorRampPalette(c("#0d2889", "#47c2f7"))  # Blue to light gray
+    } else if (method_tested == "Metropolis") {
+        color_palette <- colorRampPalette(c("#5b218b", "#ad67d0"))  # Dark green to light green
+    } else if (method_tested == "inverseCDF") {
+        color_palette <- colorRampPalette(c("#E04D4D", "#E5B4B4"))  # Red to light pink
+    } else if (method_tested == "Rejection") {
+        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+    } else {        
+        stop(paste("Unknown method:", method_tested))       
+    }
+    
+    # Generate colors for each parameter set
+    point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
+    point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
+    
+    # Generate stripe colors for trial sizes
     shade_change <- c((1:length(trial_sizes)*10))
     stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
     
@@ -231,12 +246,15 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     # Create plots
     plot_metrics <- list(
         list(data=results$execution_time, means=exec_means, 
-             ylab="Time (seconds)", main="Execution Time Distribution"),
+             ylab="Time (seconds)", main="Execution Time Distribution",
+             add_reference=FALSE),
         list(data=results$angular_error, means=circ_means,
              ylab="Angular Distance (radians)", 
-             main=expression(bold(paste("Distance between mean angle and ", theta)))),
+             main=expression(bold(paste("Distance between mean angle and ", theta))),
+             add_reference=TRUE),  # Added flag for reference line
         list(data=results$mean_rt, means=rt_means,
-             ylab="Time (seconds)", main="Mean Response Time")
+             ylab="Time (seconds)", main="Mean Response Time",
+             add_reference=FALSE)
     )
     
     # Create the three metric plots
@@ -245,6 +263,10 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
              ylim=range(plot_info$data), xlab="", ylab="", main=plot_info$main,
              xaxt="n", yaxt="n")
         add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
+        # Add reference line if specified
+        if(plot_info$add_reference) {
+            abline(h=0, lty=3, col="red", lwd=3)  # dotted horizontal line at y=0
+        }
         mtext(plot_info$ylab, side=2, line=3)
         points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
                col=point_colors_transparent, pch=19)
@@ -252,7 +274,7 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         axis(1, at=1:length(levels(results$group)), 
              labels=rep(param_labels, length(trial_sizes)), 
              las=2, cex.axis=0.9)
-        add_means(plot_info$means)
+        add_means(plot_info$means)        
     }
     
     # Create legend panel
@@ -643,22 +665,19 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     )
     
     # Start PDF device
-    pdf(filename_prefix, width=12, height=7)  # Reduced height since we removed one row
+    pdf(filename_prefix, width=12, height=7)
     
     # Calculate layout dimensions
     n_metrics <- length(metrics)
     n_param_sets <- length(param_sets)    
-    # Set up the plotting layout with n_metrics rows and n_param_sets columns
     layout_matrix <- matrix(1:(n_metrics * n_param_sets), 
                           nrow=n_metrics, 
                           ncol=n_param_sets, 
                           byrow=TRUE)
     layout(layout_matrix)    
-    # Reduce vertical spacing by adjusting margins
-    par(mar=c(1,3,1,1),  # Reduced top and bottom margins
-        oma=c(4,3,4,1),  # Keep outer margins the same
-        mgp=c(2.5,1,0))  # Keep axis label positioning the same
+    par(mar=c(1,3,1,1), oma=c(4,3,4,1), mgp=c(2.5,1,0))
 
+    # Set colors based on method
     if (method_tested == "RandomWalk") {
         color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
     } else if (method_tested == "Metropolis") {
@@ -667,13 +686,26 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
         color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
     } else if (method_tested == "Rejection") {
         color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
-    } else {        stop(paste("Unknown method:", method_tested))       }
+    } else {        
+        stop(paste("Unknown method:", method_tested))       
+    }
+    
+    # Pre-calculate y-axis ranges for each metric
+    y_ranges <- list()
+    for(metric in metrics) {
+        if(metric$name == "ks") {
+            y_ranges[[metric$name]] <- range(metric$data_cdfs)
+        } else {
+            y_ranges[[metric$name]] <- range(metric$data_exec)
+        }
+    }
     
     # Create plots
     for(metric_idx in seq_along(metrics)) {
         metric <- metrics[[metric_idx]]
         for(param_idx in seq_along(names(param_sets))) {
             param_name <- names(param_sets)[param_idx]            
+            
             # Get data for this parameter set
             if(metric$name == "ks") {
                 param_data <- metric$data_cdfs[results_cdfs$param_set == param_name]
@@ -682,50 +714,50 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
                 param_data <- metric$data_exec[results$param_set == param_name]
                 trial_sizes_data <- results$n_trials[results$param_set == param_name]
             }            
+            
             # Calculate drift for title
             drift <- sqrt(param_sets[[param_name]]$par$mu1^2 + 
                         param_sets[[param_name]]$par$mu2^2)            
-            # Create empty plot
+            
+            # Create empty plot with consistent y-axis range for each metric
             plot(1, type="n", xlim=range(trial_sizes) + c(-50, 50), yaxt="n",
-                 ylim=range(param_data), xlab="", ylab="", main="", xaxt="n")  
+                 ylim=y_ranges[[metric$name]], xlab="", ylab="", main="", xaxt="n")  
 
             # Add y-axis with exactly 7 ticks
-            y_range <- range(as.vector(param_data))
-            y_ticks <- seq(y_range[1], y_range[2], length.out=7)  # Generate ~7 evenly spaced values
-            axis(2, at=y_ticks, labels=round(y_ticks, 2), las=2, cex.axis=1.1)                                       
+            y_ticks <- seq(y_ranges[[metric$name]][1], 
+                          y_ranges[[metric$name]][2], 
+                          length.out=7)
+            axis(2, at=y_ticks, labels=round(y_ticks, 2), las=2, cex.axis=1.1)
+            
             # Add x-axis with values only for bottom row plots
             if(metric_idx == length(metrics)) {
-                axis(1, at=trial_sizes, labels=trial_sizes, cex.axis=1.5)  # Show values on bottom row
+                axis(1, at=trial_sizes, labels=trial_sizes, cex.axis=1.5)
                 mtext("Number of Trials", side=1, line=3.5)
             } else {
-                axis(1, at=trial_sizes, labels=FALSE)  # Show ticks but no values for other rows
+                axis(1, at=trial_sizes, labels=FALSE)
             }
 
             if(param_idx == 1){
                 mtext(metric$ylab, side=2, line=3.5, cex=1, font=1)
             } 
-            # Only show parameter set title on top row with larger font
+            
+            # Only show parameter set title on top row
             if(metric_idx == 1) {                
                 mtext(bquote(.(sub("δ", "", param_name)) * " " * (delta * " = " * .(sprintf("%.2f", drift)))),
                       line=0.2, cex=1)
             } 
 
-            # Store mean values for connecting line
+            # Store and plot mean values
             mean_values <- numeric(length(unique(trial_sizes_data)))
             trial_sizes_unique <- sort(unique(trial_sizes_data))            
-            # Add points for each trial size
+            
             for(trial_idx in seq_along(trial_sizes_unique)) {
                 n_trials <- trial_sizes_unique[trial_idx]
                 data_points <- param_data[trial_sizes_data == n_trials]
                 x_jittered <- jitter(rep(n_trials, length(data_points)), amount=20)
-                points(x_jittered, data_points, 
-                      col=color_indiv,
-                      pch=19)                
-                # Add vertical dotted line at the center
+                points(x_jittered, data_points, col=color_indiv, pch=19)                
                 abline(v=n_trials, lty=3, col="gray50")                
-                # Store mean value
                 mean_values[trial_idx] <- mean(data_points)                
-                # Add mean line
                 segments(n_trials-80, mean_values[trial_idx],
                         n_trials+80, mean_values[trial_idx],
                         col="black", lwd=3)
@@ -736,16 +768,17 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
                   lwd=3, pch=21, cex=2.5,
                   bg=color_mean, col="black",
                   lty="dotted")            
+            
             # Add grid
             grid(nx=NA, ny=NULL, col="gray", lty="dotted")
         }
     }
     
-    # Add overall title with method tested and date
+    # Add overall title
     mtext(sprintf("Performance Metrics by Parameter Set and Trial Size\n%s Algorithm (%s)", 
           method_tested, format(Sys.Date(), "%Y-%m-%d")), 
           outer=TRUE, line=1.2, cex=1.2, font=2)    
-    # Close PDF device
+    
     dev.off()
 }
 
