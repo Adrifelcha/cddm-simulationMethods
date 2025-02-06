@@ -631,12 +631,9 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
 #figure_cdf_differences <- sprintf(here("results", "quickTest_%s_%s_cdfs_differences.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
 #plot_cdf_differences(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = figure_cdf_differences)
 
-plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_sizes, n_reps, filename_prefix) {
+plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_sizes, n_reps, method_tested, filename_prefix) {
     # Define metrics to plot
     metrics <- list(
-        list(data_cdfs = results_cdfs$ssd, name = "ssd",
-             title = "Sum-Squared Error Distribution",
-             ylab = "Sum-Squared Differences"),
         list(data_cdfs = results_cdfs$ks_stat, name = "ks",
              title = "Kolmogorov-Smirnov Statistic Distribution",
              ylab = "KS Statistic"),
@@ -646,7 +643,8 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     )
     
     # Start PDF device
-    pdf(paste0(filename_prefix, "_allMetrics.pdf"), width=12, height=10)        
+    pdf(filename_prefix, width=12, height=7)  # Reduced height since we removed one row
+    
     # Calculate layout dimensions
     n_metrics <- length(metrics)
     n_param_sets <- length(param_sets)    
@@ -658,8 +656,18 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     layout(layout_matrix)    
     # Reduce vertical spacing by adjusting margins
     par(mar=c(1,3,1,1),  # Reduced top and bottom margins
-        oma=c(4,3,3,1),  # Keep outer margins the same
+        oma=c(4,3,4,1),  # Keep outer margins the same
         mgp=c(2.5,1,0))  # Keep axis label positioning the same
+
+    if (method_tested == "RandomWalk") {
+        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
+    } else if (method_tested == "Metropolis") {
+        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
+    } else if (method_tested == "inverseCDF") {
+        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
+    } else if (method_tested == "Rejection") {
+        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
+    } else {        stop(paste("Unknown method:", method_tested))       }
     
     # Create plots
     for(metric_idx in seq_along(metrics)) {
@@ -667,7 +675,7 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
         for(param_idx in seq_along(names(param_sets))) {
             param_name <- names(param_sets)[param_idx]            
             # Get data for this parameter set
-            if(metric$name %in% c("ssd", "ks")) {
+            if(metric$name == "ks") {
                 param_data <- metric$data_cdfs[results_cdfs$param_set == param_name]
                 trial_sizes_data <- results_cdfs$trial_size[results_cdfs$param_set == param_name]
             } else {
@@ -711,7 +719,7 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
                 data_points <- param_data[trial_sizes_data == n_trials]
                 x_jittered <- jitter(rep(n_trials, length(data_points)), amount=20)
                 points(x_jittered, data_points, 
-                      col=adjustcolor("#4D9DE0", alpha=0.3),
+                      col=color_indiv,
                       pch=19)                
                 # Add vertical dotted line at the center
                 abline(v=n_trials, lty=3, col="gray50")                
@@ -726,15 +734,16 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
             # Add connected mean points            
             lines(trial_sizes_unique, mean_values, type="b",
                   lwd=3, pch=21, cex=2.5,
-                  bg="#008cff", col="black",
+                  bg=color_mean, col="black",
                   lty="dotted")            
             # Add grid
             grid(nx=NA, ny=NULL, col="gray", lty="dotted")
         }
     }
     
-    # Add overall title
-    mtext("Performance Metrics by Parameter Set and Trial Size", 
+    # Add overall title with method tested and date
+    mtext(sprintf("Performance Metrics by Parameter Set and Trial Size\n%s Algorithm (%s)", 
+          method_tested, format(Sys.Date(), "%Y-%m-%d")), 
           outer=TRUE, line=1.2, cex=1.2, font=2)    
     # Close PDF device
     dev.off()
