@@ -189,7 +189,7 @@ dev.off()
 
 # Plot metrics related to the difference between empirical and theoretical cdfs
 figname_CDFdiff <- sprintf(here("results", "run%s_%sP%sN%sR_cdfMetrics.pdf"), method_tested, nPS, nTS, n_reps)
-plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, filename_prefix = figname_CDFdiff)
+plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, method_tested, filename_prefix = figname_CDFdiff)
 
 
 
