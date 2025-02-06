@@ -21,7 +21,7 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     } else if (method_tested == "Metropolis") {
         result <- do.call(sample.Metropolis.cddm, full_params)
     } else if (method_tested == "inverseCDF") {
-        result <- do.call(sample.invCDF.cddm, full_params)
+        result <- do.call(rCDDM_inverse, full_params)
     } else if (method_tested == "Rejection") {
         result <- do.call(sample.Reject.cddm, full_params)
     } else {        stop(paste("Unknown method:", method_tested))       }
