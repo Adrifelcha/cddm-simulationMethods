@@ -7,6 +7,7 @@
 # This script is designed to be run from the command line with a 
 # single argument specifying the algorithm to test.
 #########################################################################
+forceRun <- FALSE
 method_tested <- "Rejection"
 # Possible methods:
 # 1) "Metropolis"
@@ -16,7 +17,6 @@ method_tested <- "Rejection"
 cat("-----------------------------------------------------------\n")
 cat("\n\nSimulation algorithm to be tested:", method_tested, "\n\n")
 cat("-----------------------------------------------------------\n")
-
 #############################################################
 # Load libraries and custom functions
 #############################################################
@@ -57,89 +57,103 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 50
+n_reps <- 20
 cat("Setting number of replications:", n_reps, "\n\n")
 
-#############################################################
-#### R U N N I N G     T E S T S ############################
-#############################################################
-cat("Running tests...\n")
-results <- data.frame()
+######################################################################
+# DETERMINE IF RESULTS FILE EXISTS AND LOAD IF IT DOES ################
+######################################################################
+nPS <- length(param_sets)
+nTS <- length(trial_sizes)
+filename_RData <- sprintf(here("results", "run%s_%sP%sN%sR.RData"), method_tested, nPS, nTS, n_reps)
+if(forceRun == FALSE && file.exists(filename_RData)) {
+    cat("Results file already exists. Loading results....\n\n")    
+    load(filename_RData)
+}else{
+    #############################################################
+    #### RUN TESTS IF RESULTS FILE NOT AVAILABLE #################
+    #############################################################
+    cat("Results file does not exist. Running tests...\n\n")
+    results <- data.frame()
 
-# Create 3D arrays for each parameter set to store bivariate data
-data_arrays <- list()
-for(param_name in names(param_sets)) {
-    data_arrays[[param_name]] <- list()
-    for(n_trial in trial_sizes) {
-        data_arrays[[param_name]][[as.character(n_trial)]] <- array(
-            NA, 
-            dim = c(n_trial, 2, n_reps),
-            dimnames = list(
-                NULL,
-                c("Choice", "RT"),
-                paste0("rep", 1:n_reps)
-            )
-        )
-    }
-}
-
-# Progress counter
-total_iterations <- length(names(param_sets)) * length(trial_sizes) * n_reps
-current_iteration <- 0
-
-for(param_name in names(param_sets)) {
-    for(n_trials in trial_sizes) {
-        for(rep in 1:n_reps) {                       
-            # Progress indicator
-            current_iteration <- current_iteration + 1
-            cat(sprintf("\rProgress: %d/%d (%.1f%%) - Running %s, trials=%d, rep=%d",
-                current_iteration, total_iterations,
-                100 * current_iteration/total_iterations,
-                param_name, n_trials, rep))
-            
-            # Run test
-            bench <- single_algorithm_test(param_sets[[param_name]], n_trials, method_tested)
-            
-            # Store bivariate data in 3D array
-            data_arrays[[param_name]][[as.character(n_trials)]][,1,rep] <- bench$data$Choice
-            data_arrays[[param_name]][[as.character(n_trials)]][,2,rep] <- bench$data$RT
-            
-            # Process summary results            
-            output <- data.frame(param_set = param_name,
-                               n_trials = n_trials,
-                               replication = rep,
-                               execution_time = bench$execution_time,
-                               completion = bench$completion,
-                               prop_negative_rt = bench$prop_negative_rt,                                        
-                               mean_rt = bench$mean_rt,
-                               mean_angle = bench$mean_angle,
-                               angular_error = bench$angular_error,
-                               stringsAsFactors = FALSE)           
-            # Add circumference precision if method is RandomWalk
-            if(method_tested == "RandomWalk") {
-                output$circumference_precision <- bench$circumference_precision
-            }            
-            results <- rbind(results, output)            
+        # Create 3D arrays for each parameter set to store bivariate data
+        data_arrays <- list()
+        for(param_name in names(param_sets)) {
+            data_arrays[[param_name]] <- list()
+            for(n_trial in trial_sizes) {
+                data_arrays[[param_name]][[as.character(n_trial)]] <- array(
+                    NA, 
+                    dim = c(n_trial, 2, n_reps),
+                    dimnames = list(
+                        NULL,
+                        c("Choice", "RT"),
+                        paste0("rep", 1:n_reps)
+                    )
+                )
+            }
         }
-    }
+
+        # Progress counter
+        total_iterations <- length(names(param_sets)) * length(trial_sizes) * n_reps
+        current_iteration <- 0
+
+        for(param_name in names(param_sets)) {
+            for(n_trials in trial_sizes) {
+                for(rep in 1:n_reps) {                       
+                    # Progress indicator
+                    current_iteration <- current_iteration + 1
+                    cat(sprintf("\rProgress: %d/%d (%.1f%%) - Running %s, trials=%d, rep=%d",
+                        current_iteration, total_iterations,
+                        100 * current_iteration/total_iterations,
+                        param_name, n_trials, rep))
+                    
+                    # Run test
+                    bench <- single_algorithm_test(param_sets[[param_name]], n_trials, method_tested)
+                    
+                    # Store bivariate data in 3D array
+                    data_arrays[[param_name]][[as.character(n_trials)]][,1,rep] <- bench$data$Choice
+                    data_arrays[[param_name]][[as.character(n_trials)]][,2,rep] <- bench$data$RT
+                    
+                    # Process summary results            
+                    output <- data.frame(param_set = param_name,
+                                    n_trials = n_trials,
+                                    replication = rep,
+                                    execution_time = bench$execution_time,
+                                    completion = bench$completion,
+                                    prop_negative_rt = bench$prop_negative_rt,                                        
+                                    mean_rt = bench$mean_rt,
+                                    mean_angle = bench$mean_angle,
+                                    angular_error = bench$angular_error,
+                                    stringsAsFactors = FALSE)           
+                    # Add circumference precision if method is RandomWalk
+                    if(method_tested == "RandomWalk") {
+                        output$circumference_precision <- bench$circumference_precision
+                    }            
+                    results <- rbind(results, output)            
+                }
+            }
+        }
+
+        #############################################################
+        #### P R O C E S S     R E S U L T S  #######################
+        #############################################################
+        # Add CDFs to data arrays
+        data_arrays <- add_cdfs_to_arrays(data_arrays, param_sets)        
+        results_cdfs <- calculate_cdf_metrics(data_arrays)
+
+        # Prepare for plotting        
+        plot_order <- paste(rep(trial_sizes, each=2), 
+                            rep(c("fast", "slow"), length(trial_sizes)))           
+        results$group <- factor(paste(results$n_trials, results$param_set),
+                            levels = plot_order)
+        results_cdfs$group <- factor(paste(results_cdfs$trial_size, results_cdfs$param_set),
+                            levels = plot_order)      
+
+        # Save both summary results and data arrays
+        filename_RData <- sprintf(here("results", "run%s_%sP%sN%sR.RData"), method_tested, nPS, nTS, n_reps)
+        save(results, data_arrays, file = filename_RData)
+        cat("Saving results to:", filename_RData, "\n\n")
 }
-
-#############################################################
-#### P R O C E S S     R E S U L T S  #######################
-#############################################################
-# Add CDFs to data arrays
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-data_arrays <- add_cdfs_to_arrays(data_arrays, param_sets)
-results_cdfs <- calculate_cdf_metrics(data_arrays)
-
-# Prepare for plotting
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-plot_order <- paste(rep(trial_sizes, each=2), 
-                    rep(c("fast", "slow"), length(trial_sizes)))           
-results$group <- factor(paste(results$n_trials, results$param_set),
-                       levels = plot_order)
-results_cdfs$group <- factor(paste(results_cdfs$trial_size, results_cdfs$param_set),
-                       levels = plot_order)
 
 # Get summary statistics and metrics
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -151,47 +165,42 @@ summary_stats <- aggregate(
 )
 colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_difference", "prop_neg_rt", "completion_rate")
 
-
-# Save both summary results and data arrays
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-filename <- sprintf(here("results", "quickTest_%s_%s.RData"), method_tested, format(Sys.Date(), "%Y%m%d"))
-save(results, data_arrays, file = filename)
-cat("Saving results to:", filename, "\n\n")
 #############################################################
 #### P L O T T I N G     R E S U L T S ######################
 #############################################################
 
 # Plot algorithm performance per trial size and parameter set
 # (1) execution time, (2) mean angle - theta error, (3) mean RT
-figname_results <- sprintf(here("results", "quickTest_%s_%s.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_results)    
+figname_Performance <- sprintf(here("results", "run%s_%sP%sN%sR_results.pdf"), method_tested, nPS, nTS, n_reps)
+plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_Performance)    
 
-
+# If the method is RandomWalk, plot the circumference precision
+# (Distnce between circumference and random walk end point)
 if(method_tested == "RandomWalk") {
-    figname_circPrecision <- sprintf(here("results", "quickTest_%s_%s_circPrecision.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
+    figname_circPrecision <- sprintf(here("results", "run%s_%sP%sN%sR_circumfPrecision.pdf"), method_tested, nPS, nTS, n_reps)    
     plot_circumference_precision(results, param_sets, trial_sizes, method_tested, filename = figname_circPrecision)
 }
 
+# PLot the empirical and theoretical cdfs
+figname_CDF <- sprintf(here("results", "run%s_%sP%sN%sR_cdfs.pdf"), method_tested, nPS, nTS, n_reps)
+pdf(figname_CDF, width=10, height=8)
+plot_cdfs(data_arrays)
+dev.off()
+
+# Plot metrics related to the difference between empirical and theoretical cdfs
+figname_CDFdiff <- sprintf(here("results", "run%s_%sP%sN%sR_cdfMetrics.pdf"), method_tested, nPS, nTS, n_reps)
+plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, filename_prefix = figname_CDFdiff)
+
+
+
+
 # Print summary
+cat("\n Figures created:", figname_results, "\n\n")
 cat("\nSummary of results:\n")
 print(summary_stats)
-
-cat("\n Figures created:", figname_results, "\n\n")
-
 cat("\n\nDone!\n\n")
 
 
-# Usage example:
-#figure_cdf <- sprintf(here("results", "quickTest_%s_%s_cdfs.pdf"), method_tested, format(Sys.Date(), "%Y%m%d"))
-#pdf(figure_cdf, width=10, height=8)
-# plot_cdfs(data_arrays)
-#dev.off()
 
 
-# Generate the plots
-filename_prefix <- here("results", 
-                       sprintf("quickTest_%s_%s_metrics", 
-                              method_tested, 
-                              format(Sys.Date(), "%Y%m%d")))
-plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
-                        filename_prefix)
+
