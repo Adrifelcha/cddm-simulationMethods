@@ -483,9 +483,9 @@ calculate_cdf_metrics <- function(data_arrays) {
     return(results)
 }
 
-plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, filename = NA) {    
+plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {    
     if(!is.na(filename)) {    
-        pdf(filename, width=12, height=10)
+        pdf(filename, width=12, height=6)  # Reduced height since we're removing one row
     }
     
     # Set up 2x2 plotting grid
