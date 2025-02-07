@@ -9,19 +9,66 @@
 library(mvtnorm)
 
 
-### Use CDDM density function to find key values
+
+
+###############################################################################
+# Transformation functions: ###################################################
+###############################################################################
+# Switch between Cardinal and Rectangular Coordinates 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+rectToPolar <- function(x,y){
+  n <- length(x)
+  driftAngle <- atan2(y,x)
+  driftLength <- sqrt((x^2)+(y^2))
+  output <- as.data.frame(cbind(driftAngle,driftLength))
+  colnames(output) <- c("dAngle","dLength")
+  return(output)
+}
+
+polarToRect <- function(vectorAngle,vectorLength){
+  x <- vectorLength*cos(vectorAngle)
+  y <- vectorLength*sin(vectorAngle)
+  X <-  as.data.frame(cbind(x,y))
+  colnames(X) <-  c("x","y")
+  return(X)
+}
+
+
+# Switch between degrees and radians
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+degToRad <- function(theta.deg){  
+  theta <-  theta.deg * pi /180  #Transform to radians
+  return(theta)
+}
+
+radToDeg <- function(theta.rad){
+  theta <- theta.rad * (180/pi)
+  return(theta)
+}
+
+
+###############################################################################
+# Sampling space functions: ###################################################
+###############################################################################
+
+### Use CDDM density function to find key values for setting up the sampling space
 keyDensityPoints <- function(par, cutoff = 0.00009){
-  drift <- par$drift;   theta <- par$theta
-  tzero <- par$tzero;   boundary <- par$boundary
+  # Extract model parameters from input list
+  drift <- par$drift;   theta <- par$theta      # Drift magnitude and direction
+  tzero <- par$tzero;   boundary <- par$boundary # Non-decision time and boundary
   
-  ### Determine a reasonable minimum RT testing the density at theta
+  ### Find minimum response time (RT) where density exceeds cutoff
+  # Start from non-decision time plus small increment
   density <- 0
   min.RT <- tzero+0.1
   while(density < cutoff){
+    # Test density at drift direction (theta) until exceeding cutoff
     density <- dCDDM(c(theta,min.RT),drift,theta,tzero,boundary)
     min.RT <- min.RT+0.01
   }
-  ### Find the maximum density and most likely RT testing density at theta
+
+  ### Find maximum density and most likely RT
+  # Search for peak density by incrementing RT until density starts decreasing
   density_increase <- TRUE; d <- 0
   pred.RT <- min.RT
   while(density_increase){
@@ -31,14 +78,19 @@ keyDensityPoints <- function(par, cutoff = 0.00009){
     d <- density
   }
   max.Density <- density
-  ### Determine a reasonable maximum RT testing the density at theta
+
+  ### Find maximum RT where density falls below cutoff
+  # Start from predicted RT and increment until density drops below cutoff
   max.RT <- pred.RT
   while(density > cutoff){
     density <- dCDDM(c(theta,max.RT),drift,theta,tzero,boundary)
     max.RT <- max.RT+0.01
   }
-return(list("min.RT" = min.RT,
-            "pred.RT" = pred.RT,
-            "max.Density" = max.Density,
-            "max.RT" = max.RT))
+
+  # Return key points needed for setting up rejection sampling
+  return(list("min.RT" = min.RT,          # Minimum response time
+              "pred.RT" = pred.RT,         # Most likely response time
+              "max.Density" = max.Density, # Maximum density value
+              "max.RT" = max.RT))         # Maximum response time
 }
+
