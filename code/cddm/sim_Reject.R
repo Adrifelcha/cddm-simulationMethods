@@ -124,14 +124,3 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
   
   return(samples)
 }
-
-# Test function
-#if(!exists("test")){    test <- TRUE                           }
-#if(test){
-          #par <- list("drift" = 1, 
-#                      "theta" = pi,
-#                      "tzero" = 0.1,
-#                      "boundary" = 7)
-          #n <- 500
-          #sample.Reject.cddm(n,par, plot=TRUE)  
-#}
