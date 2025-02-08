@@ -18,8 +18,8 @@ cat("Loading custom function scripts from /code/cddm...\n\n")
 source(here("code", "cddm", "dCDDM_aux.R"))
 source(here("code", "cddm", "dCDDM.R"))
 source(here("code", "cddm", "pCDDM_aux.R"))
-source(here("code", "cddm", "pCDDM_plots.R"))
 source(here("code", "cddm", "pCDDM.R"))
+source(here("code", "cddm", "sim_auxiliarFunctions.R"))
 
 #######################################################
 # Set test parameter values and data
