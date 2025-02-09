@@ -55,3 +55,4 @@ pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo",
     
     return(approximate_cdf)
 }
+
