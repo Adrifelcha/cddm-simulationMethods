@@ -43,11 +43,30 @@ cat("Test 1: Comparing pCDDM() results for a single pair of data\n")
 cat("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 cat("Setting test data:\n")
 cat("(radians =", data[1], ", rt =", data[2], ")\n\n")
+
+pCDDM_test_goldECDF <- sprintf(here("results", "pCDDM_goldECDF.RData"))
+if(!file.exists(pCDDM_test_goldECDF)) {
+    source(here("code", "cddm", "sim_randomWalk.R"))
+    x <- sample.RW.cddm(n = 10000, par = list(mu1 = mu1, mu2 = mu2, boundary = boundary, tzero = tzero))
+    data <- x$bivariate.data
+    data_ordered <- data[order(data$RT, data$Choice), ]
+    gold_eCDF = myECDF(as.matrix(data_ordered))
+    data_ordered$eCDF <- gold_eCDF
+    save(data_ordered, file=pCDDM_test_goldECDF)
+}
+
 cat("Testing pCDDM() with grid method...(this may take a minute)\n")
 start_time <- Sys.time()
 p1 <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="grid")
 end_time <- Sys.time()
 cat("Grid method result:", p1, "\n")
+difftime(end_time, start_time, units = "secs")
+
+cat("Testing pCDDM() with grid method...(this may take a minute)\n")
+start_time <- Sys.time()
+p1b <- pCDDM(c(pi, 2), drift, theta, tzero, boundary, method="grid", show=TRUE)
+end_time <- Sys.time()
+cat("Grid method result:", p1b, "\n")
 difftime(end_time, start_time, units = "secs")
 
 cat("\nTesting pCDDM() with Monte Carlo method...\n")
