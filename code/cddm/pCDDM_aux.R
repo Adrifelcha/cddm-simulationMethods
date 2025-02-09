@@ -12,54 +12,67 @@ integrate_grid <- function(rad, time, tzero, drift, theta, boundary, n_points=10
         boundary = boundary
     )
     
-    # Get key density points
+    # Get key density points to inform grid spacing
     key_points <- keyDensityPoints(par)
+    mean_rt <- ezcddm_MRT(drift, boundary, tzero)
+    rt_var <- ezcddm_VRT(drift, boundary)
     
-    # Create adaptive grid for angles (denser around theta)
+    # Normalize theta to the integration region
     theta_norm <- theta %% (2*pi)
     if(theta_norm > rad) theta_norm <- theta_norm - 2*pi
     
-    # Create base sequence and density weights for angles
-    angle_seq <- seq(0, rad, length.out=1000)
-    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/2) + 0.2  # Add baseline density
+    # Create grid for angles (denser around theta)
+    angle_seq <- seq(0, rad, length.out=n_points)
+    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/4) + 0.2
     angle_density <- angle_density / max(angle_density)
     
     # Sample angles with density-based weights
-    rad_grid <- sort(sample(angle_seq, size=n_points, prob=angle_density, replace=TRUE))
+    rad_grid <- sort(sample(angle_seq, size=n_points/2, prob=angle_density, replace=TRUE))
     
-    # Create adaptive grid for times using key points
-    time_seq <- seq(key_points$min.RT, min(time, key_points$max.RT), length.out=1000)
-    time_density <- dnorm(time_seq, mean=key_points$pred.RT, sd=(time-tzero)/4) + 0.2
+    # Create grid for times combining both approaches
+    time_seq <- seq(key_points$min.RT, min(time, key_points$max.RT), length.out=n_points)
+    # Combine densities from both theoretical moments and key points
+    time_density <- dnorm(time_seq, mean=mean_rt, sd=sqrt(rt_var)) + 
+                   dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/6) +
+                   0.2
     time_density <- time_density / max(time_density)
     
-    time_grid <- sort(sample(time_seq, 
-                            size=n_points, 
-                            prob=time_density,
-                            replace=TRUE))
+    time_grid <- sort(sample(time_seq, size=n_points/2, prob=time_density, replace=TRUE))
     
     # Calculate total area for normalization
     total_area <- (rad) * (time - tzero)
     
     # Create grid points and calculate densities
     grid_points <- as.matrix(expand.grid(rad=rad_grid, time=time_grid))
-    densities <- sapply(1:nrow(grid_points), function(j) {
-        dCDDM(grid_points[j,], drift, theta, tzero, boundary)
-    })
+    densities <- dCDDM(grid_points, drift, theta, tzero, boundary)
     
     # Normalize by total area and number of points
-    mean(densities) * total_area
+    prob <- mean(densities) * total_area
+    
+    # Ensure probability is between 0 and 1
+    return(pmax(0, pmin(1, prob)))
 }
 
 # Wrapper function for grid-based CDF computation
 pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_points=NA, show=FALSE) {
-    if(is.na(n_points)) { n_points <- 100 }
+    if(is.na(n_points)) { 
+        n_points <- if(nrow(data) > 1) 500 else 1000 
+    }
     
     # Only compute for valid indices
     probs[valid_idx] <- sapply(valid_idx, function(i) {
         integrate_grid(data[i,1], data[i,2], tzero, drift, theta, boundary, n_points)
     })
     
-    pmax(0, pmin(1, probs))
+    # Show visualization if requested
+    if(show && length(valid_idx) > 0) {
+        i <- valid_idx[1]
+        pdf("grid_cdf.pdf")
+        plot_adaptive_grid(data[i,1], data[i,2], tzero, drift, theta, boundary, n_points)
+        dev.off()
+    }
+    
+    return(probs)
 }
 
 # Monte Carlo method for CDF computation
@@ -96,7 +109,9 @@ pCDDM_monte_carlo <- function(data, drift, theta, tzero, boundary, probs, valid_
     
     if(show && length(valid_idx) > 0) {
         i <- valid_idx[1]
+        pdf("monte_carlo_cdf.pdf")
         plot_monte_carlo_cdf(points, densities, data[i,1], data[i,2], tzero, probs[i])
+        dev.off()
     }
     
     pmax(0, pmin(1, probs))
