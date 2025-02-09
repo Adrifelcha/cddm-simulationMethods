@@ -10,7 +10,6 @@ library(mvtnorm)
 
 
 
-
 ###############################################################################
 # Transformation functions: ###################################################
 ###############################################################################
@@ -94,3 +93,32 @@ keyDensityPoints <- function(par, cutoff = 0.00009){
               "max.RT" = max.RT))         # Maximum response time
 }
 
+
+
+ezcddm_MRT <- function(drift, boundary, tzero) {
+    # Calculate av product
+    av <- drift * boundary
+    
+    # Calculate ratio of modified Bessel functions
+    I1 <- besselI(av, nu = 1)  # First kind, order 1
+    I0 <- besselI(av, nu = 0)  # First kind, order 0
+    
+    # Calculate expected RT
+    MRT <- tzero + (boundary/drift) * (I1/I0)
+    
+    return(MRT)
+}
+
+
+ezcddm_VRT <- function(drift, boundary) {  
+    # Calculate av product
+    av <- drift * boundary
+    
+    # Calculate ratio of modified Bessel functions
+    I1 <- besselI(av, nu = 1)  # First kind, order 1
+    I0 <- besselI(av, nu = 0)  # First kind, order 0
+    
+    VRT <- 1 - (I1/I0)
+    
+    return(VRT)
+}
