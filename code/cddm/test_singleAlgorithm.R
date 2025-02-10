@@ -23,11 +23,14 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     } else if (method_tested == "inverseCDF") {
         result <- do.call(rCDDM_inverse, full_params)
     } else if (method_tested == "Rejection_Uniform") {
-        result <- do.call(rCDDM_Reject_rectUniform, full_params)
+        full_params$type <- "Uniform"
+        result <- do.call(rCDDM_Reject, full_params)
     } else if (method_tested == "Rejection_exGvonM") {
-        result <- do.call(rCDDM_Reject_exGvonM, full_params)
+        full_params$type <- "exGvonM"
+        result <- do.call(rCDDM_Reject, full_params)
     } else if (method_tested == "Rejection_2DNormal") {
-        result <- do.call(rCDDM_Reject_2DNormal, full_params)
+        full_params$type <- "2DNormal"
+        result <- do.call(rCDDM_Reject, full_params)
     } else {        stop(paste("Unknown method:", method_tested))       }
     end_time <- Sys.time()
 
