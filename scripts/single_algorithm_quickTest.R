@@ -8,7 +8,11 @@
 # single argument specifying the algorithm to test.
 #########################################################################
 forceRun <- FALSE
-method_tested <- "Rejection_exGvonM"
+# method_tested is a global variable that can be set by the user
+# before running the script. Alternatively, the user can set it here.
+if(!exists("method_tested")){
+    method_tested <- "Rejection_exGvonM"
+}
 # Possible methods:
 # 1) "Metropolis"
 # 2) "RandomWalk"
