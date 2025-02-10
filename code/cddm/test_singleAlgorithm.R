@@ -22,8 +22,12 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
         result <- do.call(sample.Metropolis.cddm, full_params)
     } else if (method_tested == "inverseCDF") {
         result <- do.call(rCDDM_inverse, full_params)
-    } else if (method_tested == "Rejection") {
-        result <- do.call(sample.Reject.cddm, full_params)
+    } else if (method_tested == "Rejection_Uniform") {
+        result <- do.call(rCDDM_Reject_rectUniform, full_params)
+    } else if (method_tested == "Rejection_exGvonM") {
+        result <- do.call(rCDDM_Reject_exGvonM, full_params)
+    } else if (method_tested == "Rejection_2DNormal") {
+        result <- do.call(rCDDM_Reject_2DNormal, full_params)
     } else {        stop(paste("Unknown method:", method_tested))       }
     end_time <- Sys.time()
 
@@ -213,7 +217,11 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         color_palette <- colorRampPalette(c("#5b218b", "#ad67d0"))  # Dark green to light green
     } else if (method_tested == "inverseCDF") {
         color_palette <- colorRampPalette(c("#E04D4D", "#E5B4B4"))  # Red to light pink
-    } else if (method_tested == "Rejection") {
+    } else if (method_tested == "Rejection_Uniform") {
+        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+    } else if (method_tested == "Rejection_exGvonM") {
+        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+    } else if (method_tested == "Rejection_2DNormal") {
         color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
     } else {        
         stop(paste("Unknown method:", method_tested))       
@@ -684,7 +692,11 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
         color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
     } else if (method_tested == "inverseCDF") {
         color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
-    } else if (method_tested == "Rejection") {
+    } else if (method_tested == "Rejection_Uniform") {
+        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
+    } else if (method_tested == "Rejection_exGvonM") {
+        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
+    } else if (method_tested == "Rejection_2DNormal") {
         color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
     } else {        
         stop(paste("Unknown method:", method_tested))       
