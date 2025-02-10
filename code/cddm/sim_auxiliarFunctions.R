@@ -93,7 +93,9 @@ keyDensityPoints <- function(par, cutoff = 0.00009){
               "max.RT" = max.RT))         # Maximum response time
 }
 
-
+###############################################################################
+# EZ CDDM functions: ##########################################################
+###############################################################################
 
 ezcddm_MRT <- function(drift, boundary, tzero) {
     # Calculate av product
@@ -122,3 +124,19 @@ ezcddm_VRT <- function(drift, boundary) {
     
     return(VRT)
 }
+
+###############################################################################
+# Ex-Gaussian functions: ######################################################
+###############################################################################
+rexGAUS <- function(n, mu, sigma, tau) {
+  return(rnorm(n, mu, sigma) + rexp(n, 1/tau))
+}
+
+dexGAUS <- function(x, mu, sigma, tau) {
+  if(tau <= 0) return(dnorm(x, mu, sigma))
+  
+  arg1 <- sigma^2/(2*tau^2) + (mu-x)/tau
+  arg2 <- (x-mu)/sigma - sigma/tau
+  
+  return(exp(arg1) * pnorm(arg2) / tau)
+} 
