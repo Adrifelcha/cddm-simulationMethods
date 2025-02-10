@@ -152,7 +152,7 @@ if(forceRun == FALSE && file.exists(filename_RData)) {
                             levels = plot_order)      
 
         # Save both summary results and data arrays
-        filename_RData <- sprintf(here("results", "run%s_%sP%sN%sR.RData"), method_tested, nPS, nTS, n_reps)
+        filename_RData <- sprintf(here("results", "res%s_%sP%sN%sR.RData"), method_tested, nPS, nTS, n_reps)
         save(results, data_arrays, file = filename_RData)
         cat("Saving results to:", filename_RData, "\n\n")
 }
