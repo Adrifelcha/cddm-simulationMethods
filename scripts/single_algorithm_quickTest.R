@@ -8,12 +8,14 @@
 # single argument specifying the algorithm to test.
 #########################################################################
 forceRun <- FALSE
-method_tested <- "Rejection"
+method_tested <- "Rejection_exGvonM"
 # Possible methods:
 # 1) "Metropolis"
 # 2) "RandomWalk"
 # 3) "inverseCDF"
-# 4) "Rejection"
+# 4) "Rejection_Uniform"
+# 5) "Rejection_exGvonM"
+# 6) "Rejection_2DNormal"
 cat("-----------------------------------------------------------\n")
 cat("\n\nSimulation algorithm to be tested:", method_tested, "\n\n")
 cat("-----------------------------------------------------------\n")
@@ -57,7 +59,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 20
+n_reps <- 50
 cat("Setting number of replications:", n_reps, "\n\n")
 
 ######################################################################
