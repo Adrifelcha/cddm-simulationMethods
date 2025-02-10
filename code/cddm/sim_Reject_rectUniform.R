@@ -3,27 +3,19 @@
 #####      A script to simulate bivariate data under the CDDM using a
 #####                      REJECTION  ALGORITHM
 ###############################################################################
-########################################################   by Adriana F. Ch?vez 
-#if(!exists("superCalled")){superCalled <- FALSE}
-#if(!superCalled){ 
-#      source("./dCDDM.R") 
-#      source("./sim_auxiliarFunctions.R")
-#}
-library(scatterplot3d) 
-library(here)
-source(here::here("code", "cddm", "dCDDM_aux.R"))
-source(here::here("code", "cddm", "dCDDM.R"))
-source(here::here("code", "cddm", "sim_auxiliarFunctions.R"))
+#####      This function simulates data from the CDDM using a rejection
+#####      sampling algorithm with a uniform proposal distribution for the
+#####      choice and response time.
+###############################################################################
+########################################################   by Adriana F. Chavez 
 
 
-# Implementation of a rejection sampling algorithm for the Circular Drift Diffusion Model (CDDM)
-sample.Reject.cddm <- function(n, par, plot=FALSE){
+rCDDM_Reject_rectUniform <- function(n, par, plot=FALSE){
   # Extract parameters from input list
   mu1 <- par$mu1;       mu2 <- par$mu2        # Cartesian drift components
   drift <- par$drift;   theta <- par$theta     # Polar drift components
   tzero <- par$tzero;   boundary <- par$boundary # Non-decision time and boundary
 
-  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
   # Parameter Validation: Check if we have either Cartesian or Polar coordinates
   noPolar <- is.null(theta) & is.null(drift)   # Check if polar coordinates missing
   noRect <- is.null(mu1) & is.null(mu2)        # Check if Cartesian coordinates missing
@@ -37,7 +29,6 @@ sample.Reject.cddm <- function(n, par, plot=FALSE){
       theta <- Mu$dAngle;     par$theta <- theta  # Direction of drift
     }
   }
-  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
 
   # Get key density points for setting up the sampling space
   test.Density <- keyDensityPoints(par)
