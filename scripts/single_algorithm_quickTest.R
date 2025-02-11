@@ -63,7 +63,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 50
+n_reps <- 100
 cat("Setting number of replications:", n_reps, "\n\n")
 
 ######################################################################
@@ -128,7 +128,9 @@ if(forceRun == FALSE && file.exists(filename_RData)) {
                                     completion = bench$completion,
                                     prop_negative_rt = bench$prop_negative_rt,                                        
                                     mean_rt = bench$mean_rt,
+                                    sd_rt = bench$sd_rt,
                                     mean_angle = bench$mean_angle,
+                                    sd_angle = bench$sd_angle,
                                     angular_error = bench$angular_error,
                                     stringsAsFactors = FALSE)           
                     # Add circumference precision if method is RandomWalk
@@ -177,8 +179,12 @@ colnames(summary_stats) <- c("param_set", "n_trials", "mean_exec_time", "rad_dif
 
 # Plot algorithm performance per trial size and parameter set
 # (1) execution time, (2) mean angle - theta error, (3) mean RT
-figname_Performance <- sprintf(here("results", "run%s_%sP%sN%sR_results.pdf"), method_tested, nPS, nTS, n_reps)
+figname_Performance <- sprintf(here("results", "run%s_%sP%sN%sR_quickResults2.pdf"), method_tested, nPS, nTS, n_reps)
 plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_Performance)    
+
+# Plot algorithm summaries
+figname_summaries <- sprintf(here("results", "run%s_%sP%sN%sR_sumStats.pdf"), method_tested, nPS, nTS, n_reps)
+plot_algorithm_summaries(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_summaries)
 
 # If the method is RandomWalk, plot the circumference precision
 # (Distnce between circumference and random walk end point)
