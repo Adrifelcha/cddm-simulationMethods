@@ -878,6 +878,7 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     # Calculate means and standard deviations
     error_means <- tapply(results$angular_error, results$group, mean)  # Changed from mean_angle
     choice_sds <- tapply(results$sd_angle, results$group, mean)
+    choice_var <- tapply(results$var_angle, results$group, mean)
     rt_means <- tapply(results$mean_rt, results$group, mean)
     rt_sds <- tapply(results$sd_rt, results$group, mean)
     
@@ -895,6 +896,9 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     })    
     theoretical_Choice_SDs <- sapply(seq_along(param_sets), function(i) {
         sqrt(ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary))
+    })
+    theoretical_Choice_Vars <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary)
     })
     
     # Create color vector based on parameter sets
