@@ -181,9 +181,9 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
                          border = NA)
             
             text(x = (length(param_sets)/2) + 0.5 + (i-1)*length(param_sets),
-                 y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.8,
+                 y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.96,
                  labels = paste(trial_sizes[i], "trials"),
-                 col = "gray50",
+                 col = "gray30",
                  cex = 0.8)
         }
     }
@@ -215,17 +215,17 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     
     # Create color vector based on number of parameter sets and method tested    
     if (method_tested == "RandomWalk") {
-        color_palette <- colorRampPalette(c("#0d2889", "#47c2f7"))  # Blue to light gray
+        color_palette <- colorRampPalette(c("#64bec8", "#2d3e7e"))  # Blue 
     } else if (method_tested == "Metropolis") {
-        color_palette <- colorRampPalette(c("#5b218b", "#ad67d0"))  # Dark green to light green
+        color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Purple
     } else if (method_tested == "inverseCDF") {
         color_palette <- colorRampPalette(c("#E04D4D", "#E5B4B4"))  # Red to light pink
     } else if (method_tested == "Rejection_Uniform") {
-        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+        color_palette <- colorRampPalette(c("#12d852", "#0c6a2a"))  # Grass green
     } else if (method_tested == "Rejection_exGvonM") {
-        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+        color_palette <- colorRampPalette(c("#96d549", "#599e05"))  # Lemon green
     } else if (method_tested == "Rejection_2DNormal") {
-        color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))  # Purple to light purple
+        color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Teal green
     } else {        
         stop(paste("Unknown method:", method_tested))       
     }
@@ -247,6 +247,27 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
     })
     
+    # Calculate theoretical MRTs using pre-computed drift lengths
+    theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
+    })
+    
+    # Calculate drift angles for each parameter set
+    drift_angles <- sapply(param_sets, function(ps) {
+        mu1 <- ps$par$mu1
+        mu2 <- ps$par$mu2
+        atan2(mu2, mu1)  # Direction of drift vector
+    })
+    
+    # Calculate theoretical modes using pre-computed drift lengths and angles
+    theoretical_modes <- sapply(seq_along(param_sets), function(i) {
+        par_copy <- param_sets[[i]]$par
+        par_copy$drift <- drift_lengths[i]  # Use pre-computed drift
+        par_copy$theta <- drift_angles[i]   # Use pre-computed angle
+        density_points <- keyDensityPoints(par_copy)
+        density_points$pred.RT
+    })
+    
     # Create legend labels with expression for delta
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
@@ -258,14 +279,16 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     plot_metrics <- list(
         list(data=results$execution_time, means=exec_means, 
              ylab="Time (seconds)", main="Execution Time Distribution",
-             add_reference=FALSE),
+             add_reference=FALSE, is_rt_plot=FALSE),
         list(data=results$angular_error, means=circ_means,
              ylab="Angular Distance (radians)", 
              main=expression(bold(paste("Distance between mean angle and ", theta))),
-             add_reference=TRUE),  # Added flag for reference line
+             add_reference=TRUE, ref_value=0, is_rt_plot=FALSE),  # Zero reference for angular error
         list(data=results$mean_rt, means=rt_means,
              ylab="Time (seconds)", main="Mean Response Time",
-             add_reference=FALSE)
+             add_reference=TRUE, ref_values=theoretical_MRTs, 
+             mode_values=theoretical_modes,
+             is_rt_plot=TRUE)
     )
     
     # Create the three metric plots
@@ -273,11 +296,26 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         plot(1, type="n", axes=FALSE, xlim=c(1, length(levels(results$group))),
              ylim=range(plot_info$data), xlab="", ylab="", main=plot_info$main,
              xaxt="n", yaxt="n")
+             
         add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
-        # Add reference line if specified
+        
+        # Add reference lines
         if(plot_info$add_reference) {
-            abline(h=0, lty=3, col="red", lwd=3)  # dotted horizontal line at y=0
+            if(plot_info$is_rt_plot) {
+                # Add theoretical MRT lines for each parameter set
+                for(i in seq_along(theoretical_MRTs)) {
+                    rect_indices <- seq(i, length(levels(results$group)), length(param_sets))
+                    # Add mean line (red)
+                    segments(min(rect_indices)-0.5, theoretical_MRTs[i],
+                            max(rect_indices)+0.5, theoretical_MRTs[i],
+                            col="red", lty=3, lwd=3)
+                }
+            } else {
+                # Single reference line for angular error
+                abline(h=plot_info$ref_value, lty=3, col="red", lwd=3)
+            }
         }
+        
         mtext(plot_info$ylab, side=2, line=3)
         points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
                col=point_colors_transparent, pch=19)
@@ -288,20 +326,32 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
         add_means(plot_info$means)        
     }
     
-    # Create legend panel
+    # Create empty fourth plot
     plot(1, type="n", xlab="", ylab="", main="", axes=FALSE)    
-    # Parameter sets legend
+    
+    # Enable plotting in outer margins
+    par(xpd=TRUE)
+    
+    # Parameter sets legend at the top
     legend("top", legend=legend_labels,
            col=adjustcolor(unique(point_colors), alpha=0.5),
            pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
-           cex=1.5, bty="n", inset=c(0, 0.075))    
-    # Trial sizes legend
-    legend("bottom", legend=paste(trial_sizes, "trials"),
-           fill=stripe_colors, title=expression(bold("Trial Sizes")),
-           cex=1.5, bty="n", ncol=min(2, length(trial_sizes)),
-           inset=c(0, 0.6/length(param_sets)))    
+           cex=1.5, bty="n", inset=c(0, -0.1))    
     
-    # Create simulation info with only labels in bold
+    # Trial sizes legend in the middle
+    legend("center", legend=paste(trial_sizes, "trials"),
+           fill=stripe_colors, title=expression(bold("Trial Sizes")),
+           cex=1.5, bty="n", ncol=min(2, length(trial_sizes)))    
+    
+    # Reference line legend below trial sizes
+    legend("bottom", 
+           legend="Theoretical Mean",
+           col="red",
+           lty=3, lwd=3,
+           cex=1.5, bty="n",
+           inset=c(0, -0.15))
+    
+    # Simulation info with only labels in bold
     sim_info <- c(
         substitute(bold("Algorithm:") ~ x, list(x = method_tested)),
         substitute(bold("Repetitions:") ~ x, list(x = n_reps)),
@@ -311,6 +361,9 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     # Add simulation information
     legend("bottom", legend = parse(text = sapply(sim_info, deparse)), 
            cex=1.5, bty="n", inset=c(0, 0))
+           
+    # Reset plotting parameters
+    par(xpd=FALSE)
 
     if(!is.na(filename)) {    dev.off()     }
 }
@@ -805,3 +858,117 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
 #                              format(Sys.Date(), "%Y%m%d")))
 #plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
 #                        filename_prefix)
+
+plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {
+    # At the start of the function
+    if(nrow(results) == 0) stop("No results to plot")
+    if(length(param_sets) == 0) stop("No parameter sets provided")
+    if(length(trial_sizes) == 0) stop("No trial sizes provided")
+    
+    if(!is.na(filename)) { pdf(filename, width=12, height=10) }
+    
+    # Set up 2x2 plotting layout with adjusted margins
+    par(mfrow=c(2,2), oma=c(2,2,2,0), mar=c(4,4,3,3), mgp=c(2,0.7,0),
+        cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
+    
+    # Calculate means and standard deviations
+    choice_means <- tapply(results$mean_angle, results$group, mean)
+    choice_sds <- tapply(results$sd_angle, results$group, mean)
+    rt_means <- tapply(results$mean_rt, results$group, mean)
+    rt_sds <- tapply(results$sd_rt, results$group, mean)
+    
+    # Calculate theoretical MRTs using pre-computed drift lengths
+    drift_lengths <- sapply(param_sets, function(ps) {
+        mu1 <- ps$par$mu1
+        mu2 <- ps$par$mu2
+        sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
+    })
+    theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
+    })
+    
+    # Create color vector based on parameter sets
+    color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))
+    point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
+    point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
+    
+    # Generate stripe colors for trial sizes
+    shade_change <- c((1:length(trial_sizes)*10))
+    stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
+    
+    # Generate parameter set labels
+    param_labels <- names(param_sets)
+    legend_labels <- sapply(seq_along(param_sets), function(i) {
+        parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
+                           names(param_sets)[i], drift_lengths[i]))
+    })
+    
+    # Create plots list with their specific properties
+    plot_metrics <- list(
+        list(data=results$mean_angle, means=choice_means,
+             ylab="Choice (radians)", main="Mean Choice",
+             add_reference=TRUE, ref_value=0),
+        list(data=results$sd_angle, means=choice_sds,
+             ylab="Standard Deviation (radians)", main="Choice Variability",
+             add_reference=FALSE),
+        list(data=results$mean_rt, means=rt_means,
+             ylab="Time (seconds)", main="Mean Response Time",
+             add_reference=TRUE, ref_values=theoretical_MRTs),
+        list(data=results$sd_rt, means=rt_sds,
+             ylab="Standard Deviation (seconds)", main="RT Variability",
+             add_reference=FALSE)
+    )
+    
+    # Create the four plots
+    for(plot_info in plot_metrics) {
+        plot(1, type="n", axes=FALSE, 
+             xlim=c(1, length(levels(results$group))),
+             ylim=range(c(plot_info$data, 
+                         if(!is.null(plot_info$ref_values)) plot_info$ref_values else NULL,
+                         if(!is.null(plot_info$ref_value)) plot_info$ref_value else NULL)), 
+             xlab="", ylab="", main=plot_info$main,
+             xaxt="n", yaxt="n")
+        
+        # Add background stripes
+        rect(seq(1, length(levels(results$group)), by=length(param_sets))-0.5,
+             par("usr")[3],
+             seq(length(param_sets), length(levels(results$group)), by=length(param_sets))+0.5,
+             par("usr")[4],
+             col=rep(stripe_colors, each=length(param_sets)),
+             border=NA)
+        
+        # Add reference lines if specified
+        if(!is.null(plot_info$add_reference) && plot_info$add_reference) {
+            if(!is.null(plot_info$ref_values)) {
+                # Add theoretical MRT lines for each parameter set
+                for(i in seq_along(plot_info$ref_values)) {
+                    rect_indices <- seq(i, length(levels(results$group)), length(param_sets))
+                    segments(min(rect_indices)-0.5, plot_info$ref_values[i],
+                            max(rect_indices)+0.5, plot_info$ref_values[i],
+                            col="red", lty=3, lwd=3)
+                }
+            } else if(!is.null(plot_info$ref_value)) {
+                # Add single reference line
+                abline(h=plot_info$ref_value, lty=3, col="red", lwd=3)
+            }
+        }
+        
+        # Add points and axes
+        points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
+               col=point_colors_transparent, pch=19)
+        axis(2, las=2, cex.axis=0.9)
+        axis(1, at=1:length(levels(results$group)), 
+             labels=rep(param_labels, length(trial_sizes)), 
+             las=2, cex.axis=0.9)
+        
+        # Add means
+        points(1:length(levels(results$group)), plot_info$means,
+               col="black", pch=19, cex=1.5)
+    }
+    
+    # Add title
+    mtext(paste("Summary Statistics -", method_tested), 
+          outer=TRUE, cex=1.5, line=0)
+    
+    if(!is.na(filename)) { dev.off() }
+}
