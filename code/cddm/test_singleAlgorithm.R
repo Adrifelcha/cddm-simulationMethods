@@ -864,8 +864,14 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     
     if(!is.na(filename)) { pdf(filename, width=12, height=10) }
     
-    # Set up 2x2 plotting layout with adjusted margins and extra space on right
-    par(mfrow=c(2,2), oma=c(0,0,2,10), mar=c(4,5,3,0), mgp=c(2,0.7,0),
+    # Create a 2x3 layout matrix where the right column is for legends
+    layout_matrix <- matrix(c(1,2,5,
+                            3,4,5), nrow=2, byrow=TRUE)
+    # Set relative widths of columns (first two columns wider than third)
+    layout(layout_matrix, widths=c(4,4,1))
+    
+    # Set margins for plot panels
+    par(oma=c(0,1.5,2,0), mar=c(3.5,3,3,2), mgp=c(2,0.7,0),
         cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
     
     # Calculate means and standard deviations
@@ -903,7 +909,8 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     param_labels <- names(param_sets)
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
-                           names(param_sets)[i], drift_lengths[i]))
+                           names(param_sets)[i], 
+                           drift_lengths[i]))
     })
     
     # Create plots list with their specific properties
@@ -970,26 +977,45 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     mtext(get_title(method_tested), 
           outer=TRUE, cex=1.5, line=0, font=2)
 
-    # Enable plotting in outer margins
-    par(xpd=TRUE)        
-    usr <- par("usr")  # Get the plot region coordinates    
-    # Parameter sets legend at the top right
-    legend(usr[2] * 1.05, usr[4], legend=legend_labels,
+    # Create the legend panel (position 5 in layout)
+    par(mar=c(1,1,1,1))  # Minimal margins for legend space
+    plot(0, 0, type="n", bty="n", xaxt="n", yaxt="n", xlab="", ylab="")
+    
+    # Enable plotting in outer margins for legend panel
+    par(xpd=TRUE)
+    
+    # Parameter sets legend at the top
+    legend(-1.5, 0.5, legend=legend_labels,
            col=adjustcolor(unique(point_colors), alpha=0.5),
            pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
-           cex=1.5, bty="n")        
-    # Trial sizes legend in the middle right
-    legend(usr[2] * 1.05, usr[4] * 0.5, legend=paste(trial_sizes, "trials"),
+           cex=1.2, bty="n")    
+    
+    # Trial sizes legend in the middle
+    legend(-1.5, 0.3, legend=paste(trial_sizes, "trials"),
            fill=stripe_colors, title=expression(bold("Trial Sizes")),
-           cex=1.5, bty="n", ncol=min(2, length(trial_sizes)))        
-    # Reference line legend at the bottom right
-    legend(usr[2] * 1.05, usr[3], legend="Theoretical Mean",
-           col="red", lty=3, lwd=3, cex=1.5, bty="n")    
+           cex=1.2, bty="n", ncol=min(1, length(trial_sizes)))    
+    
+    # Reference line legend 
+    line_legend <- 0
+    lines(c(-0.8, 0.6), c(line_legend, line_legend), col="red", lty=3, lwd=3.5)
+    text(-0.2, line_legend-0.04, "Theoretical Value", cex=1.2, bty="n")  
+        
+    # Simulation info with only labels in bold
+    sim_info <- c(        
+        substitute(bold("Repetitions:")),
+        substitute(x, list(x = n_reps)),
+        substitute(""),  # Empty line for spacing
+        substitute(bold("Date:")),
+        substitute(x, list(x = format(Sys.Date(), "%Y-%m-%d")))
+    )
+    
+    # Add simulation information at the bottom
+    legend(-1.5, -0.15, legend = parse(text = sapply(sim_info, deparse)), 
+           cex=1.2, bty="n")
+    
     # Reset plotting parameters
     par(xpd=FALSE)
 
     if(!is.na(filename)) { dev.off() }
 }
 
-figname_summaries <- sprintf(here("results", "run%s_%sP%sN%sR_sumStats.pdf"), method_tested, nPS, nTS, n_reps)
-plot_algorithm_summaries(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_summaries)
