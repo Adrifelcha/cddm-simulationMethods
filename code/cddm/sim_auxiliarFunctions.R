@@ -162,4 +162,5 @@ dexGAUS <- function(x, mu, sigma, tau) {
   arg2 <- (x-mu)/sigma - sigma/tau
   
   return(exp(arg1) * pnorm(arg2) / tau)
-} 
+}
+
