@@ -116,18 +116,41 @@ ezcddm_VRT <- function(drift, boundary) {
     # Calculate av product
     av <- drift * boundary
     
+    # Calculate modified Bessel functions
+    I1 <- besselI(av, nu = 1)  # First kind, order 1
+    I0 <- besselI(av, nu = 0)  # First kind, order 0
+    
+    # Calculate ratio once to avoid repetition
+    ratio <- I1/I0
+    
+    # Calculate variance using the full equation:
+    # ((b^2/v^2)(I1^2/I0^2)) + ((2b/v^3)(I1/I0)) - (b^2/v^2)
+    VRT <- ((boundary^2)/(drift^2)) * (ratio^2) + 
+           ((2*boundary)/(drift^3)) * ratio - 
+           ((boundary^2)/(drift^2))
+    
+    return(VRT)
+}
+
+
+ezcddm_VCA <- function(drift, boundary, tzero) {
+    # Calculate av product
+    av <- drift * boundary
+    
     # Calculate ratio of modified Bessel functions
     I1 <- besselI(av, nu = 1)  # First kind, order 1
     I0 <- besselI(av, nu = 0)  # First kind, order 0
     
-    VRT <- 1 - (I1/I0)
+    # Calculate expected RT
+    VCA <- 1 - (I1/I0)
     
-    return(VRT)
+    return(VCA)
 }
 
 ###############################################################################
 # Ex-Gaussian functions: ######################################################
 ###############################################################################
+
 rexGAUS <- function(n, mu, sigma, tau) {
   return(rnorm(n, mu, sigma) + rexp(n, 1/tau))
 }
