@@ -11,7 +11,7 @@ forceRun <- FALSE
 # method_tested is a global variable that can be set by the user
 # before running the script. Alternatively, the user can set it here.
 if(!exists("method_tested")){
-    method_tested <- "Rejection_exGvonM"
+    method_tested <- "Metropolis"
 }
 # Possible methods:
 # 1) "Metropolis"
@@ -131,6 +131,7 @@ if(forceRun == FALSE && file.exists(filename_RData)) {
                                     sd_rt = bench$sd_rt,
                                     mean_angle = bench$mean_angle,
                                     sd_angle = bench$sd_angle,
+                                    var_angle = bench$var_angle,
                                     angular_error = bench$angular_error,
                                     stringsAsFactors = FALSE)           
                     # Add circumference precision if method is RandomWalk
