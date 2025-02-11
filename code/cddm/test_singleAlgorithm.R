@@ -208,6 +208,31 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
         return(color_palette)
     }
 
+    get_indiv_and_mean_colors <- function(method_tested) {
+        if (method_tested == "RandomWalk") {
+            color_indiv <- adjustcolor("#338ed8", alpha=0.3)
+            color_mean <- "#134d7c"
+        } else if (method_tested == "Metropolis") {
+            color_indiv <- adjustcolor("#9d4dc5", alpha=0.3)
+            color_mean <- "#651e88"
+        } else if (method_tested == "inverseCDF") {
+            color_indiv <- adjustcolor("#d88f4c", alpha=0.3)
+            color_mean <- "#a15f21"
+        } else if (method_tested == "Rejection_Uniform") {
+            color_indiv <- adjustcolor("#34c22f", alpha=0.3)
+            color_mean <- "#147c35"
+        } else if (method_tested == "Rejection_exGvonM") {
+            color_indiv <- adjustcolor("#80c927", alpha=0.3)
+            color_mean <- "#548a12"
+        } else if (method_tested == "Rejection_2DNormal") {
+            color_indiv <- adjustcolor("#27bd77", alpha=0.3)
+            color_mean <- "#14804d"
+        } else {        
+            stop(paste("Unknown method:", method_tested))       
+        }
+        return(list(color_indiv=color_indiv, color_mean=color_mean))
+    }
+
     get_title <- function(method_tested) {
         if (method_tested == "RandomWalk") {
             title <- "Random Walk emulator"
@@ -748,23 +773,10 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     layout(layout_matrix)    
     par(mar=c(1,3,1,1), oma=c(4,3,4,1), mgp=c(2.5,1,0))
 
-    # Set colors based on method
-    if (method_tested == "RandomWalk") {
-        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
-    } else if (method_tested == "Metropolis") {
-        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
-    } else if (method_tested == "inverseCDF") {
-        color_indiv <- adjustcolor("#4D9DE0", alpha=0.3); color_mean <- "#008cff"
-    } else if (method_tested == "Rejection_Uniform") {
-        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
-    } else if (method_tested == "Rejection_exGvonM") {
-        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
-    } else if (method_tested == "Rejection_2DNormal") {
-        color_indiv <- adjustcolor("#51E04D", alpha=0.3); color_mean <- "#00FF51"
-    } else {        
-        stop(paste("Unknown method:", method_tested))       
-    }
-    
+    colores <- get_indiv_and_mean_colors(method_tested)
+    color_indiv <- colores$color_indiv
+    color_mean <- colores$color_mean
+
     # Pre-calculate y-axis ranges for each metric
     y_ranges <- list()
     for(metric in metrics) {
