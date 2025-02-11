@@ -11,9 +11,9 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     full_params <- list(n = n_trials,
                         par = params$par)
 
-    ##################################################################
+    #################################################################
     # Run the sampling function
-    ##################################################################
+    #################################################################
     start_time <- Sys.time()
     if (method_tested == "RandomWalk") {
         result_raw <- do.call(sample.RW.cddm, full_params)
@@ -34,9 +34,9 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     } else {        stop(paste("Unknown method:", method_tested))       }
     end_time <- Sys.time()
 
-    ##################################################################
+    #################################################################
     # Calculate summary statistics
-    ##################################################################
+    #################################################################
     # Execution time
     execution_time <- as.numeric(difftime(end_time, start_time, units="secs"))
     # Completion rate (i.e. proportion of trials that did not return NA)
@@ -49,9 +49,9 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     # Proportion of trials with negative RTs (excluding NAs)
     prop_negative_rt <- mean(result$RT < 0, na.rm=TRUE)
 
-    ##################################################################
+    #################################################################
     # Return the results
-    ##################################################################
+    #################################################################
     output <- list(
         execution_time = execution_time,
         completion = completion,
@@ -188,6 +188,44 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
         }
     }
 
+    get_method_colors <- function(method_tested) {
+        if (method_tested == "RandomWalk") {
+            color_palette <- colorRampPalette(c("#64bec8", "#2d3e7e"))  # Blue to light gray
+        } else if (method_tested == "Metropolis") {
+            color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Dark green to light green
+        } else if (method_tested == "inverseCDF") {
+            color_palette <- colorRampPalette(c("#E5B4B4", "#E04D4D"))  # Red to light pink
+        } else if (method_tested == "Rejection_Uniform") {
+            color_palette <- colorRampPalette(c("#12d852", "#0c6a2a"))  # Purple to light purple
+        } else if (method_tested == "Rejection_exGvonM") {
+            color_palette <- colorRampPalette(c("#96d549", "#599e05"))  # Purple to light purple
+        } else if (method_tested == "Rejection_2DNormal") {
+            color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Purple to light purple
+        } else {        
+            stop(paste("Unknown method:", method_tested))       
+        }
+        return(color_palette)
+    }
+
+    get_title <- function(method_tested) {
+        if (method_tested == "RandomWalk") {
+            title <- "Random Walk emulator"
+        } else if (method_tested == "Metropolis") {
+            title <- "Metropolis sampler with Bivariate Normal proposal"
+        } else if (method_tested == "inverseCDF") {
+            title <- "Inverse CDF sampler"
+        } else if (method_tested == "Rejection_Uniform") {
+            title <- "Rejection sampler with Uniform proposal"
+        } else if (method_tested == "Rejection_exGvonM") {
+            title <- "Rejection sampler with independent exGaussian and vonMises proposals"
+        } else if (method_tested == "Rejection_2DNormal") {
+            title <- "Rejection sampler with independent Bivariate Normal proposals"
+        } else {        
+            stop(paste("Unknown method:", method_tested))       
+        }
+        return(title)
+    }
+
 
 #########################################################################
 # P L O T     A L G O R I T H M     P E R F O R M A N C E   #############
@@ -214,21 +252,7 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     rt_means <- tapply(results$mean_rt, results$group, mean)    
     
     # Create color vector based on number of parameter sets and method tested    
-    if (method_tested == "RandomWalk") {
-        color_palette <- colorRampPalette(c("#64bec8", "#2d3e7e"))  # Blue 
-    } else if (method_tested == "Metropolis") {
-        color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Purple
-    } else if (method_tested == "inverseCDF") {
-        color_palette <- colorRampPalette(c("#E04D4D", "#E5B4B4"))  # Red to light pink
-    } else if (method_tested == "Rejection_Uniform") {
-        color_palette <- colorRampPalette(c("#12d852", "#0c6a2a"))  # Grass green
-    } else if (method_tested == "Rejection_exGvonM") {
-        color_palette <- colorRampPalette(c("#96d549", "#599e05"))  # Lemon green
-    } else if (method_tested == "Rejection_2DNormal") {
-        color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Teal green
-    } else {        
-        stop(paste("Unknown method:", method_tested))       
-    }
+    color_palette <- get_method_colors(method_tested)
     
     # Generate colors for each parameter set
     point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
@@ -374,16 +398,19 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
 # Show the distance between the walk end and the boundary 
 ######################################################################
 plot_circumference_precision <- function(results, param_sets, trial_sizes, method_tested, filename = NA) {    
-    if(!is.na(filename)){    
-        pdf(filename, width=10, height=8)
-    }
+    if(!is.na(filename)){   pdf(filename, width=10, height=8) }
     
     # Calculate statistics
     y_range <- range(results$circumference_precision)
     y_mid <- mean(y_range)
     y_values <- c(y_range[1], y_mid, y_range[2])
     circ_means <- tapply(results$circumference_precision, results$group, mean)
-    
+    # Calculate drift lengths for each parameter set
+    drift_lengths <- sapply(param_sets, function(ps) {
+        mu1 <- ps$par$mu1
+        mu2 <- ps$par$mu2
+        sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
+    })
     # Create color vector based on parameter sets
     point_colors <- rainbow(length(param_sets))[as.numeric(factor(results$param_set))]
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
@@ -391,11 +418,7 @@ plot_circumference_precision <- function(results, param_sets, trial_sizes, metho
     stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
     
     # Set up plotting parameters
-    par(mfrow=c(1,1), 
-        mar=c(5,7,3,2),    # Increased left margin from 5 to 7
-        cex.main=1.8, 
-        cex.lab=1.2, 
-        cex.axis=1.1)
+    par(mfrow=c(1,1), mar=c(5,7,3,2), cex.main=1.8, cex.lab=1.2, cex.axis=1.1)
     
     # Create plot
     plot(jitter(as.numeric(results$group), amount=0.2), 
@@ -403,56 +426,35 @@ plot_circumference_precision <- function(results, param_sets, trial_sizes, metho
          col=point_colors_transparent,  pch=19, 
          main="Circumference Precision Distribution",
          xlab="Parameter Set", ylab="", xaxt="n", yaxt="n", 
-         xlim=c(0.5, length(levels(results$group)) + 0.5))
-    
+         xlim=c(0.5, length(levels(results$group)) + 0.5))    
     # Add y-axis with scientific notation
     axis(2, at=y_values, labels=sprintf("%.2e", y_values), las=2)
     add_background_stripes(stripe_colors, trial_sizes, param_sets, results_cdfs) 
     mtext("Average Distance from Boundary", side=2, line=5.5)
-
     # Add mean lines
     segments(1:length(circ_means) - 0.25, circ_means,
              1:length(circ_means) + 0.25, circ_means,
-             lwd=2, col="black")
-    
+             lwd=2, col="black")    
     # Add mean values as text
     text(1:length(circ_means) + 0.3, 
-         circ_means, 
-         sprintf("%.4f", circ_means),
-         adj=0, 
-         cex=0.8)
-    
+         circ_means,  sprintf("%.4f", circ_means),
+         adj=0, cex=0.8)    
     # Add x-axis labels
-    axis(1, 
-         at=seq_along(levels(results$group)), 
-         labels=levels(results$group))
+    axis(1, at=seq_along(levels(results$group)), labels=levels(results$group))
     
-    # Calculate drift lengths for each parameter set
-    drift_lengths <- sapply(param_sets, function(ps) {
-        mu1 <- ps$par$mu1
-        mu2 <- ps$par$mu2
-        sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
-    })
     
     # Create legend labels with expression for delta
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
                            names(param_sets)[i], 
                            drift_lengths[i]))
-    })
-    
+    })    
     # Add legend with delta values
-    legend("topright",
-           legend=legend_labels,
+    legend("topright", legend=legend_labels,
            col=adjustcolor(unique(point_colors), alpha=0.5),
-           pch=19,
-           title="Parameter Sets",
-           cex=1.2,
-           bty="n")
+           pch=19, title="Parameter Sets", cex=1.2, bty="n")
     
-    if(!is.na(filename)){
-                dev.off()
-    }
+    if(!is.na(filename)){  dev.off()    }
 }
 
 ######################################################################
@@ -634,10 +636,12 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
          labels=levels(all_groups),
          las=2, cex.axis=0.9)
     
-    # Add means
-    segments(1:length(means) - 0.25, means,
-            1:length(means) + 0.25, means,
-            lwd=2, col="black")
+    # Add means as horizontal lines
+    for(i in 1:length(means)) {
+        segments(i - 0.2, means[i],
+                i + 0.2, means[i],
+                col="black", lwd=3)
+    }
     
     # Add reference line at zero
     abline(h=0, lty=2, col="gray")
@@ -673,10 +677,12 @@ plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_si
              labels=levels(results_cdfs$group),
              las=2, cex.axis=0.9)
         
-        # Add means
-        segments(1:length(means) - 0.25, means,
-                1:length(means) + 0.25, means,
-                lwd=2, col="black")
+        # Add means as horizontal lines
+        for(i in 1:length(means)) {
+            segments(i - 0.2, means[i],
+                    i + 0.2, means[i],
+                    col="black", lwd=3)
+        }
     }
     
     drift_lengths <- sapply(param_sets, function(ps) {
@@ -850,15 +856,6 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     dev.off()
 }
 
-
-# Generate the plots
-#filename_prefix <- here("results", 
-#                       sprintf("quickTest_%s_%s_metrics", 
-#                              method_tested, 
-#                              format(Sys.Date(), "%Y%m%d")))
-#plot_metrics_by_paramset(results_cdfs, results, param_sets, trial_sizes, n_reps, 
-#                        filename_prefix)
-
 plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {
     # At the start of the function
     if(nrow(results) == 0) stop("No results to plot")
@@ -867,28 +864,34 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     
     if(!is.na(filename)) { pdf(filename, width=12, height=10) }
     
-    # Set up 2x2 plotting layout with adjusted margins
-    par(mfrow=c(2,2), oma=c(2,2,2,0), mar=c(4,4,3,3), mgp=c(2,0.7,0),
+    # Set up 2x2 plotting layout with adjusted margins and extra space on right
+    par(mfrow=c(2,2), oma=c(0,0,2,10), mar=c(4,5,3,0), mgp=c(2,0.7,0),
         cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
     
     # Calculate means and standard deviations
-    choice_means <- tapply(results$mean_angle, results$group, mean)
+    error_means <- tapply(results$angular_error, results$group, mean)  # Changed from mean_angle
     choice_sds <- tapply(results$sd_angle, results$group, mean)
     rt_means <- tapply(results$mean_rt, results$group, mean)
     rt_sds <- tapply(results$sd_rt, results$group, mean)
     
-    # Calculate theoretical MRTs using pre-computed drift lengths
+    # Calculate theoretical MRTs and variances
     drift_lengths <- sapply(param_sets, function(ps) {
         mu1 <- ps$par$mu1
         mu2 <- ps$par$mu2
         sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
-    })
+    })    
     theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
         ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
+    })        
+    theoretical_RT_SDs <- sapply(seq_along(param_sets), function(i) {
+        sqrt(ezcddm_VRT(drift_lengths[i], param_sets[[i]]$par$boundary))
+    })    
+    theoretical_Choice_SDs <- sapply(seq_along(param_sets), function(i) {
+        sqrt(ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary))
     })
     
     # Create color vector based on parameter sets
-    color_palette <- colorRampPalette(c("#0c6a2a", "#65d279"))
+    color_palette <- get_method_colors(method_tested)
     point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
     point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
     
@@ -905,18 +908,19 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     
     # Create plots list with their specific properties
     plot_metrics <- list(
-        list(data=results$mean_angle, means=choice_means,
-             ylab="Choice (radians)", main="Mean Choice",
+        list(data=results$angular_error, means=error_means,
+             ylab=expression("Mean choice - " * theta * " (radians)"), 
+             main="Mean Choice",
              add_reference=TRUE, ref_value=0),
         list(data=results$sd_angle, means=choice_sds,
              ylab="Standard Deviation (radians)", main="Choice Variability",
-             add_reference=FALSE),
+             add_reference=TRUE, ref_values=theoretical_Choice_SDs),
         list(data=results$mean_rt, means=rt_means,
              ylab="Time (seconds)", main="Mean Response Time",
              add_reference=TRUE, ref_values=theoretical_MRTs),
         list(data=results$sd_rt, means=rt_sds,
              ylab="Standard Deviation (seconds)", main="RT Variability",
-             add_reference=FALSE)
+             add_reference=TRUE, ref_values=theoretical_RT_SDs)
     )
     
     # Create the four plots
@@ -926,16 +930,9 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
              ylim=range(c(plot_info$data, 
                          if(!is.null(plot_info$ref_values)) plot_info$ref_values else NULL,
                          if(!is.null(plot_info$ref_value)) plot_info$ref_value else NULL)), 
-             xlab="", ylab="", main=plot_info$main,
-             xaxt="n", yaxt="n")
-        
+             xlab="", ylab="", main=plot_info$main, xaxt="n", yaxt="n")        
         # Add background stripes
-        rect(seq(1, length(levels(results$group)), by=length(param_sets))-0.5,
-             par("usr")[3],
-             seq(length(param_sets), length(levels(results$group)), by=length(param_sets))+0.5,
-             par("usr")[4],
-             col=rep(stripe_colors, each=length(param_sets)),
-             border=NA)
+        add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
         
         # Add reference lines if specified
         if(!is.null(plot_info$add_reference) && plot_info$add_reference) {
@@ -947,8 +944,7 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
                             max(rect_indices)+0.5, plot_info$ref_values[i],
                             col="red", lty=3, lwd=3)
                 }
-            } else if(!is.null(plot_info$ref_value)) {
-                # Add single reference line
+            } else if(!is.null(plot_info$ref_value)) {                
                 abline(h=plot_info$ref_value, lty=3, col="red", lwd=3)
             }
         }
@@ -959,16 +955,41 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
         axis(2, las=2, cex.axis=0.9)
         axis(1, at=1:length(levels(results$group)), 
              labels=rep(param_labels, length(trial_sizes)), 
-             las=2, cex.axis=0.9)
-        
-        # Add means
-        points(1:length(levels(results$group)), plot_info$means,
-               col="black", pch=19, cex=1.5)
-    }
+             las=2, cex.axis=0.9)             
+        # Add y-axis label
+        mtext(plot_info$ylab, side=2, line=2.5, cex=0.9)        
+        # Add means as horizontal lines
+        for(i in 1:length(plot_info$means)) {
+            segments(i - 0.2, plot_info$means[i],
+                    i + 0.2, plot_info$means[i],
+                    col="black", lwd=3)
+        }
+    }    
     
-    # Add title
-    mtext(paste("Summary Statistics -", method_tested), 
-          outer=TRUE, cex=1.5, line=0)
-    
+    ## Add title
+    mtext(get_title(method_tested), 
+          outer=TRUE, cex=1.5, line=0, font=2)
+
+    # Enable plotting in outer margins
+    par(xpd=TRUE)        
+    usr <- par("usr")  # Get the plot region coordinates    
+    # Parameter sets legend at the top right
+    legend(usr[2] * 1.05, usr[4], legend=legend_labels,
+           col=adjustcolor(unique(point_colors), alpha=0.5),
+           pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
+           cex=1.5, bty="n")        
+    # Trial sizes legend in the middle right
+    legend(usr[2] * 1.05, usr[4] * 0.5, legend=paste(trial_sizes, "trials"),
+           fill=stripe_colors, title=expression(bold("Trial Sizes")),
+           cex=1.5, bty="n", ncol=min(2, length(trial_sizes)))        
+    # Reference line legend at the bottom right
+    legend(usr[2] * 1.05, usr[3], legend="Theoretical Mean",
+           col="red", lty=3, lwd=3, cex=1.5, bty="n")    
+    # Reset plotting parameters
+    par(xpd=FALSE)
+
     if(!is.na(filename)) { dev.off() }
 }
+
+figname_summaries <- sprintf(here("results", "run%s_%sP%sN%sR_sumStats.pdf"), method_tested, nPS, nTS, n_reps)
+plot_algorithm_summaries(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_summaries)
