@@ -16,10 +16,10 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     #################################################################
     start_time <- Sys.time()
     if (method_tested == "RandomWalk") {
-        result_raw <- do.call(sample.RW.cddm, full_params)
+        result_raw <- do.call(rCDDM_RandomWalk, full_params)
         result <- result_raw$bivariate.data
     } else if (method_tested == "Metropolis") {
-        result <- do.call(sample.Metropolis.cddm, full_params)
+        result <- do.call(rCDDM_Metropolis, full_params)
     } else if (method_tested == "inverseCDF") {
         result <- do.call(rCDDM_inverse, full_params)
     } else if (method_tested == "Rejection_Uniform") {
