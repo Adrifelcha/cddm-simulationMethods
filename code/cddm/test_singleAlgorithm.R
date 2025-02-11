@@ -1036,3 +1036,74 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     if(!is.na(filename)) { dev.off() }
 }
 
+plot_largest_trial_distributions <- function(data_arrays, param_sets, trial_sizes, filename = NA) {
+    
+    max_trial_size <- max(trial_sizes)
+    
+    if(!is.na(filename)) { pdf(filename, width = 8, height = 10) }
+    
+    # Set up 2x1 plotting layout
+    par(mfrow = c(2, 1), mar = c(4, 4, 3, 2))
+    
+    # 1. Circular plot for choices
+    # --------------------------------
+    plot(NULL, xlim = c(-1.2, 1.2), ylim = c(-1.2, 1.2), 
+         asp = 1, axes = FALSE, xlab = "", ylab = "",
+         main = "Choice Distribution by Parameter Set")
+    
+    # Draw reference circle
+    theta <- seq(0, 2*pi, length.out = 100)
+    lines(cos(theta), sin(theta), col = "gray", lty = 2)
+    
+    # Plot choices for each parameter set
+    colors <- c("red", "blue")
+    radii <- c(0.8, 0.6)  # Different radii for concentric circles
+    
+    for(i in seq_along(param_sets)) {
+        param_name <- names(param_sets)[i]
+        # Get choices from the largest trial size
+        choices <- data_arrays[[param_name]][[as.character(max_trial_size)]][,1,]
+        choices <- as.vector(choices)  # Flatten array
+        
+        # Convert choices to x,y coordinates
+        x <- radii[i] * cos(choices)
+        y <- radii[i] * sin(choices)
+        
+        # Plot points
+        points(x, y, col = colors[i], pch = 16, cex = 0.5)
+    }
+    
+    # Add legend
+    legend("topright", legend = names(param_sets), 
+           col = colors, pch = 16, bty = "n")
+    
+    # 2. RT histogram
+    # --------------------------------
+    # Get RTs for each parameter set
+    rt_lists <- list()
+    for(param_name in names(param_sets)) {
+        rt_lists[[param_name]] <- as.vector(
+            data_arrays[[param_name]][[as.character(max_trial_size)]][,2,]
+        )
+    }
+    
+    # Calculate common breaks for histograms
+    all_rts <- unlist(rt_lists)
+    breaks <- seq(min(all_rts), max(all_rts), length.out = 30)
+    
+    # Plot overlapping histograms
+    hist(rt_lists[[1]], breaks = breaks, col = adjustcolor(colors[1], alpha = 0.5),
+         main = "Response Time Distribution by Parameter Set",
+         xlab = "Response Time", probability = TRUE)
+    hist(rt_lists[[2]], breaks = breaks, col = adjustcolor(colors[2], alpha = 0.5),
+         add = TRUE, probability = TRUE)
+    
+    # Add legend
+    legend("topright", legend = names(param_sets),
+           fill = adjustcolor(colors, alpha = 0.5), bty = "n")
+    
+    if(!is.na(filename)) { dev.off() }
+}
+
+figname_data <- sprintf(here("results", "run%s_%sP%sN%sR_Data.pdf"), method_tested, nPS, nTS, n_reps)
+plot_largest_trial_distributions(data_arrays, param_sets, trial_sizes, figname_data)
