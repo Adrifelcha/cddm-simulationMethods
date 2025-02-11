@@ -154,7 +154,7 @@ getFinalState <- function(randomWalk.states){
 
 # Final function: Generate bivariate data + random walk trace
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-sample.RW.cddm <- function(n, par, drift.Coeff=1, dt=0.0015){
+rCDDM_RandomWalk <- function(n, par, drift.Coeff=1, dt=0.0015){
   trials <- n
   boundary <- par$boundary
   drift.Angle <- par$theta
