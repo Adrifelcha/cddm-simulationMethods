@@ -4,30 +4,24 @@
 #####                     Metropolis Sampling Algorithm
 ###############################################################################
 ########################################################   by Adriana F. Ch?vez 
-#if(!exists("superCalled")){superCalled <- FALSE}
-#if(!superCalled){ 
-#  source("./dCDDM.R") 
-#  source("./sim_auxiliarFunctions.R")
-#}
 library(mvtnorm)
 
-# Function to generate samples from CDDM using Metropolis-Hastings algorithm
-sample.Metropolis.cddm <- function(n, par, plot=FALSE){  # n=number of samples, par=parameters, plot=visualization flag
+# Function to generate samples from CDDM using Metropolis algorithm
+rCDDM_Metropolis <- function(n, par, plot=FALSE){  # n=number of samples, par=parameters, plot=visualization flag
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Extract model parameters from the parameter list
-  mu1 <- par$mu1
-  mu2 <- par$mu2
-  drift <- par$drift      # Drift rate: strength/speed of information accumulation
-  theta <- par$theta      # Mean direction: predicted/target angle in radians
-  tzero <- par$tzero      # Non-decision time: time for non-decision components
-  boundary <- par$boundary # Decision boundary: threshold for decision
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  mu1 <- par$mu1;   mu2 <- par$mu2               # Drift vector in Cartesian coordinates
+  drift <- par$drift;   theta <- par$theta       # Drift direction in polar coordinates
+  tzero <- par$tzero;   boundary <- par$boundary # Decision boundary and non-decision time
   
-  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   #               Defensive Coding                                         #
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   noPolar <- is.null(theta) & is.null(drift)
   noRect <- is.null(mu1) & is.null(mu2)
   if(noPolar){
-    if(noRect){
-      stop("Provide Cartesian or Polar coordinates", call. = FALSE)
+    if(noRect){ stop("Provide Cartesian or Polar coordinates", call. = FALSE)
     }else{
       # Convert Cartesian to polar coordinates if needed
       Mu <- rectToPolar(mu1, mu2)
@@ -35,18 +29,25 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){  # n=number of samples, 
       theta <- Mu$dAngle;     par$theta <- theta  # Direction of drift
     }
   }
-  #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
-  
-  # Initialize predicted choice angle from theta
-  predChoice <- theta     # Predicted choice angle (initialized to mean direction)      
-  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Store original theta and compute rotation angle to center at pi
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  theta_original <- theta
+  rotation_angle <- pi - theta
+  theta <- pi  # Center the distribution at pi  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Get density characteristics for tuning the proposal distribution
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   test.Density <- keyDensityPoints(par)  # Calculate key points of the density function
   min.RT <- test.Density$min.RT          # Minimum possible reaction time
   max.RT <- test.Density$max.RT          # Maximum considered reaction time
   max.Density <- test.Density$max.Density # Peak density value
-  predRT <- test.Density$pred.RT         # Most likely reaction time
-  
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Define initial predicted choice and RT
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  predRT <- ezcddm_MRT(drift, boundary, tzero)
+  predChoice <- theta     # Initialized to mean direction
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   if(plot){          # If plotting is enabled
     par(mar = c(0, 0, 0, 0))  # Set margins to zero
     # Create grid for density visualization
@@ -83,9 +84,7 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){  # n=number of samples, 
   
   while(warm_up){  # Continue until desired acceptance rate is achieved
     # Generate random RGB values for plotting
-    b <- runif(1,0,1)   # Random blue component
-    e <- runif(1,0,1)   # Random green component
-    d <- runif(1,0,1)   # Random red component
+    b <- runif(1,0,1);   e <- runif(1,0,1);   d <- runif(1,0,1)   
     baseColor <- rgb(b,e,d,0.05)   # Create transparent color for density
     meanColor <- rgb(b,e,d,0.4)    # Create more opaque color for points
     
@@ -178,8 +177,15 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){  # n=number of samples, 
     }
   }
   
+  # Rotate samples back to original theta
+  samples[,1] <- (samples[,1] - rotation_angle) %% (2*pi)
+  
   if(plot){  # Plot final samples
-    a$points3d(samples[,1],samples[,2],dCDDM(samples,drift,theta,tzero,boundary),
+    # Rotate samples temporarily back for plotting
+    plot_samples <- samples
+    plot_samples[,1] <- (plot_samples[,1] + rotation_angle) %% (2*pi)
+    a$points3d(plot_samples[,1], plot_samples[,2],
+               dCDDM(as.matrix(plot_samples), drift, pi, tzero, boundary),
                col = rgb(b,e,d,0.5), pch = 16, cex = 0.5)
   }
   
@@ -189,3 +195,4 @@ sample.Metropolis.cddm <- function(n, par, plot=FALSE){  # n=number of samples, 
   
   return(samples)  # Return data frame of samples
 }
+
