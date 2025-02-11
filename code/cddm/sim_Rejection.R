@@ -52,6 +52,7 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
 # Get theoretical moments for RT distribution
   mean_rt <- ezcddm_MRT(drift, boundary, tzero)   # Expected RT
   rt_var <- ezcddm_VRT(drift, boundary)           # RT variance
+  choice_var <- ezcddm_VCA(drift, boundary, tzero)   # Choice variance
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Set up parameters relevant for proposal distributions considered
@@ -60,9 +61,9 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
   rotation <- pi - theta
   rotated_theta <- pi
   proposal_mean <- c(rotated_theta, mean_rt)  # Center at pi and theoretical mean RT
-  proposal_sigma <- matrix(c((2*pi/6)^2,0,  # Variance for angle (covers ~1/6 of circle)
-                              0,rt_var      # Use theoretical variance for RT
-                            ), nrow=2)
+  # Use theoretical variances for RT and choice
+  proposal_sigma <- matrix(c(choice_var,0,  
+                              0,rt_var), nrow=2)
   }else if(type=="exGvonM"){
     kappa <- drift * boundary  # Concentration parameter for von Mises
     mu <- mean_rt
