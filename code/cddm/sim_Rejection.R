@@ -61,9 +61,9 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
   rotation <- pi - theta
   rotated_theta <- pi
   proposal_mean <- c(rotated_theta, mean_rt)  # Center at pi and theoretical mean RT
-  # Use theoretical variances for RT and choice
-  proposal_sigma <- matrix(c(choice_var,0,  
-                              0,rt_var), nrow=2)
+  # Make sure proposal distribution is wider (use theoretical variances as reference)
+  proposal_sigma <- matrix(c(max(c((2*pi/6)^2, choice_var),0),  
+                             0,rt_var*2), nrow=2)
   }else if(type=="exGvonM"){
     kappa <- drift * boundary  # Concentration parameter for von Mises
     mu <- mean_rt
