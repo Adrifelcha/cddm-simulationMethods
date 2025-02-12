@@ -170,4 +170,4 @@ rCDDM_MetropolisHastings <- function(n, par, plot=FALSE){
   return(samples)
 }
 
-x <- rCDDM_MetropolisHastings(10, par=list(mu1=1, mu2=1, tzero=0, boundary=1))
+#x <- rCDDM_MetropolisHastings(10, par=list(mu1=1, mu2=1, tzero=0, boundary=1))
