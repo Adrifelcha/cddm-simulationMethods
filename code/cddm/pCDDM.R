@@ -37,20 +37,28 @@ pCDDM <- function(data, drift, theta, tzero, boundary, method="monte_carlo",
     } else {
         stop("Unknown type. Use 'joint', 'RT', or 'rad'")
     }
+    
+    # Calculate rotation angle to move theta to pi
+    rotation <- pi - theta
+    # Rotate observed angles by the same amount
+    rad_rotated <- (rad + rotation) %% (2*pi)
+    
     # Initialize output vector    
     probs <- rep(0, length(rad))  
     # Input validation
     valid_idx <- which(time >= tzero & rad > 0)    
     if(length(valid_idx) == 0){ return(probs) }
     
-    # Create data matrix
-    data_matrix <- cbind(rad, time)
+    # Create data matrix with rotated angles
+    data_matrix <- cbind(rad_rotated, time)
     
-    # Call appropriate method
+    # Call appropriate method with theta = pi
     if(method == "monte_carlo") {
-        approximate_cdf <- pCDDM_monte_carlo(data_matrix, drift, theta, tzero, boundary, probs, valid_idx, n_points, show)
+        approximate_cdf <- pCDDM_monte_carlo(data_matrix, drift, pi, tzero, boundary, probs, valid_idx, 
+                                             n_points, show, rotation)
     } else if(method == "grid") {
-        approximate_cdf <- pCDDM_grid(data_matrix, drift, theta, tzero, boundary, probs, valid_idx, n_points, show)
+        approximate_cdf <- pCDDM_grid(data_matrix, drift, pi, tzero, boundary, probs, valid_idx, 
+                                      n_points, show, rotation)
     }
     
     return(approximate_cdf)
