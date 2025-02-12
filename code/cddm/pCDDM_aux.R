@@ -12,7 +12,7 @@ integrate_grid <- function(rad, time, tzero, drift, theta, boundary, n_points=10
         boundary = boundary
     )
     
-    # Get key density points to inform grid spacing
+    # Get key density points and theoretical moments
     key_points <- keyDensityPoints(par)
     mean_rt <- ezcddm_MRT(drift, boundary, tzero)
     rt_var <- ezcddm_VRT(drift, boundary)
@@ -21,40 +21,47 @@ integrate_grid <- function(rad, time, tzero, drift, theta, boundary, n_points=10
     theta_norm <- theta %% (2*pi)
     if(theta_norm > rad) theta_norm <- theta_norm - 2*pi
     
-    # Create grid for angles (denser around theta)
+    # Create more refined angle grid with multiple concentration points
     angle_seq <- seq(0, rad, length.out=n_points)
-    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/4) + 0.2
-    angle_density <- angle_density / max(angle_density)
+    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/6) + 
+                    0.5 * dnorm(angle_seq, mean=0, sd=pi/8) +  # Add concentration near 0
+                    0.2  # Add uniform component
+    angle_density <- angle_density / sum(angle_density)
     
     # Sample angles with density-based weights
     rad_grid <- sort(sample(angle_seq, size=n_points/2, prob=angle_density, replace=TRUE))
     
-    # Create grid for times combining both approaches
-    time_seq <- seq(key_points$min.RT, min(time, key_points$max.RT), length.out=n_points)
-    # Combine densities from both theoretical moments and key points
+    # Create more refined time grid
+    time_seq <- seq(tzero, time, length.out=n_points)
     time_density <- dnorm(time_seq, mean=mean_rt, sd=sqrt(rt_var)) + 
-                   dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/6) +
-                   0.2
-    time_density <- time_density / max(time_density)
+                   2 * dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/8) +
+                   dnorm(time_seq, mean=tzero, sd=(time-tzero)/10) +  # Add concentration near tzero
+                   0.2  # Add uniform component
+    time_density <- time_density / sum(time_density)
     
     time_grid <- sort(sample(time_seq, size=n_points/2, prob=time_density, replace=TRUE))
     
-    # Calculate total area for normalization
+    # Calculate area for normalization (using actual integration region)
     total_area <- (rad) * (time - tzero)
     
     # Create grid points and calculate densities
     grid_points <- as.matrix(expand.grid(rad=rad_grid, time=time_grid))
     densities <- dCDDM(grid_points, drift, theta, tzero, boundary)
     
-    # Normalize by total area and number of points
-    prob <- mean(densities) * total_area
+    # Compute weighted average of densities
+    weights <- outer(angle_density[findInterval(rad_grid, angle_seq)],
+                    time_density[findInterval(time_grid, time_seq)])
+    weights <- weights / sum(weights)
+    
+    # Calculate weighted probability
+    prob <- sum(densities * weights) * total_area
     
     # Ensure probability is between 0 and 1
     return(pmax(0, pmin(1, prob)))
 }
 
 # Wrapper function for grid-based CDF computation
-pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_points=NA, show=FALSE) {
+pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_points=NA, show=FALSE, rotation=0) {
     if(is.na(n_points)) { 
         n_points <- if(nrow(data) > 1) 500 else 1000 
     }
@@ -66,17 +73,15 @@ pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_
     
     # Show visualization if requested
     if(show && length(valid_idx) > 0) {
-        i <- valid_idx[1]
-        pdf("grid_cdf.pdf")
-        plot_adaptive_grid(data[i,1], data[i,2], tzero, drift, theta, boundary, n_points)
-        dev.off()
+        i <- valid_idx[1]        
+        plot_adaptive_grid(data[i,1], data[i,2], tzero, drift, theta, boundary, n_points)        
     }
     
     return(probs)
 }
 
 # Monte Carlo method for CDF computation
-pCDDM_monte_carlo <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_points=NA, show=FALSE) {
+pCDDM_monte_carlo <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_points=NA, show=FALSE, rotation=0) {
     if(is.na(n_points)) { 
         n_points <- if(nrow(data) > 1) 50000 else 7000
     }
