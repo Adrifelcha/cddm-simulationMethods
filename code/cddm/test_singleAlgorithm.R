@@ -1,5 +1,5 @@
 #########################################################################
-# S I N G L E     A L G O R I T H M     T E S T ########################
+# M A I N    T E S T I N G    F U N C T I O N ###########################
 #########################################################################
 # This source code contains a custom function to:
 # 1) Run a single sampling algorithm on a fixed set of parameters.
@@ -76,8 +76,8 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
 
 
 #########################################################################
-# A D D    E M P I R I C A L     A N D   T H E O R E T I C A L ##########
-#     C U M U L A T I V E      D E N S I T Y     F U N C T I O N   ######
+#### A D D    E M P I R I C A L     A N D   T H E O R E T I C A L #######
+##  C U M U L A T I V E      D E N S I T I E S   T O   A R R A Y S ######
 #########################################################################
 # This source code contains a custom function to:
 # 1) Add empirical and theoretical cumulative density functions 
@@ -160,97 +160,127 @@ add_cdfs_to_arrays <- function(data_arrays, param_sets) {
 
 
 #########################################################################
-# Helper functions #######################################################
+# C A L C U L A T E     C D F     M E T R I C S ##########################
 #########################################################################
-# Helper functions
-    add_means <- function(means) {
-        segments(1:length(means) - 0.25, means, 1:length(means) + 0.25, means,
-                lwd=3, col="black")
+# This source code contains a custom function to:
+# 1) Calculate metrics for the difference between empirical and theoretical CDFs
+# 2) Return the results.
+#########################################################################
+calculate_cdf_metrics <- function(data_arrays) {
+    # Initialize empty results dataframe
+    results <- data.frame()
+    
+    # Calculate metrics for each parameter set and trial size
+    for(param_name in names(data_arrays)) {
+        for(n_trials_char in names(data_arrays[[param_name]])) {
+            array_data <- data_arrays[[param_name]][[n_trials_char]]
+            n_trials <- as.numeric(n_trials_char)
+            n_reps <- dim(array_data)[3]            
+            
+            for(rep in 1:n_reps) {
+                # Calculate differences between empirical and theoretical CDFs
+                differences <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
+                
+                # Calculate summary statistics
+                output <- data.frame(
+                    mean_diff = mean(differences),
+                    median_diff = median(differences),
+                    ssd = sum(differences^2),  # Sum of squared differences
+                    ks_stat = max(abs(differences)),  # Kolmogorov-Smirnov statistic                    
+                    param_set = param_name,
+                    trial_size = n_trials,
+                    rep = rep
+                )
+                results <- rbind(results, output)
+            }
+        }
     }
     
-    add_background_stripes <- function(stripe_colors, trial_sizes, param_sets, results) {
-        n_trials <- length(trial_sizes)
-        for(i in 1:n_trials) {
-            rect(xleft = seq(0.5 + (i-1)*length(param_sets), 
-                           max(as.numeric(results$group)) + 0.5), 
-                         ybottom = par("usr")[3],
-                         xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
-                                    max(as.numeric(results$group)) + 0.5, 
-                                    by=n_trials*length(param_sets)),
-                         ytop = par("usr")[4],
-                         col = stripe_colors[i],
-                         border = NA)
-            
-            text(x = (length(param_sets)/2) + 0.5 + (i-1)*length(param_sets),
-                 y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.96,
-                 labels = paste(trial_sizes[i], "trials"),
-                 col = "gray30",
-                 cex = 0.8)
-        }
-    }
+    return(results)
+}
 
-    get_method_colors <- function(method_tested) {
-        if (method_tested == "RandomWalk") {
-            color_palette <- colorRampPalette(c("#64bec8", "#2d3e7e"))  # Blue to light gray
-        } else if (method_tested == "Metropolis") {
-            color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Dark green to light green
-        } else if (method_tested == "inverseCDF") {
-            color_palette <- colorRampPalette(c("#E5B4B4", "#E04D4D"))  # Red to light pink
-        } else if (method_tested == "Rejection_Uniform") {
-            color_palette <- colorRampPalette(c("#12d852", "#0c6a2a"))  # Purple to light purple
-        } else if (method_tested == "Rejection_exGvonM") {
-            color_palette <- colorRampPalette(c("#96d549", "#599e05"))  # Purple to light purple
-        } else if (method_tested == "Rejection_2DNormal") {
-            color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Purple to light purple
-        } else {        
-            stop(paste("Unknown method:", method_tested))       
-        }
-        return(color_palette)
-    }
+#########################################################################
+# H E L P E R     F U N C T I O N S #####################################
+#########################################################################
+# These functions are used throughout the script to simplify plotting.
+#########################################################################
 
-    get_indiv_and_mean_colors <- function(method_tested) {
-        if (method_tested == "RandomWalk") {
-            color_indiv <- adjustcolor("#338ed8", alpha=0.3)
-            color_mean <- "#134d7c"
-        } else if (method_tested == "Metropolis") {
-            color_indiv <- adjustcolor("#9d4dc5", alpha=0.3)
-            color_mean <- "#651e88"
-        } else if (method_tested == "inverseCDF") {
-            color_indiv <- adjustcolor("#d88f4c", alpha=0.3)
-            color_mean <- "#a15f21"
-        } else if (method_tested == "Rejection_Uniform") {
-            color_indiv <- adjustcolor("#34c22f", alpha=0.3)
-            color_mean <- "#147c35"
-        } else if (method_tested == "Rejection_exGvonM") {
-            color_indiv <- adjustcolor("#80c927", alpha=0.3)
-            color_mean <- "#548a12"
-        } else if (method_tested == "Rejection_2DNormal") {
-            color_indiv <- adjustcolor("#27bd77", alpha=0.3)
-            color_mean <- "#14804d"
-        } else {        
-            stop(paste("Unknown method:", method_tested))       
-        }
-        return(list(color_indiv=color_indiv, color_mean=color_mean))
-    }
+# Add horizontal lines to indicate the mean of the data
+add_means <- function(means) {
+    segments(1:length(means) - 0.25, means, 1:length(means) + 0.25, means,
+                lwd=3, col="black")
+}
 
-    get_title <- function(method_tested) {
-        if (method_tested == "RandomWalk") {
-            title <- "Random Walk emulator"
-        } else if (method_tested == "Metropolis") {
-            title <- "Metropolis sampler with Bivariate Normal proposal"
-        } else if (method_tested == "inverseCDF") {
-            title <- "Inverse CDF sampler"
-        } else if (method_tested == "Rejection_Uniform") {
-            title <- "Rejection sampler with Uniform proposal"
-        } else if (method_tested == "Rejection_exGvonM") {
-            title <- "Rejection sampler with independent exGaussian and vonMises proposals"
-        } else if (method_tested == "Rejection_2DNormal") {
-            title <- "Rejection sampler with independent Bivariate Normal proposals"
-        } else {        
-            stop(paste("Unknown method:", method_tested))       
-        }
-        return(title)
+# Add background stripes to the plot to differentiate between trial sizes
+add_background_stripes <- function(stripe_colors, trial_sizes, param_sets, results) {
+    n_trials <- length(trial_sizes)
+    for(i in 1:n_trials) {
+        rect(xleft = seq(0.5 + (i-1)*length(param_sets), 
+                        max(as.numeric(results$group)) + 0.5), 
+                        ybottom = par("usr")[3],
+                        xright = seq(length(param_sets) + 0.5 + (i-1)*length(param_sets), 
+                                max(as.numeric(results$group)) + 0.5, 
+                                by=n_trials*length(param_sets)),
+                        ytop = par("usr")[4],
+                        col = stripe_colors[i],
+                        border = NA)
+        
+        text(x = (length(param_sets)/2) + 0.5 + (i-1)*length(param_sets),
+                y = par("usr")[3] + (par("usr")[4] - par("usr")[3])*0.96,
+                labels = paste(trial_sizes[i], "trials"),
+                col = "gray30",
+                cex = 0.8)
     }
+}
+
+# Get the color palette per parameter set, depending on the method tested
+get_method_colors <- function(method_tested) {
+    if (method_tested == "RandomWalk") {
+        color_palette <- colorRampPalette(c("#64bec8", "#2d3e7e"))  # Blue to light gray
+        color_indiv <- adjustcolor("#338ed8", alpha=0.3)
+        color_mean <- "#134d7c"
+    } else if (method_tested == "Metropolis") {
+        color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Dark green to light green
+        color_indiv <- adjustcolor("#9d4dc5", alpha=0.3)
+        color_mean <- "#651e88"
+    } else if (method_tested == "inverseCDF") {
+        color_palette <- colorRampPalette(c("#E5B4B4", "#E04D4D"))  # Red to light pink
+        color_indiv <- adjustcolor("#d88f4c", alpha=0.3)
+        color_mean <- "#a15f21"
+    } else if (method_tested == "Rejection_Uniform") {
+        color_palette <- colorRampPalette(c("#12d852", "#0c6a2a"))  # Purple to light purple
+        color_indiv <- adjustcolor("#34c22f", alpha=0.3)
+        color_mean <- "#147c35"
+    } else if (method_tested == "Rejection_exGvonM") {
+        color_palette <- colorRampPalette(c("#96d549", "#599e05"))  # Purple to light purple
+        color_indiv <- adjustcolor("#80c927", alpha=0.3)
+        color_mean <- "#548a12"
+    } else if (method_tested == "Rejection_2DNormal") {
+        color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Purple to light purple
+        color_indiv <- adjustcolor("#27bd77", alpha=0.3)
+        color_mean <- "#14804d"
+    } else {        
+        stop(paste("Unknown method:", method_tested))       
+    }
+    return(list(color_palette=color_palette, color_indiv=color_indiv, color_mean=color_mean))
+}
+# Get an informative title for the method_tested
+get_title <- function(method_tested) {
+    if (method_tested == "RandomWalk") {
+        title <- "Random Walk emulator"
+    } else if (method_tested == "Metropolis") {
+        title <- "Metropolis sampler with Bivariate Normal proposal"
+    } else if (method_tested == "inverseCDF") {
+        title <- "Inverse CDF sampler"
+    } else if (method_tested == "Rejection_Uniform") {
+        title <- "Rejection sampler with Uniform proposal"
+    } else if (method_tested == "Rejection_exGvonM") {
+        title <- "Rejection sampler with independent exGaussian and vonMises proposals"
+    } else if (method_tested == "Rejection_2DNormal") {
+        title <- "Rejection sampler with independent Bivariate Normal proposals"
+    } else {   stop(paste("Unknown method:", method_tested))    }
+return(title)
+}
 
 
 #########################################################################
@@ -278,7 +308,7 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     rt_means <- tapply(results$mean_rt, results$group, mean)    
     
     # Create color vector based on number of parameter sets and method tested    
-    color_palette <- get_method_colors(method_tested)
+    color_palette <- get_method_colors(method_tested)$color_palette
     
     # Generate colors for each parameter set
     point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
@@ -418,11 +448,189 @@ plot_algorithm_performance <- function(results, param_sets, trial_sizes, n_reps,
     if(!is.na(filename)) {    dev.off()     }
 }
 
-######################################################################
-# Function specific to the Random Walk algorithm #####################
-######################################################################
-# Show the distance between the walk end and the boundary 
-######################################################################
+#########################################################################
+####  P L O T    O B S E R V E D    VS    T H E O R E T I C A L     #####
+####               S U M M A R Y   S T A T I S T I C S              #####
+#########################################################################
+# This source code contains a custom function to show the distribution of
+# observed summary statistics (mean and standard deviation of the choices
+# and response times) vs the theoretical values prescribed by EZ equations.
+#########################################################################
+plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {
+    # At the start of the function
+    if(nrow(results) == 0) stop("No results to plot")
+    if(length(param_sets) == 0) stop("No parameter sets provided")
+    if(length(trial_sizes) == 0) stop("No trial sizes provided")
+    
+    if(!is.na(filename)) { pdf(filename, width=12, height=10) }
+    
+    # Create a 2x3 layout matrix where the right column is for legends
+    layout_matrix <- matrix(c(1,2,5,
+                            3,4,5), nrow=2, byrow=TRUE)
+    # Set relative widths of columns (first two columns wider than third)
+    layout(layout_matrix, widths=c(4,4,1))
+    
+    # Set margins for plot panels
+    par(oma=c(0,1.5,2,0), mar=c(3.5,3,3,2), mgp=c(2,0.7,0),
+        cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
+    
+    # Calculate means and standard deviations
+    error_means <- tapply(results$angular_error, results$group, mean)  # Changed from mean_angle
+    choice_sds <- tapply(results$sd_angle, results$group, mean)
+    choice_var <- tapply(results$var_angle, results$group, mean)
+    rt_means <- tapply(results$mean_rt, results$group, mean)
+    rt_sds <- tapply(results$sd_rt, results$group, mean)
+    
+    # Calculate theoretical MRTs and variances
+    drift_lengths <- sapply(param_sets, function(ps) {
+        mu1 <- ps$par$mu1
+        mu2 <- ps$par$mu2
+        sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
+    })    
+    theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
+    })        
+    theoretical_RT_SDs <- sapply(seq_along(param_sets), function(i) {
+        sqrt(ezcddm_VRT(drift_lengths[i], param_sets[[i]]$par$boundary))
+    })    
+    theoretical_Choice_SDs <- sapply(seq_along(param_sets), function(i) {
+        sqrt(ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary))
+    })
+    theoretical_Choice_Vars <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary)
+    })
+    
+    # Create color vector based on parameter sets
+    color_palette <- get_method_colors(method_tested)$color_palette
+    point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
+    point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
+    
+    # Generate stripe colors for trial sizes
+    shade_change <- c((1:length(trial_sizes)*10))
+    stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
+    
+    # Generate parameter set labels
+    param_labels <- names(param_sets)
+    legend_labels <- sapply(seq_along(param_sets), function(i) {
+        parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
+                           names(param_sets)[i], 
+                           drift_lengths[i]))
+    })
+    
+    # Create plots list with their specific properties
+    plot_metrics <- list(
+        list(data=results$angular_error, means=error_means,
+             ylab=expression("Mean choice - " * theta * " (radians)"), 
+             main="Mean Choice",
+             add_reference=TRUE, ref_value=0),
+        list(data=results$sd_angle, means=choice_sds,
+             ylab="Standard Deviation (radians)", main="Choice Variability",
+             add_reference=TRUE, ref_values=theoretical_Choice_SDs),
+        list(data=results$mean_rt, means=rt_means,
+             ylab="Time (seconds)", main="Mean Response Time",
+             add_reference=TRUE, ref_values=theoretical_MRTs),
+        list(data=results$sd_rt, means=rt_sds,
+             ylab="Standard Deviation (seconds)", main="RT Variability",
+             add_reference=TRUE, ref_values=theoretical_RT_SDs)
+    )
+    
+    # Create the four plots
+    for(plot_info in plot_metrics) {
+        plot(1, type="n", axes=FALSE, 
+             xlim=c(1, length(levels(results$group))),
+             ylim=range(c(plot_info$data, 
+                         if(!is.null(plot_info$ref_values)) plot_info$ref_values else NULL,
+                         if(!is.null(plot_info$ref_value)) plot_info$ref_value else NULL)), 
+             xlab="", ylab="", main=plot_info$main, xaxt="n", yaxt="n")        
+        # Add background stripes
+        add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
+        
+        # Add reference lines if specified
+        if(!is.null(plot_info$add_reference) && plot_info$add_reference) {
+            if(!is.null(plot_info$ref_values)) {
+                # Add theoretical MRT lines for each parameter set
+                for(i in seq_along(plot_info$ref_values)) {
+                    rect_indices <- seq(i, length(levels(results$group)), length(param_sets))
+                    segments(min(rect_indices)-0.5, plot_info$ref_values[i],
+                            max(rect_indices)+0.5, plot_info$ref_values[i],
+                            col="red", lty=3, lwd=3)
+                }
+            } else if(!is.null(plot_info$ref_value)) {                
+                abline(h=plot_info$ref_value, lty=3, col="red", lwd=3)
+            }
+        }
+        
+        # Add points and axes
+        points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
+               col=point_colors_transparent, pch=19)
+        axis(2, las=2, cex.axis=0.9)
+        axis(1, at=1:length(levels(results$group)), 
+             labels=rep(param_labels, length(trial_sizes)), 
+             las=2, cex.axis=0.9)             
+        # Add y-axis label
+        mtext(plot_info$ylab, side=2, line=2.5, cex=0.9)        
+        # Add means as horizontal lines
+        for(i in 1:length(plot_info$means)) {
+            segments(i - 0.2, plot_info$means[i],
+                    i + 0.2, plot_info$means[i],
+                    col="black", lwd=3)
+        }
+    }    
+    
+    ## Add title
+    mtext(get_title(method_tested), 
+          outer=TRUE, cex=1.5, line=0, font=2)
+
+    # Create the legend panel (position 5 in layout)
+    par(mar=c(1,1,1,1))  # Minimal margins for legend space
+    plot(0, 0, type="n", bty="n", xaxt="n", yaxt="n", xlab="", ylab="")
+    
+    # Enable plotting in outer margins for legend panel
+    par(xpd=TRUE)
+    
+    # Parameter sets legend at the top
+    legend(-1.5, 0.5, legend=legend_labels,
+           col=adjustcolor(unique(point_colors), alpha=0.5),
+           pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
+           cex=1.2, bty="n")    
+    
+    # Trial sizes legend in the middle
+    legend(-1.5, 0.3, legend=paste(trial_sizes, "trials"),
+           fill=stripe_colors, title=expression(bold("Trial Sizes")),
+           cex=1.2, bty="n", ncol=min(1, length(trial_sizes)))    
+    
+    # Reference line legend 
+    line_legend <- 0
+    lines(c(-0.8, 0.6), c(line_legend, line_legend), col="red", lty=3, lwd=3.5)
+    text(-0.2, line_legend-0.04, "Theoretical Value", cex=1.2, bty="n")  
+        
+    # Simulation info with only labels in bold
+    sim_info <- c(        
+        substitute(bold("Repetitions:")),
+        substitute(x, list(x = n_reps)),
+        substitute(""),  # Empty line for spacing
+        substitute(bold("Date:")),
+        substitute(x, list(x = format(Sys.Date(), "%Y-%m-%d")))
+    )
+    
+    # Add simulation information at the bottom
+    legend(-1.5, -0.15, legend = parse(text = sapply(sim_info, deparse)), 
+           cex=1.2, bty="n")
+    
+    # Reset plotting parameters
+    par(xpd=FALSE)
+
+    if(!is.na(filename)) { dev.off() }
+}
+
+#########################################################################
+# P L O T     A L G O R I T H M     P E R F O R M A N C E   #############
+#########################################################################
+# This source code contains a custom function to:
+# 1) Plot the performance of a single sampling algorithm in terms of
+#    a) Execution time, b) mean choice - theta, c) mean response time
+# 2) Return the plots.
+#########################################################################
 plot_circumference_precision <- function(results, param_sets, trial_sizes, method_tested, filename = NA) {    
     if(!is.na(filename)){   pdf(filename, width=10, height=8) }
     
@@ -564,38 +772,7 @@ plot_cdfs <- function(data_arrays) {
 ######################################################################
 # Plot the differences between the empirical and theoretical CDFs ####
 ######################################################################
-calculate_cdf_metrics <- function(data_arrays) {
-    # Initialize empty results dataframe
-    results <- data.frame()
-    
-    # Calculate metrics for each parameter set and trial size
-    for(param_name in names(data_arrays)) {
-        for(n_trials_char in names(data_arrays[[param_name]])) {
-            array_data <- data_arrays[[param_name]][[n_trials_char]]
-            n_trials <- as.numeric(n_trials_char)
-            n_reps <- dim(array_data)[3]            
-            
-            for(rep in 1:n_reps) {
-                # Calculate differences between empirical and theoretical CDFs
-                differences <- array_data[, "eCDF", rep] - array_data[, "tCDF", rep]
-                
-                # Calculate summary statistics
-                output <- data.frame(
-                    mean_diff = mean(differences),
-                    median_diff = median(differences),
-                    ssd = sum(differences^2),  # Sum of squared differences
-                    ks_stat = max(abs(differences)),  # Kolmogorov-Smirnov statistic                    
-                    param_set = param_name,
-                    trial_size = n_trials,
-                    rep = rep
-                )
-                results <- rbind(results, output)
-            }
-        }
-    }
-    
-    return(results)
-}
+
 
 plot_cdf_differences <- function(results_cdfs, data_arrays, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {    
     if(!is.na(filename)) {    
@@ -773,7 +950,7 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     layout(layout_matrix)    
     par(mar=c(1,3,1,1), oma=c(4,3,4,1), mgp=c(2.5,1,0))
 
-    colores <- get_indiv_and_mean_colors(method_tested)
+    colores <- get_method_colors(method_tested)
     color_indiv <- colores$color_indiv
     color_mean <- colores$color_mean
 
@@ -869,241 +1046,91 @@ plot_metrics_by_paramset <- function(results_cdfs, results, param_sets, trial_si
     dev.off()
 }
 
-plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, method_tested, filename = NA) {
-    # At the start of the function
-    if(nrow(results) == 0) stop("No results to plot")
-    if(length(param_sets) == 0) stop("No parameter sets provided")
-    if(length(trial_sizes) == 0) stop("No trial sizes provided")
+
+plot_data_distributions <- function(data_arrays, param_sets, trial_sizes, method_tested, filename = NA) {
     
-    if(!is.na(filename)) { pdf(filename, width=12, height=10) }
-    
-    # Create a 2x3 layout matrix where the right column is for legends
-    layout_matrix <- matrix(c(1,2,5,
-                            3,4,5), nrow=2, byrow=TRUE)
-    # Set relative widths of columns (first two columns wider than third)
-    layout(layout_matrix, widths=c(4,4,1))
-    
-    # Set margins for plot panels
-    par(oma=c(0,1.5,2,0), mar=c(3.5,3,3,2), mgp=c(2,0.7,0),
-        cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
-    
-    # Calculate means and standard deviations
-    error_means <- tapply(results$angular_error, results$group, mean)  # Changed from mean_angle
-    choice_sds <- tapply(results$sd_angle, results$group, mean)
-    choice_var <- tapply(results$var_angle, results$group, mean)
-    rt_means <- tapply(results$mean_rt, results$group, mean)
-    rt_sds <- tapply(results$sd_rt, results$group, mean)
-    
-    # Calculate theoretical MRTs and variances
+    max_trial_size <- max(trial_sizes)
+    last_rep <- dim(data_arrays[[1]][[1]])[3]  # Get the last repetition number
+
     drift_lengths <- sapply(param_sets, function(ps) {
         mu1 <- ps$par$mu1
         mu2 <- ps$par$mu2
         sqrt(mu1^2 + mu2^2)  # Magnitude of drift vector
-    })    
-    theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
-        ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
-    })        
-    theoretical_RT_SDs <- sapply(seq_along(param_sets), function(i) {
-        sqrt(ezcddm_VRT(drift_lengths[i], param_sets[[i]]$par$boundary))
-    })    
-    theoretical_Choice_SDs <- sapply(seq_along(param_sets), function(i) {
-        sqrt(ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary))
-    })
-    theoretical_Choice_Vars <- sapply(seq_along(param_sets), function(i) {
-        ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary)
     })
     
-    # Create color vector based on parameter sets
-    color_palette <- get_method_colors(method_tested)
-    point_colors <- color_palette(length(param_sets))[as.numeric(factor(results$param_set))]
-    point_colors_transparent <- adjustcolor(point_colors, alpha=0.3)
-    
-    # Generate stripe colors for trial sizes
-    shade_change <- c((1:length(trial_sizes)*10))
-    stripe_colors <- rgb((255-shade_change)/255,(255-shade_change)/255,(255-shade_change)/255,0.5)
-    
-    # Generate parameter set labels
-    param_labels <- names(param_sets)
+    # Create legend labels with expression for delta
     legend_labels <- sapply(seq_along(param_sets), function(i) {
         parse(text = sprintf('"%s" * " (" * delta * " = " * %.2f * ")"', 
                            names(param_sets)[i], 
                            drift_lengths[i]))
     })
     
-    # Create plots list with their specific properties
-    plot_metrics <- list(
-        list(data=results$angular_error, means=error_means,
-             ylab=expression("Mean choice - " * theta * " (radians)"), 
-             main="Mean Choice",
-             add_reference=TRUE, ref_value=0),
-        list(data=results$sd_angle, means=choice_sds,
-             ylab="Standard Deviation (radians)", main="Choice Variability",
-             add_reference=TRUE, ref_values=theoretical_Choice_SDs),
-        list(data=results$mean_rt, means=rt_means,
-             ylab="Time (seconds)", main="Mean Response Time",
-             add_reference=TRUE, ref_values=theoretical_MRTs),
-        list(data=results$sd_rt, means=rt_sds,
-             ylab="Standard Deviation (seconds)", main="RT Variability",
-             add_reference=TRUE, ref_values=theoretical_RT_SDs)
-    )
-    
-    # Create the four plots
-    for(plot_info in plot_metrics) {
-        plot(1, type="n", axes=FALSE, 
-             xlim=c(1, length(levels(results$group))),
-             ylim=range(c(plot_info$data, 
-                         if(!is.null(plot_info$ref_values)) plot_info$ref_values else NULL,
-                         if(!is.null(plot_info$ref_value)) plot_info$ref_value else NULL)), 
-             xlab="", ylab="", main=plot_info$main, xaxt="n", yaxt="n")        
-        # Add background stripes
-        add_background_stripes(stripe_colors, trial_sizes, param_sets, results)
-        
-        # Add reference lines if specified
-        if(!is.null(plot_info$add_reference) && plot_info$add_reference) {
-            if(!is.null(plot_info$ref_values)) {
-                # Add theoretical MRT lines for each parameter set
-                for(i in seq_along(plot_info$ref_values)) {
-                    rect_indices <- seq(i, length(levels(results$group)), length(param_sets))
-                    segments(min(rect_indices)-0.5, plot_info$ref_values[i],
-                            max(rect_indices)+0.5, plot_info$ref_values[i],
-                            col="red", lty=3, lwd=3)
-                }
-            } else if(!is.null(plot_info$ref_value)) {                
-                abline(h=plot_info$ref_value, lty=3, col="red", lwd=3)
-            }
-        }
-        
-        # Add points and axes
-        points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
-               col=point_colors_transparent, pch=19)
-        axis(2, las=2, cex.axis=0.9)
-        axis(1, at=1:length(levels(results$group)), 
-             labels=rep(param_labels, length(trial_sizes)), 
-             las=2, cex.axis=0.9)             
-        # Add y-axis label
-        mtext(plot_info$ylab, side=2, line=2.5, cex=0.9)        
-        # Add means as horizontal lines
-        for(i in 1:length(plot_info$means)) {
-            segments(i - 0.2, plot_info$means[i],
-                    i + 0.2, plot_info$means[i],
-                    col="black", lwd=3)
-        }
-    }    
-    
-    ## Add title
-    mtext(get_title(method_tested), 
-          outer=TRUE, cex=1.5, line=0, font=2)
-
-    # Create the legend panel (position 5 in layout)
-    par(mar=c(1,1,1,1))  # Minimal margins for legend space
-    plot(0, 0, type="n", bty="n", xaxt="n", yaxt="n", xlab="", ylab="")
-    
-    # Enable plotting in outer margins for legend panel
-    par(xpd=TRUE)
-    
-    # Parameter sets legend at the top
-    legend(-1.5, 0.5, legend=legend_labels,
-           col=adjustcolor(unique(point_colors), alpha=0.5),
-           pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
-           cex=1.2, bty="n")    
-    
-    # Trial sizes legend in the middle
-    legend(-1.5, 0.3, legend=paste(trial_sizes, "trials"),
-           fill=stripe_colors, title=expression(bold("Trial Sizes")),
-           cex=1.2, bty="n", ncol=min(1, length(trial_sizes)))    
-    
-    # Reference line legend 
-    line_legend <- 0
-    lines(c(-0.8, 0.6), c(line_legend, line_legend), col="red", lty=3, lwd=3.5)
-    text(-0.2, line_legend-0.04, "Theoretical Value", cex=1.2, bty="n")  
-        
-    # Simulation info with only labels in bold
-    sim_info <- c(        
-        substitute(bold("Repetitions:")),
-        substitute(x, list(x = n_reps)),
-        substitute(""),  # Empty line for spacing
-        substitute(bold("Date:")),
-        substitute(x, list(x = format(Sys.Date(), "%Y-%m-%d")))
-    )
-    
-    # Add simulation information at the bottom
-    legend(-1.5, -0.15, legend = parse(text = sapply(sim_info, deparse)), 
-           cex=1.2, bty="n")
-    
-    # Reset plotting parameters
-    par(xpd=FALSE)
-
-    if(!is.na(filename)) { dev.off() }
-}
-
-plot_largest_trial_distributions <- function(data_arrays, param_sets, trial_sizes, filename = NA) {
-    
-    max_trial_size <- max(trial_sizes)
-    
     if(!is.na(filename)) { pdf(filename, width = 8, height = 10) }
     
     # Set up 2x1 plotting layout
-    par(mfrow = c(2, 1), mar = c(4, 4, 3, 2))
+    par(mfrow = c(2, 1), mar = c(1, 1, 3, 0), oma=c(3,0,0,0), mgp=c(2.5,1,0))
+    
+    # Get color palette for this method
+    color_palette <- get_method_colors(method_tested)$color_palette
+    colors <- color_palette(length(param_sets))
+    point_colors <- adjustcolor(colors, alpha=0.3)    
     
     # 1. Circular plot for choices
     # --------------------------------
-    plot(NULL, xlim = c(-1.2, 1.2), ylim = c(-1.2, 1.2), 
+    plot(NULL, xlim = c(-1.05, 1.05), ylim = c(-1.05, 1.05), 
          asp = 1, axes = FALSE, xlab = "", ylab = "",
-         main = "Choice Distribution by Parameter Set")
+         main = "")
+    mtext("Choice Distributions", side=3, line=0.5, cex=1.4, font=2)
     
     # Draw reference circle
-    theta <- seq(0, 2*pi, length.out = 100)
-    lines(cos(theta), sin(theta), col = "gray", lty = 2)
-    
+    theta <- seq(0, 2*pi, length.out = 100)    
     # Plot choices for each parameter set
-    colors <- c("red", "blue")
-    radii <- c(0.8, 0.6)  # Different radii for concentric circles
+    # Concentric circles closer together
+    radii <- seq(1, 0.8, length.out = length(param_sets))  # Smaller range between radii    
     
     for(i in seq_along(param_sets)) {
         param_name <- names(param_sets)[i]
-        # Get choices from the largest trial size
-        choices <- data_arrays[[param_name]][[as.character(max_trial_size)]][,1,]
-        choices <- as.vector(choices)  # Flatten array
+        # Get choices from the largest trial size, last repetition only
+        choices <- data_arrays[[param_name]][[as.character(max_trial_size)]][, 1, last_rep]
         
         # Convert choices to x,y coordinates
         x <- radii[i] * cos(choices)
         y <- radii[i] * sin(choices)
         
         # Plot points
-        points(x, y, col = colors[i], pch = 16, cex = 0.5)
+        lines(cos(theta)*radii[i], sin(theta)*radii[i], col = "gray80", lwd = 2, lty=1)     
+        points(x, y, col = point_colors[i], pch = 16, cex = 1.2)
     }
     
-    # Add legend
-    legend("topright", legend = names(param_sets), 
-           col = colors, pch = 16, bty = "n")
-    
+    par(xpd=TRUE)
+    # Parameter sets legend at the top
+    legend("bottomleft", legend=legend_labels,
+           col=adjustcolor(unique(colors), alpha=1),
+           pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
+           cex=1, bty="n", inset=c(0, 0))    
+    legend("topright", legend=paste("n =", max_trial_size),
+           cex=1, bty="n", inset=c(0.1, 0), text.font=2)    
+    par(xpd=FALSE)
     # 2. RT histogram
     # --------------------------------
-    # Get RTs for each parameter set
+    # Get RTs for each parameter set (last repetition only)
     rt_lists <- list()
     for(param_name in names(param_sets)) {
-        rt_lists[[param_name]] <- as.vector(
-            data_arrays[[param_name]][[as.character(max_trial_size)]][,2,]
-        )
+        rt_lists[[param_name]] <- data_arrays[[param_name]][[as.character(max_trial_size)]][, 2, last_rep]
     }
     
     # Calculate common breaks for histograms
     all_rts <- unlist(rt_lists)
     breaks <- seq(min(all_rts), max(all_rts), length.out = 30)
-    
+    rt_xlabels <- seq(min(all_rts), max(all_rts), length.out = 7)
     # Plot overlapping histograms
-    hist(rt_lists[[1]], breaks = breaks, col = adjustcolor(colors[1], alpha = 0.5),
-         main = "Response Time Distribution by Parameter Set",
-         xlab = "Response Time", probability = TRUE)
-    hist(rt_lists[[2]], breaks = breaks, col = adjustcolor(colors[2], alpha = 0.5),
-         add = TRUE, probability = TRUE)
-    
-    # Add legend
-    legend("topright", legend = names(param_sets),
-           fill = adjustcolor(colors, alpha = 0.5), bty = "n")
+    hist(rt_lists[[1]], breaks = breaks, col = adjustcolor(colors[1], alpha = 0.75),
+         ann = FALSE, probability = TRUE, axes = FALSE)
+    hist(rt_lists[[2]], breaks = breaks, col = adjustcolor(colors[2], alpha = 0.75),
+         add = TRUE, ann = FALSE, probability = TRUE, axes = FALSE)             
+    axis(1, at=rt_xlabels, labels=round(rt_xlabels,1), cex.axis=0.8, line=-0.7)
+    mtext("Response Time (seconds)", side=1, line=1.8, cex=1.1, font=1)
+    mtext("Response Time Distributions", side=3, line=0, cex=1.4, font=2)
     
     if(!is.na(filename)) { dev.off() }
 }
-
-figname_data <- sprintf(here("results", "run%s_%sP%sN%sR_Data.pdf"), method_tested, nPS, nTS, n_reps)
-plot_largest_trial_distributions(data_arrays, param_sets, trial_sizes, figname_data)
