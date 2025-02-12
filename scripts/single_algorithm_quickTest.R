@@ -7,11 +7,11 @@
 # This script is designed to be run from the command line with a 
 # single argument specifying the algorithm to test.
 #########################################################################
-forceRun <- FALSE
+forceRun <- TRUE
 # method_tested is a global variable that can be set by the user
 # before running the script. Alternatively, the user can set it here.
 if(!exists("method_tested")){
-    method_tested <- "Metropolis"
+    method_tested <- "Rejection_exGvonM"
 }
 # Possible methods:
 # 1) "Metropolis"
@@ -186,6 +186,10 @@ plot_algorithm_performance(results, param_sets, trial_sizes, n_reps, method_test
 # Plot algorithm summaries
 figname_summaries <- sprintf(here("results", "run%s_%sP%sN%sR_sumStats.pdf"), method_tested, nPS, nTS, n_reps)
 plot_algorithm_summaries(results, param_sets, trial_sizes, n_reps, method_tested, filename = figname_summaries)
+
+# Plot data distributions
+figname_data <- sprintf(here("results", "run%s_%sP%sN%sR_Data.pdf"), method_tested, nPS, nTS, n_reps)
+plot_data_distributions(data_arrays, param_sets, trial_sizes, method_tested, figname_data)
 
 # If the method is RandomWalk, plot the circumference precision
 # (Distnce between circumference and random walk end point)
