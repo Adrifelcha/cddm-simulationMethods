@@ -18,12 +18,12 @@ pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_
     }
 
     # Get maximum bounds for integration from all valid data points
-    max.rad <- max(data[valid_idx,1])
-    max.time <- max(data[valid_idx,2])
+    max_rad <- max(data[valid_idx,1])
+    max_time <- max(data[valid_idx,2])
 
     # Normalize theta to ensure it's in the correct range for integration
     theta_norm <- theta %% (2*pi)
-    if(theta_norm > max.rad) theta_norm <- theta_norm - 2*pi
+    if(theta_norm > max_rad) theta_norm <- theta_norm - 2*pi
 
     # Get theoretical moments and key points of the CDDM distribution
     par <- list(drift = drift, theta = theta,
@@ -33,7 +33,7 @@ pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_
     rt_var <- ezcddm_VRT(drift, boundary)    # Theoretical response time variance
     
     # Create adaptive angle grid (once for all data points)
-    angle_seq <- seq(0, max.rad, length.out=n_points)
+    angle_seq <- seq(0, 2*pi, length.out=n_points)
     angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/6) + 
                     0.5 * dnorm(angle_seq, mean=0, sd=pi/8) +  
                     0.2  
@@ -41,26 +41,31 @@ pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_
     rad_grid <- sort(sample(angle_seq, size=n_points/2, prob=angle_density, replace=FALSE))
 
     # Create adaptive time grid (once for all data points)
-    time_seq <- seq(tzero, max.time, length.out=n_points)
+    time_seq <- seq(tzero, key_points$max.RT, length.out=n_points)
     time_density <- dnorm(time_seq, mean=mean_rt, sd=sqrt(rt_var)) + 
                    2 * dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/8) +
-                   dnorm(time_seq, mean=tzero, sd=(max.time-tzero)/10) +
+                   dnorm(time_seq, mean=tzero, sd=(key_points$max.RT-tzero)/10) +
                    0.2  
     time_density <- time_density / sum(time_density)
     time_grid <- sort(sample(time_seq, size=n_points/2, prob=time_density, replace=FALSE))
 
-    # Create grid points and compute densities once
-    grid_points <- as.matrix(expand.grid(rad=rad_grid, time=time_grid))
+    # Create grid points only up to data maximums
+    rad_grid_filtered <- rad_grid[rad_grid <= max_rad]
+    time_grid_filtered <- time_grid[time_grid <= max_time]
+    grid_points <- as.matrix(expand.grid(rad=rad_grid_filtered, time=time_grid_filtered))
+    
+    # Compute densities only for the filtered grid points
     densities <- dCDDM(grid_points, drift, theta, tzero, boundary)
     
     # Compute importance sampling weights once
-    weights <- outer(angle_density[findInterval(rad_grid, angle_seq)],
-                    time_density[findInterval(time_grid, time_seq)])
+    weights <- outer(angle_density[findInterval(rad_grid_filtered, angle_seq)],
+                    time_density[findInterval(time_grid_filtered, time_seq)])
     weights <- weights / sum(weights)
     
     # Optional visualization of the adaptive grid
     if(show && length(valid_idx) > 0) {
-        plot_adaptive_grid(data, valid_idx, grid_points, densities, tzero, rotation)
+        plot_adaptive_grid(data, valid_idx, grid_points, densities, tzero, rotation,
+                          drift, theta, boundary)
     }
     
     # For each valid observation, compute its CDF using the pre-computed grid
@@ -142,62 +147,116 @@ pCDDM_monte_carlo <- function(data, drift, theta, tzero, boundary, probs, valid_
 ################################################################################
 ################################################################################
 # Plot the adaptive grid using pre-computed points and densities
-plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, rotation=0) {
-    # Load required package
+plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, rotation=0, 
+                             drift, theta, boundary, n_background=50) {
+    # Load required packages
     if (!require("scatterplot3d")) {
         install.packages("scatterplot3d")
         library(scatterplot3d)
     }
     
-    # Create custom x-axis labels
-    x_at <- seq(0, 2*pi, by=pi/2)  # Tick marks at 0, π/2, π, 3π/2, 2π
-    x_labels <- sprintf("%.2f", (x_at - rotation) %% (2*pi))  # Convert to original angles
+    # If no grid points, return early
+    if(nrow(grid_points) == 0) {
+        warning("No grid points to plot")
+        return(NULL)
+    }
+    
+    # Create background grid for full distribution
+    par <- list(drift=drift, theta=theta, tzero=tzero, boundary=boundary)
+    key_points <- keyDensityPoints(par)
+    
+    # Create regular grid for background surface
+    rad_bg <- seq(0, 2*pi, length.out=n_background)
+    time_bg <- seq(tzero, key_points$max.RT, length.out=n_background)
+    
+    # Create density matrix for surface
+    density_matrix <- matrix(0, n_background, n_background)
+    for(i in 1:n_background) {
+        for(j in 1:n_background) {
+            density_matrix[i,j] <- dCDDM(c(rad_bg[i], time_bg[j]), 
+                                       drift, theta, tzero, boundary)
+        }
+    }
     
     # Set up plotting parameters
-    par(mfrow=c(1,1), mar=c(5, 3, 6, 3), oma=c(0, 0, 0.3, 0))
+    par(mfrow=c(1,1), mar=c(1, 1, 4, 1), oma=c(0, 0, 0.3, 0))
     
-    # Create 3D scatterplot with custom x-axis
-    s3d <- scatterplot3d(grid_points[,1], grid_points[,2], densities,
-                        xlab="Choice (radians)", ylab="Response Time",
-                        zlab="Density", color=rgb(0, 0, 1, 0.3),
-                        main="Adaptive Grid Integration\nCDDM Density Surface",
-                        pch=19, angle=45, cex.main=1.5, cex.lab=1.2,
-                        x.ticklabs=x_labels, xlim=c(0, 2*pi))
+    # Create surface plot for background distribution
+    persp_output <- persp(rad_bg, time_bg, density_matrix,
+                         theta=45, phi=30, expand=0.5,
+                         col=rgb(0.8, 0.8, 1, 0.3),  # Light blue transparent surface
+                         border=rgb(0.7, 0.7, 1, 0.2),  # Slightly darker grid lines
+                         xlab="Choice (radians)", 
+                         ylab="Response Time",
+                         zlab="Density",
+                         main="Adaptive Grid Integration\nCDDM Density Surface",
+                         ticktype="detailed",
+                         zlim=c(0, max(density_matrix)),
+                         nticks=5,
+                         cex.axis=0.8,
+                         box=TRUE)
     
-    # Add points on the bottom plane
-    s3d$points3d(grid_points[,1], grid_points[,2], 
-                 rep(0, nrow(grid_points)),
-                 col=rgb(0.7, 0.7, 0.7, 0.5), pch=19)
-    
-    # Add vertical lines connecting points to their densities
-    for(i in 1:nrow(grid_points)) {
-        s3d$points3d(rep(grid_points[i,1], 2), 
-                    rep(grid_points[i,2], 2),
-                    c(0, densities[i]), 
-                    type="l",
-                    col=rgb(0, 0, 1, 0.1))
+    # Convert 3D coordinates to 2D for plotting points
+    convert_coords <- function(x, y, z) {
+        trans3d(x, y, z, pmat=persp_output)
     }
     
-    # Add markers for observed data points
-    for(i in valid_idx) {
-        s3d$points3d(rep(data[i,1], 2), 
-                    rep(data[i,2], 2),
-                    c(0, max(densities)), 
-                    type="l", 
-                    col="red", lwd=2)
-        # Add point marker at the base
-        s3d$points3d(data[i,1], data[i,2], 0,
-                    col="red", pch=16, cex=1.5)
+    # Get unique grid points for each dimension
+    unique_rad <- sort(unique(grid_points[,1]))
+    unique_time <- sort(unique(grid_points[,2]))
+    
+    # Draw lines following the density surface for radians
+    for(rad in unique_rad) {
+        time_points <- grid_points[grid_points[,1] == rad, 2]
+        density_points <- numeric(length(time_points))
+        for(i in seq_along(time_points)) {
+            density_points[i] <- dCDDM(c(rad, time_points[i]), 
+                                     drift, theta, tzero, boundary)
+        }
+        line_2d <- convert_coords(rep(rad, length(time_points)),
+                                time_points,
+                                density_points)
+        lines(line_2d, col=rgb(0, 0, 1, 0.3), lwd=1.5)
     }
     
-    # Add legend
+    # Draw lines following the density surface for time
+    for(time in unique_time) {
+        rad_points <- grid_points[grid_points[,2] == time, 1]
+        density_points <- numeric(length(rad_points))
+        for(i in seq_along(rad_points)) {
+            density_points[i] <- dCDDM(c(rad_points[i], time), 
+                                     drift, theta, tzero, boundary)
+        }
+        line_2d <- convert_coords(rad_points,
+                                rep(time, length(rad_points)),
+                                density_points)
+        lines(line_2d, col=rgb(0, 0, 1, 0.3), lwd=1.5)
+    }
+    
+    # Add markers for observed data points if any exist
+    if(length(valid_idx) > 0) {
+        for(i in valid_idx) {
+            # Calculate actual density at the observed point
+            obs_density <- dCDDM(c(data[i,1], data[i,2]), drift, theta, tzero, boundary)
+            
+            # Add point at the actual density height
+            data_point_2d <- convert_coords(data[i,1], data[i,2], obs_density)
+            points(data_point_2d, col="red", pch=16, cex=0.7)
+        }
+    }
+    
+    # Add legend in top-right corner of plot window
+    par(xpd=TRUE)
     legend("topright", 
-           c("Density Points", "Grid Base Points", "Observed Data"), 
-           col=c(rgb(0, 0, 1, 0.3), 
-                 rgb(0.7, 0.7, 0.7, 0.5),
+           c("Full Distribution", "Grid Coverage", "Observed Data"), 
+           col=c(rgb(0.7, 0.7, 1, 0.2),  # Color of the distribution grid lines
+                 rgb(0, 0, 1, 0.3),      # Color of the adaptive grid
                  "red"), 
-           pch=c(19, 19, 16), 
-           cex=1.2, pt.cex=1.2)
+           pch=c(NA, NA, 16),
+           lty=c(1, 1, NA),
+           lwd=c(1, 1.5, NA),
+           pt.cex=0.7,
+           cex=1.2)
 }
 
 plot_monte_carlo_cdf <- function(points, densities, rad, time, tzero, prob) {
@@ -222,8 +281,8 @@ plot_monte_carlo_cdf <- function(points, densities, rad, time, tzero, prob) {
                        main = paste("Monte Carlo Approximation to CDF\n", 
                                   "Choice =", round(rad, 3), 
                                   ", RT =", round(time, 3),
-                                  "\nEstimated CDF =", round(prob, 4)),                       
-                       pch = 19, angle = 45, cex.main = 1.5, cex.lab = 1.2)    
+                                  "\nEstimated CDF =", round(prob, 4)),
+                       pch = 19, angle = 45, cex.main = 1.5, cex.lab = 1.2)
     # Add points on the bottom plane
     s3d$points3d(points_i[,1], points_i[,2], rep(0, nrow(points_i)),
                 col = rgb(0.7, 0.7, 0.7, 0.5), pch = 19)
