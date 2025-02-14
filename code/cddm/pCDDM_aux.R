@@ -179,7 +179,7 @@ plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, r
     }
     
     # Set up plotting parameters
-    par(mfrow=c(1,1), mar=c(1, 1, 4, 1), oma=c(0, 0, 0.3, 0))
+    par(mfrow=c(1,1), mar=c(0, 1.5, 1, 0.5), oma=c(0, 0, 0, 0))
     
     # Create surface plot for background distribution
     persp_output <- persp(rad_bg, time_bg, density_matrix,
@@ -189,13 +189,16 @@ plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, r
                          xlab="Choice (radians)", 
                          ylab="Response Time",
                          zlab="Density",
-                         main="Adaptive Grid Integration\nCDDM Density Surface",
+                         main="",
                          ticktype="detailed",
                          zlim=c(0, max(density_matrix)),
                          nticks=5,
                          cex.axis=0.8,
                          box=TRUE)
     
+    mtext("Adaptive Grid Integration\nCDDM Density Surface", side=3, f=2, 
+          line=-2.5, cex=1.5, adj=0)
+
     # Convert 3D coordinates to 2D for plotting points
     convert_coords <- function(x, y, z) {
         trans3d(x, y, z, pmat=persp_output)
@@ -249,14 +252,15 @@ plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, r
     par(xpd=TRUE)
     legend("topright", 
            c("Full Distribution", "Grid Coverage", "Observed Data"), 
-           col=c(rgb(0.7, 0.7, 1, 0.2),  # Color of the distribution grid lines
-                 rgb(0, 0, 1, 0.3),      # Color of the adaptive grid
+           col=c(rgb(0.7, 0.7, 1, 1),  # Color of the distribution grid lines
+                 rgb(0, 0, 1, 1),      # Color of the adaptive grid
                  "red"), 
            pch=c(NA, NA, 16),
            lty=c(1, 1, NA),
-           lwd=c(1, 1.5, NA),
-           pt.cex=0.7,
-           cex=1.2)
+           lwd=c(2 , 2, NA),
+           pt.cex=1,
+           cex=1.2,
+           bty="n")
 }
 
 plot_monte_carlo_cdf <- function(points, densities, rad, time, tzero, prob) {
