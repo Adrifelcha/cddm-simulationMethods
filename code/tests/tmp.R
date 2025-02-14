@@ -1,3 +1,20 @@
+#############################################################
+# Load libraries and custom functions
+#############################################################
+cat("Loading R libraries...\n")
+library("here")
+library("circular")
+
+cat("\nLoading custom function scripts from /code/cddm...\n\n")
+source(here("code", "cddm", "sim_randomWalk.R"))        
+r_files <- list.files(path = here("code", "cddm"), 
+                      pattern = "\\.R$", 
+                      full.names = TRUE)
+for(file in r_files) {
+    source(file)
+}
+source(here("code", "general_functions", "eCDF.R"))
+
 mu1 = 1
 mu2 = 1
 boundary = 3
@@ -20,15 +37,16 @@ gold_eCDF = myECDF(data_matrix)
 data_ordered$eCDF <- gold_eCDF
 
 
-use <- 20
+use <- 500
 x <- data_ordered[use,c(1,2)]
 
 
-pdf("tmp.pdf")
+filename <- sprintf(here("results", "grid_pCDDM.pdf"))
+pdf(filename)
 p1b <- pCDDM(x, drift, theta, tzero, boundary, method="grid", show=TRUE)
 dev.off()
 
-
+#dCDDM(c(pi,6), drift, theta, tzero, boundary)
 
 start_time <- Sys.time()
 p1 <- pCDDM(x, drift, theta, tzero, boundary, method="grid")
