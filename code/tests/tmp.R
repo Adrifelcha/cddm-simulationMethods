@@ -15,8 +15,8 @@ for(file in r_files) {
 }
 source(here("code", "general_functions", "eCDF.R"))
 
-mu1 = 1
-mu2 = 1
+mu1 = -3
+mu2 = 0
 boundary = 3
 tzero = 0.1
 
@@ -37,7 +37,7 @@ gold_eCDF = myECDF(data_matrix)
 data_ordered$eCDF <- gold_eCDF
 
 
-use <- 500
+use <- 10000
 x <- data_ordered[use,c(1,2)]
 
 
@@ -45,6 +45,14 @@ filename <- sprintf(here("results", "grid_pCDDM.pdf"))
 pdf(filename)
 p1b <- pCDDM(x, drift, theta, tzero, boundary, method="grid", show=TRUE)
 dev.off()
+
+filename2 <- sprintf(here("results", "monte_carlo_pCDDM.pdf"))
+pdf(filename2)
+p1b <- pCDDM(x, drift, theta, tzero, boundary, method="monte_carlo", show=TRUE)
+dev.off()
+
+
+
 
 #dCDDM(c(pi,6), drift, theta, tzero, boundary)
 
