@@ -32,20 +32,28 @@ pCDDM_grid <- function(data, drift, theta, tzero, boundary, probs, valid_idx, n_
     mean_rt <- ezcddm_MRT(drift, boundary, tzero)  # Theoretical mean response time
     rt_var <- ezcddm_VRT(drift, boundary)    # Theoretical response time variance
     
-    # Create adaptive angle grid (once for all data points)
+    # Create adaptive angle grid with more robust density-based sampling
     angle_seq <- seq(0, 2*pi, length.out=n_points)
-    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/6) + 
-                    0.5 * dnorm(angle_seq, mean=0, sd=pi/8) +  
-                    0.2  
+    angle_density <- dnorm(angle_seq, mean=theta_norm, sd=pi/8) + 
+                    0.3 * dnorm(angle_seq, mean=0, sd=pi/10) +
+                    0.1  # Increased minimum baseline to ensure positive probabilities
+    
+    # Apply softer threshold to angle density
+    density_threshold <- max(angle_density) * 0.01  # Reduced threshold to 1%
+    angle_density[angle_density < density_threshold] <- density_threshold  # Set to minimum instead of 0
     angle_density <- angle_density / sum(angle_density)
     rad_grid <- sort(sample(angle_seq, size=n_points/2, prob=angle_density, replace=FALSE))
 
-    # Create adaptive time grid (once for all data points)
+    # Create adaptive time grid with more robust density-based sampling
     time_seq <- seq(tzero, key_points$max.RT, length.out=n_points)
-    time_density <- dnorm(time_seq, mean=mean_rt, sd=sqrt(rt_var)) + 
-                   2 * dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/8) +
-                   dnorm(time_seq, mean=tzero, sd=(key_points$max.RT-tzero)/10) +
-                   0.2  
+    time_density <- 2 * dnorm(time_seq, mean=mean_rt, sd=sqrt(rt_var)) + 
+                   3 * dnorm(time_seq, mean=key_points$pred.RT, sd=(key_points$max.RT - key_points$min.RT)/10) +
+                   dnorm(time_seq, mean=tzero, sd=(key_points$max.RT-tzero)/12) +
+                   0.1  # Increased minimum baseline
+    
+    # Apply softer threshold to time density
+    time_threshold <- max(time_density) * 0.01  # Reduced threshold to 1%
+    time_density[time_density < time_threshold] <- time_threshold  # Set to minimum instead of 0
     time_density <- time_density / sum(time_density)
     time_grid <- sort(sample(time_seq, size=n_points/2, prob=time_density, replace=FALSE))
 
@@ -183,7 +191,7 @@ plot_adaptive_grid <- function(data, valid_idx, grid_points, densities, tzero, r
     
     # Create surface plot for background distribution
     persp_output <- persp(rad_bg, time_bg, density_matrix,
-                         theta=45, phi=30, expand=0.5,
+                         theta=45, phi=30, expand=0.7,
                          col=rgb(0.8, 0.8, 1, 0.3),  # Light blue transparent surface
                          border=rgb(0.7, 0.7, 1, 0.2),  # Slightly darker grid lines
                          xlab="Choice (radians)", 
