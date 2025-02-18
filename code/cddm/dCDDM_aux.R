@@ -114,3 +114,52 @@ cddm.pdf.jags <- function(x, drift, theta, tzero, boundary){
   # Return bivariate density
   return(PDF)
 }
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Part 3: Define functions to compute marginal RT density under CDDM
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+dCDDM_RT <- function(rt, drift, boundary, tzero) {
+    # Input validation
+    if(drift < 0) stop("drift must be non-negative")
+    if(boundary <= 0) stop("boundary must be positive")
+    if(tzero < 0) stop("tzero must be non-negative")
+    
+    # Handle vector input
+    if(length(rt) > 1) {
+        N <- length(rt)
+        pdf <- rep(NA, N)
+        for(i in 1:N) {
+            pdf[i] <- dCDDM_RT_single(rt[i], drift, boundary, tzero)
+        }
+    } else {
+        pdf <- dCDDM_RT_single(rt, drift, boundary, tzero)
+    }
+    
+    return(pdf)
+}
+
+# Helper function for single RT value
+dCDDM_RT_single <- function(t, drift, boundary, tzero) {
+    # Early return for impossible times
+    if(t <= tzero) return(0)
+    
+    # Constants
+    eta_squared <- boundary * boundary
+    inva2 <- 1 / eta_squared
+    
+    # Calculate the sum term
+    sum <- 0
+    for(i in 1:length(j0_squared)) {
+        exponand <- j0_squared[i] * inva2 * (t-tzero) * -0.5
+        sum <- sum + j0_over_J1_of_j0[i] * exp(exponand)
+    }
+    
+    # Calculate the exponential term
+    exp_term <- exp(-(drift*drift)*(t-tzero)/2)
+    
+    # Combine terms for final density
+    density <- (1/(boundary*boundary)) * exp_term * sum
+    
+    return(max(0, density))
+}
