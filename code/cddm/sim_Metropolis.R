@@ -159,22 +159,28 @@ rCDDM_Metropolis <- function(n, par, plot=FALSE){  # n=number of samples, par=pa
   # Main sampling phase
   samples <- matrix(NA, nrow=n, ncol=2)  # Initialize matrix for samples
   u <- runif(n,0,1)  # Generate random uniforms for acceptance decisions
+  current <- Mu      # Track current state of the chain
   for(i in 1:n){  # Loop through desired number of samples
     # Generate valid candidate (ensure RT > minimum)
     cand <- c(0,-1)  # Initialize invalid candidate
     while(cand[2]<=min.RT){  # Keep trying until valid RT
-      cand <- rmvnorm(1,Mu,Sigma)  # Generate candidate
+      cand <- rmvnorm(1, current, Sigma)  # Generate candidate from current state
+      cand[1] <- cand[1] %% (2*pi)  # Wrap choice angle
     }
-    samples[i,1] <- cand[1] %% (2*pi)  # Store wrapped choice angle
-    samples[i,2] <- cand[2]            # Store reaction time
     
     # Perform Metropolis acceptance step
-    ratio.num <- max(dCDDM(cand,drift, theta, tzero, boundary),0,na.rm = TRUE)  # Candidate density
-    ratio.den <- dCDDM(Mu,drift, theta, tzero, boundary)  # Current state density
-    ratio <- ratio.num/ratio.den  # Compute acceptance ratio
-    if(ratio>u[i]){  # Accept if ratio exceeds random uniform
-      Mu <- as.vector(cand)  # Update current state
+    ratio.num <- max(dCDDM(cand, drift, theta, tzero, boundary), 0, na.rm=TRUE)
+    ratio.den <- dCDDM(current, drift, theta, tzero, boundary)
+    ratio <- ratio.num/ratio.den
+    
+    # Accept or reject the candidate
+    if(ratio > u[i]){  # Accept if ratio exceeds random uniform
+      current <- cand  # Update current state
     }
+    
+    # Store current state (whether it was updated or not)
+    samples[i,] <- current
+
   }
   
   # Rotate samples back to original theta
