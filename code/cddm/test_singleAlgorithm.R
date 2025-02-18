@@ -31,6 +31,8 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     } else if (method_tested == "Rejection_2DNormal") {
         full_params$type <- "2DNormal"
         result <- do.call(rCDDM_Reject, full_params)
+    } else if (method_tested == "Rejection_sequential") {        
+        result <- do.call(rCDDM_Reject_seq, full_params)
     } else {        stop(paste("Unknown method:", method_tested))       }
     end_time <- Sys.time()
 
@@ -259,6 +261,10 @@ get_method_colors <- function(method_tested) {
         color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Purple to light purple
         color_indiv <- adjustcolor("#27bd77", alpha=0.3)
         color_mean <- "#14804d"
+    } else if (method_tested == "Rejection_sequential") {
+        color_palette <- colorRampPalette(c("#37c699", "#197f5f"))  # Purple to light purple
+        color_indiv <- adjustcolor("#27bd77", alpha=0.3)
+        color_mean <- "#14804d"
     } else {        
         stop(paste("Unknown method:", method_tested))       
     }
@@ -278,6 +284,8 @@ get_title <- function(method_tested) {
         title <- "Rejection sampler with independent exGaussian and vonMises proposals"
     } else if (method_tested == "Rejection_2DNormal") {
         title <- "Rejection sampler with independent Bivariate Normal proposals"
+    } else if (method_tested == "Rejection_sequential") {
+        title <- "Sequential Rejection sampler for RTs and choices"
     } else {   stop(paste("Unknown method:", method_tested))    }
 return(title)
 }
