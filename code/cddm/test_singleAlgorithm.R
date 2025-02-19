@@ -19,6 +19,10 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
         result_raw <- do.call(rCDDM_RandomWalk, full_params)
         result <- result_raw$bivariate.data
     } else if (method_tested == "Metropolis") {
+        full_params$logRT <- FALSE
+        result <- do.call(rCDDM_Metropolis, full_params)
+    } else if (method_tested == "Metropolis_logRT") {
+        full_params$logRT <- TRUE
         result <- do.call(rCDDM_Metropolis, full_params)
     } else if (method_tested == "inverseCDF") {
         result <- do.call(rCDDM_inverse, full_params)
@@ -46,7 +50,7 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
      # Difference between mean radian-choice and radian-theta
     angles <- circular::circular(result$Choice, type="angles", units="radians")
     mean_angle <- circular::mean.circular(angles)        
-    theoretical_theta <- circular::circular(atan2(params$par$mu2, params$par$mu1))        
+    theoretical_theta <- circular::circular(atan2(params$par$mu2, params$par$mu1))
     angular_error <- as.numeric(mean_angle - theoretical_theta)    
     # Proportion of trials with negative RTs (excluding NAs)
     prop_negative_rt <- mean(result$RT < 0, na.rm=TRUE)
@@ -245,6 +249,10 @@ get_method_colors <- function(method_tested) {
         color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Dark green to light green
         color_indiv <- adjustcolor("#9d4dc5", alpha=0.3)
         color_mean <- "#651e88"
+    } else if (method_tested == "Metropolis_logRT") {
+        color_palette <- colorRampPalette(c("#ad67d0", "#5b218b"))  # Dark green to light green
+        color_indiv <- adjustcolor("#9d4dc5", alpha=0.3)
+        color_mean <- "#651e88"
     } else if (method_tested == "inverseCDF") {
         color_palette <- colorRampPalette(c("#E5B4B4", "#E04D4D"))  # Red to light pink
         color_indiv <- adjustcolor("#d88f4c", alpha=0.3)
@@ -276,6 +284,8 @@ get_title <- function(method_tested) {
         title <- "Random Walk emulator"
     } else if (method_tested == "Metropolis") {
         title <- "Metropolis sampler with Bivariate Normal proposal"
+    } else if (method_tested == "Metropolis_logRT") {
+        title <- "Metropolis sampler with log-transformed RTs"
     } else if (method_tested == "inverseCDF") {
         title <- "Inverse CDF sampler"
     } else if (method_tested == "Rejection_Uniform") {
