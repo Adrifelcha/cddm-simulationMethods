@@ -35,7 +35,7 @@ source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 source("./code/general_functions/eCDF.R") # Needed for computing empirical CDF
 source("./code/cddm/sim_auxiliarFunctions.R")
 source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
-source("./code/cddm/sim_Reject.R")     # Needed for Algorithm 2
+source("./code/cddm/sim_Rejection.R")     # Needed for Algorithm 2
 source("./code/cddm/sim_Metropolis.R") # Needed for Algorithm 3
 source("./code/cddm/sim_invCDF.R")     # Needed for Algorithm 4
 source("./code/cddm/plottingFunctions.R") # Needed to make custom CDDM plots
@@ -83,6 +83,7 @@ data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
 ## dCDDM(*) - CDDM density function
 
 ```{r intro_dCDDM}
+source("./code/cddm/dCDDM_aux.R")
 source("./code/cddm/dCDDM.R")
 
 choice <- 5; rt <- 1
@@ -127,7 +128,7 @@ Each pair of observations is obtained by emulating the random walk process descr
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_randomWalk.R")
-X.RW <- sample.RW.cddm(n,par)
+X.RW <- rCDDM_RandomWalk(n,par)
 ```
 
 ```{r run_RW,  echo=FALSE}
