@@ -131,6 +131,21 @@ source("./code/cddm/sim_randomWalk.R")
 X.RW <- rCDDM_RandomWalk(n,par)
 ```
 
+```{r, echo=FALSE, eval=FALSE}
+a <- X.RW$bivariate.data
+rt <- a[,2]
+test.Density <- keyDensityPoints(par)  # Calculate key points of the density function
+min.RT <- test.Density$min.RT          # Minimum possible reaction time
+max.RT <- test.Density$max.RT          # Maximum considered reaction time
+max.Density <- test.Density$max.Density # Peak density value
+predRT <- ezcddm_MRT(par$drift, par$boundary, par$tzero)
+hist(log(rt), xlim=c(-1.5,1))
+abline(v=c(log(predRT), mean(c(log(min.RT),log(max.RT))), log(min.RT), log(max.RT)), col = c("blue","red","green","yellow"))
+
+hist(rt*10)
+hist(log(rt*10))
+```
+
 ```{r run_RW,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
