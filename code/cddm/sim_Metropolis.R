@@ -8,16 +8,19 @@ library(mvtnorm)
 
 
 # Helper function to generate valid candidate
-generate_valid_candidate <- function(current, Sigma, logRT, min.RT, max.RT) {
+generate_valid_candidate <- function(current, Sigma, logRT, tzero, max.RT) {
   repeat {
           cand <- rmvnorm(1, mean=current, sigma=Sigma)
           cand[1] <- cand[1] %% (2*pi)
           if(logRT) {
-                      cand[2] <- exp(cand[2])
+               cand[2] <- exp(cand[2])               
           }
-          if(cand[2] > min.RT && cand[2] < max.RT) {
+
+          x <-  dCDDM(current, drift, theta, tzero, boundary)
+
+          if(cand[2] > tzero && cand[2] < max.RT) {
               return(cand)
-          }
+          }          
   }
 }
 
@@ -58,12 +61,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE){
   min.RT <- test.Density$min.RT          # Minimum possible reaction time
   max.RT <- test.Density$max.RT          # Maximum considered reaction time
   max.Density <- test.Density$max.Density # Peak density value
-  if(logRT){
-              # Log-transform RTs and density
-              log_min.RT <- log(min.RT)
-              log_max.RT <- log(max.RT)
-              log_max.Density <- log(max.Density)
-  }
+
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Define predicted choice and RT to center the proposal distribution
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -108,15 +106,23 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE){
   Mu <- c(predChoice, predRT)    # Starting point: predicted choice and RT
   
   # Smarter initial proposal variances based on parameter values
-  if(logRT) {
-    var_RT <- (log(boundary))^2/4  # Scale with log boundary
+  var_choice <- (2*pi)^2
+  if(logRT){
+    var_RT <- 10
   } else {
-    var_RT <- (boundary/2)^2       # Scale with boundary
+    var_RT <- 50
   }
-  var_choice <- min((2*pi)^2/4, (drift^2 + 1))  # Scale with drift, capped at π²
-  
+
+
+# if(logRT) {
+#    var_RT <- (log(boundary))^2/4  # Scale with log boundary
+#  } else {
+#    var_RT <- (boundary/2)^2       # Scale with boundary
+#  }
+#  var_choice <- min((2*pi)^2/4, (drift^2 + 1))  # Scale with drift, capped at π²
+
   # Initialize covariance matrix
-  Sigma <- diag(c(var_choice, var_RT))
+  Sigma <- diag(c(var_choice,var_RT))
   
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Begin warmup phase to tune proposal distribution
@@ -239,23 +245,44 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE){
   current <- Mu
   
   # Main sampling loop
-  for(i in 1:n){
+  for(i in 1:n){      
+      # Progress indicator      
+      rep_count <- 1
+      cat(sprintf("\rProgress: %d/%d (%.1f%%)",
+          i, n, 100 * i/n))
       repeat{
-              # Generate valid candidate
-              cand <- generate_valid_candidate(current, Sigma, logRT, min.RT, max.RT)
-              
-              # Compute acceptance ratio
-              ratio.num <- max(dCDDM(cand, drift, theta, tzero, boundary), 0, na.rm=TRUE)
-              ratio.den <- dCDDM(current, drift, theta, tzero, boundary)
-              ratio <- ratio.num/ratio.den
-              
-              # Accept if ratio exceeds rejection criterion
-              if(ratio > u[i]) {
-                current <- cand
-                break
-              }
-      }
+          cat(sprintf("Sample %d, Repetition %d\n", i, rep_count))
+          flush.console()  # Force output to display immediately
+          
+          # Generate valid candidate
+          cand <- generate_valid_candidate(current, Sigma, logRT, tzero, max.RT)
+          
+          if(logRT){
+            current[2] <- exp(current[2])
+          }
 
+          # Compute acceptance ratio
+          ratio.num <- max(dCDDM(cand, drift, theta, tzero, boundary), 0, na.rm=TRUE)
+          ratio.den <- dCDDM(current, drift, theta, tzero, boundary)
+          ratio <- ratio.num/ratio.den
+          
+          # Print debugging information
+          cat(sprintf("  ratio: %.4f, criterion: %.4f\n", ratio, u[i]))
+          flush.console()
+          
+          # Accept if ratio exceeds rejection criterion
+          if(ratio > u[i]) {
+              if(logRT){
+                 cand[2] <- log(cand[2])
+              }
+              current <- cand
+              #cat("  Accepted!\n")
+              #flush.console()
+              break
+          }
+          rep_count <- rep_count + 1
+      }
+      
       # Store current state
       samples[i,] <- current
       if(logRT){
@@ -264,7 +291,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE){
   }
   
   # Rotate samples back to original theta
-  samples[,1] <- (samples[,1] - rotation_angle) %% (2*pi)
+  samples[,1] <- (samples[,1] - rotation_angle) %% (2*pi)  
   
   if(plot){   # Plot final samples
               # Rotate samples temporarily back for plotting
@@ -282,5 +309,8 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE){
   return(samples)  # Return data frame of samples
 }
 
+start_time <- Sys.time()
+x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
+end_time <- Sys.time()
+end_time - start_time
 
-#x  <- rCDDM_Metropolis(1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
