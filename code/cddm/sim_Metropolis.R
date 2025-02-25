@@ -388,6 +388,11 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
     # Now create the warmup diagnostic plots
     par(mar=c(4,4,2,1))  # Reset margins for the diagnostic plots
     
+    # Find convergence iterations for each chain
+    convergence_iters <- sapply(warmup_history, function(x) {
+      which(x$acceptance_rate >= ARate_des)[1]
+    })
+    
     # Plot sigma evolution for choices - one line per chain
     plot(NULL, 
          xlim=range(sapply(warmup_history, function(x) x$iteration)),
@@ -398,7 +403,14 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
       chain_data <- warmup_history[[ch]]
       lines(chain_data$iteration, chain_data$sigma_choice, 
             col=rainbow(n_chains)[ch], lwd=2)
+      # Vertical line at convergence
+      abline(v=convergence_iters[ch], col=rainbow(n_chains)[ch], lty=3)
+      # Horizontal line at final value
+      abline(h=chain_data$sigma_choice[nrow(chain_data)], 
+            col=rainbow(n_chains)[ch], lty=2)
     }
+    # Add thick black line for integrated final value
+    abline(h=sqrt(final_sigma[1,1]), col="black", lwd=3)
     
     # Plot sigma evolution for RT - one line per chain
     plot(NULL,
@@ -410,7 +422,14 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
       chain_data <- warmup_history[[ch]]
       lines(chain_data$iteration, chain_data$sigma_rt, 
             col=rainbow(n_chains)[ch], lwd=2)
+      # Vertical line at convergence
+      abline(v=convergence_iters[ch], col=rainbow(n_chains)[ch], lty=3)
+      # Horizontal line at final value
+      abline(h=chain_data$sigma_rt[nrow(chain_data)], 
+            col=rainbow(n_chains)[ch], lty=2)
     }
+    # Add thick black line for integrated final value
+    abline(h=sqrt(final_sigma[2,2]), col="black", lwd=3)
     
     # Plot acceptance rate - one line per chain
     plot(NULL,
@@ -423,6 +442,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
       chain_data <- warmup_history[[ch]]
       lines(chain_data$iteration, chain_data$acceptance_rate, 
             col=rainbow(n_chains)[ch], lwd=2)
+      abline(v=convergence_iters[ch], col=rainbow(n_chains)[ch], lty=3)
     }
     
     # Plot trajectory in 2D - one path per chain
@@ -462,9 +482,9 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   return(samples)  # Return data frame of samples
 }
 
-#start_time <- Sys.time()
-x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=TRUE, logRT = FALSE, plot_warmup = TRUE, n_chains = 3)
+start_time <- Sys.time()
+x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 1)
 #y  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
-#end_time <- Sys.time()
-#end_#time - start_time
+end_time <- Sys.time()
+end_time - start_time
 
