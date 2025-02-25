@@ -103,7 +103,7 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   ### Counterclockwise
   if(theta<=0){     theta <- (2*pi)+theta   }  
   ####   Generate data using random walk algorithm, so we can plot paths
-  randomWalk = sample.RW.cddm(trials,cddm.par)
+  randomWalk = rCDDM_RandomWalk(trials,cddm.par)
   
   #### Load relevant variables from the randomWalk output
   state  <- randomWalk$random.walk
