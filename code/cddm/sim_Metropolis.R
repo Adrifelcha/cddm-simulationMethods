@@ -111,8 +111,9 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   M <- 400               # Number of iterations for warmup phase
   ARate_des <- 0.4       # Target acceptance rate (40% is typical for M-H)
     
-  var_choice <- (pi/3)^2
-  var_RT <- ezcddm_VRT(drift, boundary)*4
+  increase_var <- 4
+  var_choice <- ((pi/3)^2) * increase_var
+  var_RT <- ezcddm_VRT(drift, boundary) * increase_var
   if(logRT){   var_RT <- log(var_RT)       }
 
   Mu <- c(predChoice, predRT) # Initial mean vector
