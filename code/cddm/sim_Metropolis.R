@@ -112,7 +112,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   ARate_des <- 0.4       # Target acceptance rate (40% is typical for M-H)
     
   increase_var <- 4
-  var_choice <- ((pi/3)^2) * increase_var
+  var_choice <- ((pi/4)^2) * increase_var
   var_RT <- ezcddm_VRT(drift, boundary) * increase_var
   if(logRT){   var_RT <- log(var_RT)       }
 
@@ -492,7 +492,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
 }
 
 start_time <- Sys.time()
-pdf(paste0(here("results", "cddm_metropolis_warmup.pdf")), width=12, height=8)
+pdf(paste0(here("results", "cddm_metropolis_warmup.pdf")), width=8, height=12)
 x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=TRUE, logRT = FALSE, plot_warmup = TRUE, n_chains = 1)
 #y  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
 dev.off()
