@@ -23,7 +23,7 @@ generate_valid_candidate <- function(current, Sigma, logRT, tzero, max.RT) {
 
 
 # Function to generate samples from CDDM using Metropolis algorithm
-rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 1){
+rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 1, debug = FALSE){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Extract model parameters from the parameter list
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -321,12 +321,16 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   # Main sampling loop
   for(i in 1:n){      
       # Progress indicator      
-      rep_count <- 1
-      cat(sprintf("\rProgress: %d/%d (%.1f%%)",
+      if(debug){
+        rep_count <- 1
+        cat(sprintf("\rProgress: %d/%d (%.1f%%)",
           i, n, 100 * i/n))
+      }
       repeat{
-          cat(sprintf("Sample %d, Repetition %d\n", i, rep_count))
-          flush.console()  # Force output to display immediately
+          if(debug){
+            cat(sprintf("Sample %d, Repetition %d\n", i, rep_count))
+            flush.console()  # Force output to display immediately
+          }
           
           # Generate valid candidate
           cand <- generate_valid_candidate(current, Sigma, logRT, tzero, max.RT)
@@ -341,8 +345,10 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
           ratio <- ratio.num/ratio.den
           
           # Print debugging information
-          cat(sprintf("  ratio: %.4f, criterion: %.4f\n", ratio, u[i]))
-          flush.console()
+          if(debug){
+            cat(sprintf("  ratio: %.4f, criterion: %.4f\n", ratio, u[i]))
+            flush.console()
+          }
           
           # Accept if ratio exceeds rejection criterion
           if(ratio > u[i]) {
