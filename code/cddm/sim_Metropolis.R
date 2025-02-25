@@ -360,7 +360,10 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
               #flush.console()
               break
           }
-          rep_count <- rep_count + 1
+
+          if(debug){
+            rep_count <- rep_count + 1
+          }
       }
       
       # Store current state
