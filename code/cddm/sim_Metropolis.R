@@ -482,9 +482,9 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   return(samples)  # Return data frame of samples
 }
 
-start_time <- Sys.time()
-x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 1)
+#start_time <- Sys.time()
+#x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 1)
 #y  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
-end_time <- Sys.time()
-end_time - start_time
+#end_time <- Sys.time()
+#end_time - start_time
 
