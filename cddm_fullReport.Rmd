@@ -30,7 +30,9 @@ forceRun_inv <- FALSE   #
 repCompTimes <- FALSE
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
 # Call scripts containing auxiliary custom functions
+source("./code/cddm/dCDDM_aux.R") # CDDM likelihood function - Needed for ALL algorithms
 source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
+source("./code/cddm/pCDDM_aux.R") # Needed for approximating the CDF under the CDDM
 source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
 source("./code/general_functions/eCDF.R") # Needed for computing empirical CDF
 source("./code/cddm/sim_auxiliarFunctions.R")
@@ -93,9 +95,10 @@ dCDDM(c(choice,rt),drift,theta,tzero,boundary)
 ## pCDDM(*) - CDDM cumulate density function
 
 ```{r intro_pCDDM}
+source("./code/cddm/pCDDM_aux.R")
 source("./code/cddm/pCDDM.R")
 
-x <- pCDDM(data_fig1, drift, theta, tzero, boundary, plot=TRUE)
+x <- pCDDM(data_fig1, drift, theta, tzero, boundary, show=TRUE)
 ```
 
 ## Illustrative parameter set
@@ -151,7 +154,7 @@ hist(log(rt*10))
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
       start_time <- Sys.time()
-      X.RW <- sample.RW.cddm(n,par)
+      X.RW <- rCDDM_RandomWalk(n,par)
       end_time <- Sys.time()
       RW.time <- round(end_time-start_time,4)
       save(X.RW, file = "./tmp/X.RW.RData")
@@ -184,8 +187,8 @@ plot.CDDM_margECDF(X.RW$bivariate.data, color=col.RW(0.3))
 # Algorithm 2: Rejection sampling algorithm
 
 ```{r, eval=FALSE}
-source("./code/cddm/sim_Reject.R")
-X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
+source("./code/cddm/sim_Rejection.R")
+X.Reject <- rCDDM_Reject(n,par,plot=TRUE)
 ```
 
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
@@ -193,18 +196,18 @@ X.Reject <- sample.Reject.cddm(n,par,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject.RData")){
       start_time <- Sys.time()
-      X.Reject <- sample.Reject.cddm(n,par,plot=FALSE)
+      X.Reject <- rCDDM_Reject(n,par,plot=FALSE)
       end_time <- Sys.time()
       Reject.time <- round(end_time-start_time, 4)
       save(X.Reject, file = "./tmp/X.Reject.RData")
       save(Reject.time, file = "./tmp/Reject.time.RData")
-      z <- sample.Reject.cddm(n,par,plot=TRUE)
+      z <- rCDDM_Reject(n,par,plot=TRUE)
 }else{
      # Load already existing output
      load("./tmp/X.Reject.RData")
      load("./tmp/Reject.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     z <- sample.Reject.cddm(n,par,plot=TRUE)
+     z <- rCDDM_Reject(n,par,plot=TRUE)
 }
 ```
 
