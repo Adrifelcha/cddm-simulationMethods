@@ -108,7 +108,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Initialize Metropolis-Hastings algorithm parameters
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  M <- 300               # Number of iterations for warmup phase
+  M <- 400               # Number of iterations for warmup phase
   ARate_des <- 0.4       # Target acceptance rate (40% is typical for M-H)
     
   # Smarter initial proposal variances based on parameter values
@@ -135,9 +135,22 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
     }
   }
   
+  # Initialize chain states with different starting points for each chain
   chain_states <- list()
   for(i in 1:n_chains) {
-    chain_states[[i]] <- list(mu = Mu, sigma = Sigma, ARate_obs = ARate_des)
+    # For chain 1, use original starting point
+    if (i == 1) {
+      chain_states[[i]] <- list(mu = Mu, sigma = Sigma, ARate_obs = ARate_des)
+    } else {
+      # For other chains, perturb the initial proposal covariance
+      # Randomly scale the variance components within ±50% of original values
+      perturbed_sigma <- Sigma * matrix(
+        c(runif(1, 0.5, 1.5), 0,  # Scale choice variance
+          0, runif(1, 0.5, 1.5)),  # Scale RT variance
+        nrow = 2, ncol = 2
+      )
+      chain_states[[i]] <- list(mu = Mu, sigma = perturbed_sigma, ARate_obs = ARate_des)
+    }
   }
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Begin warmup phase to tune proposal distribution
@@ -283,12 +296,27 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   }  
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  # Integrate results from all chains before main sampling phase
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+  # Compute average proposal distribution across chains
+  final_sigma <- matrix(0, 2, 2)
+  final_mu <- c(0, 0)
+  
+  for(i in 1:n_chains) {
+    final_sigma <- final_sigma + chain_states[[i]]$sigma
+    final_mu <- final_mu + chain_states[[i]]$mu
+  }
+  final_sigma <- final_sigma / n_chains
+  final_mu <- final_mu / n_chains
+
+  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Main sampling phase
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
   # Initialize sampling
   samples <- matrix(NA, nrow=n, ncol=2)
   u <- runif(n,0,1)
-  current <- chain_states[[1]]$mu
+  current <- final_mu
+  Sigma <- final_sigma
   
   # Main sampling loop
   for(i in 1:n){      
@@ -435,7 +463,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
 }
 
 #start_time <- Sys.time()
-x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=TRUE, logRT = FALSE, plot_warmup = TRUE, n_chains = 2)
+x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=TRUE, logRT = FALSE, plot_warmup = TRUE, n_chains = 3)
 #y  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), logRT = TRUE)
 #end_time <- Sys.time()
 #end_#time - start_time
