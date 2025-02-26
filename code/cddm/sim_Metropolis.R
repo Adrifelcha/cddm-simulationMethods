@@ -325,8 +325,9 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
                     cat(sprintf("\rProgress: %d/%d (%.1f%%)",i, n, 100 * i/n))    
                  }        
         a <- 0
-        repeat{
-                cat(a+1)
+        repeat{ 
+                #a <- a+1
+                #cat(a)
                 # Generate valid candidate
                 cand <- generate_valid_candidate(current, Sigma, logRT, tzero, max.RT)          
                 if(logRT){  current[2] <- exp(current[2])  }  # Log-transform RTs if needed
@@ -481,3 +482,7 @@ dev.off()
 end_time <- Sys.time()
 end_time - start_time
 
+start_time <- Sys.time()
+x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=FALSE, logRT = FALSE, plot_warmup = FALSE, n_chains = 2)
+end_time <- Sys.time()
+end_time - start_time
