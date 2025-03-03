@@ -11,6 +11,11 @@ dCDDM <- function(data, drift, theta, tzero, boundary) {
     if(boundary <= 0) stop("boundary must be positive")
     if(tzero < 0) stop("tzero must be non-negative")
     
+    # Convert data frame to matrix if needed
+    if(is.data.frame(data)) {
+        data <- as.matrix(data)
+    }
+    
     if(is.vector(data)) {
         N <- 1
         # Ensure non-negative output

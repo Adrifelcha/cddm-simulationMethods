@@ -134,8 +134,8 @@ ezcddm_VRT <- function(drift, boundary) {
 }
 
 
-ezcddm_VCA <- function(drift, boundary, tzero) {
-    # Calculate av product
+ezcddm_VCA <- function(drift, boundary) {
+    # Calculate av 
     av <- drift * boundary
     
     # Calculate ratio of modified Bessel functions
@@ -164,4 +164,22 @@ dexGAUS <- function(x, mu, sigma, tau) {
   
   return(exp(arg1) * pnorm(arg2) / tau)
 }
+
+###############################################################################
+# Log-RT functions:   #########################################################
+###############################################################################
+
+# Function to compute variance and mean of log-transformed RTs
+logRT_stats <- function(mean_RT, var_RT) {
+  # Compute log-RT variance
+  sigma_logRT <- log(var_RT / mean_RT^2 + 1)
+  
+  # Compute log-RT mean
+  mu_Y <- log(mean_X) - (sigma_Y2 / 2)
+  
+  # Return both values as a list
+  return(list(mu_logRT = mu_logRT, sigma_logRT = sigma_logRT))
+}
+
+
 

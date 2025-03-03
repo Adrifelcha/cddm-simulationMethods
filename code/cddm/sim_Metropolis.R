@@ -9,7 +9,7 @@ library(mvtnorm)
 ###############################################################################
 # Helper function for the sampling phase (ensure that the candidate is valid)
 ###############################################################################
-generate_valid_candidate <- function(current, Sigma, logRT, tzero, max.RT) {
+generate_validMVN_candidate <- function(current, Sigma, logRT, tzero, max.RT) {
   repeat {
           # Get bivariate normal candidate
           cand <- rmvnorm(1, mean=current, sigma=Sigma)
@@ -69,17 +69,24 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   # Prepare proposal distribution
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Define predicted choice and RT to center the proposal distribution  
-  predRT <- ezcddm_MRT(drift, boundary, tzero)  # Expected RT
-  if(logRT){      
-      predRT <- log(predRT)     # Log-transform RTs
-  }
+  predRT <- ezcddm_MRT(drift, boundary, tzero)  # Expected RT  
   predChoice <- theta                           # Expected choice
-  
-  # Determine initial proposal variances
+
+  # Determine reasonable variance of choice and RT
+  predVarChoice <- ezcddm_VCA(drift, boundary)
+  predVarRT <- ezcddm_VRT(drift, boundary)
+
+  # If logRT is TRUE, transform RT to log-space
+  if(logRT){   
+                logRT_stats <- logRT_stats(predRT, predVarRT)
+                predVarRT <- logRT_stats$sigma_logRT 
+                predRT <- logRT_stats$mu_logRT
+  }
+
+  # Increase variance of choice and RT
   increase_var <- 4
-  var_choice <- ((pi/2)^2) * increase_var
-  var_RT <- ezcddm_VRT(drift, boundary) * increase_var
-  if(logRT){   var_RT <- log(var_RT)       }
+  var_choice <- predVarChoice * increase_var
+  var_RT <- predVarRT * increase_var
 
   # Initial proposal distribution parameters
   Sigma <- diag(c(var_choice,var_RT)) # Initial covariance matrix
@@ -329,7 +336,7 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
                 #a <- a+1
                 #cat(a)
                 # Generate valid candidate
-                cand <- generate_valid_candidate(current, Sigma, logRT, tzero, max.RT)          
+                cand <- generate_validMVN_candidate(current, Sigma, logRT, tzero, max.RT)          
                 if(logRT){  current[2] <- exp(current[2])  }  # Log-transform RTs if needed
 
                 # Compute acceptance ratio

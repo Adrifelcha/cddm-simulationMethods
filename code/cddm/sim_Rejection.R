@@ -52,7 +52,7 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
 # Get theoretical moments for RT distribution
   mean_rt <- ezcddm_MRT(drift, boundary, tzero)   # Expected RT
   rt_var <- ezcddm_VRT(drift, boundary)           # RT variance
-  choice_var <- ezcddm_VCA(drift, boundary, tzero)   # Choice variance
+  choice_var <- ezcddm_VCA(drift, boundary)   # Choice variance
 
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Set up parameters relevant for proposal distributions considered
@@ -90,17 +90,25 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
       }
       # Set up grid for plotting
       nSupp <- 100; nLines <- 30
-      support.C <- seq(0, 2*pi, length.out=nSupp)
-      support.RT1 <- seq(min_RT, max_RT, length.out=nSupp)
-      support.RT2 <- rev(support.RT1)
-      support.theta <- rep(theta, nSupp)
       
-      # Calculate density values for different slices
-      z.diag1 <- dCDDM(cbind(support.C, support.RT1), drift, theta, tzero, boundary)
-      z.diag2 <- dCDDM(cbind(support.C, support.RT2), drift, theta, tzero, boundary)
-      z.RT_at_theta <- dCDDM(cbind(support.theta, support.RT1), drift, theta, tzero, boundary)
+      # Suppress circular conversion warnings
+      suppressWarnings({
+        support.C <- seq(0, 2*pi, length.out=nSupp)
+        support.RT1 <- seq(min_RT, max_RT, length.out=nSupp)
+        support.RT2 <- rev(support.RT1)
+        support.theta <- rep(theta, nSupp)
+        
+        # Calculate density values for different slices
+        z.diag1 <- dCDDM(cbind(support.C, support.RT1), drift, theta, tzero, boundary)
+        z.diag2 <- dCDDM(cbind(support.C, support.RT2), drift, theta, tzero, boundary)
+        z.RT_at_theta <- dCDDM(cbind(support.theta, support.RT1), drift, theta, tzero, boundary)
+        
+        # Find the actual maximum density value for better scaling
+        actual_max_density <- max(c(z.diag1, z.diag2, z.RT_at_theta), na.rm=TRUE)
+        max_Density <- max(max_Density, actual_max_density * 1.1)  # Ensure enough headroom
+      })
       
-      # Create 3D scatter plot
+      # Create 3D scatter plot with adjusted zlim
       a <- scatterplot3d(support.C, support.RT1, z.diag1, 
                         xlim=c(0, 2*pi), ylim=c(min_RT, max_RT), 
                         zlim=c(0, max_Density),
@@ -203,3 +211,9 @@ rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){
   
   return(samples)
 }
+
+
+#drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
+#par <- list("drift" = drift, "theta" = theta,
+#            "tzero" = tzero, "boundary" = boundary)
+#rCDDM_Reject(n = 5000, par, type="exGvonM", plot=TRUE)
