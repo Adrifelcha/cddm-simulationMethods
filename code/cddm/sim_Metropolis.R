@@ -32,6 +32,13 @@ generate_validMVN_candidate <- function(current, Sigma, logRT, tzero, max.RT) {
 rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = FALSE, 
                              n_chains = 1, debug = FALSE){
   
+  # Add detailed debugging
+  if(debug) {
+    cat("Starting rCDDM_Metropolis function\n")
+    cat("Parameter list structure:\n")
+    print(str(par))
+  }
+  
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # Prepare model parameters
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -480,6 +487,25 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
   
   return(samples)  # Return data frame of samples
 }
+
+
+# Arbitrary set of parameter values
+drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
+Mu <- polarToRect(drift, theta)
+
+par <- list("drift" = drift, "theta" = theta, "boundary" = boundary, "tzero" = tzero)
+#par <- list("mu1" = Mu$x, "mu2" = Mu$y, "boundary" = boundary, "tzero" = tzero)
+
+# When calling the function, add error handling
+x <- tryCatch({
+  rCDDM_Metropolis(n = 1000, par = par, plot=TRUE, logRT = FALSE, 
+                  plot_warmup = TRUE, n_chains = 5, debug = TRUE)
+}, error = function(e) {
+  cat("Error occurred:", conditionMessage(e), "\n")
+  cat("Call stack:\n")
+  print(sys.calls())
+  NULL
+})
 
 
 TryTEST <- FALSE
