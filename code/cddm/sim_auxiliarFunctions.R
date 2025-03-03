@@ -123,11 +123,12 @@ ezcddm_VRT <- function(drift, boundary) {
     # Calculate ratio once to avoid repetition
     ratio <- I1/I0
     
+
+    a <- (boundary^2)/(drift^2)    
+
     # Calculate variance using the full equation:
     # ((b^2/v^2)(I1^2/I0^2)) + ((2b/v^3)(I1/I0)) - (b^2/v^2)
-    VRT <- ((boundary^2)/(drift^2)) * (ratio^2) + 
-           ((2*boundary)/(drift^3)) * ratio - 
-           ((boundary^2)/(drift^2))
+    VRT <- a * (ratio^2) + ((2*boundary)/(drift^3)) * ratio - a
     
     return(VRT)
 }
