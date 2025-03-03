@@ -19,6 +19,11 @@
 # state - rectangular coordinates recorded during the random walk
 ###############################################################################
 
+#adaptive_dt <- function(drift, boundary) {
+#  return(min(0.001, boundary / (10 * drift)))
+#}
+
+
 ###############################################################################
 # Main functions: #############################################################
 # Simulate the full random walk across many trials (for each trial, 
@@ -93,16 +98,23 @@ cddm.randomWalk <- function(trials, mu1, mu2, boundary, ndt=0.1, drift.Coeff=1, 
     }
     
     if(pass > boundary){ # Once the boundary has been passed...
-      # Transform the rectangular coordinates of final state into polar coordinates
-      get.Polar <- rectToPolar(state[t,1,a],state[t,2,a])
-      # Isolate the radians
-      get.Radians <- get.Polar[,"dAngle"] %% (2*pi)
-      # Identify the exact point touching the circumference
-      final.coord <- polarToRect(get.Radians,boundary)
-      # Save these coordinate points on the circle
-      final.x <- final.coord$x
-      final.y <- final.coord$y
-      state[t,,a] <- c(final.x,final.y)
+      # Get the last point inside the boundary and first point outside
+      inside_point <- state[t-1,,a]
+      outside_point <- state[t,,a]
+      
+      # Calculate the intersection of the line segment with the boundary circle
+      # This is a more accurate estimate of where the process crossed the boundary
+      inside_dist <- sqrt(sum(inside_point^2))
+      outside_dist <- sqrt(sum(outside_point^2))
+      
+      # Linear interpolation parameter
+      alpha <- (boundary - inside_dist) / (outside_dist - inside_dist)
+      
+      # Interpolated crossing point
+      crossing_point <- inside_point + alpha * (outside_point - inside_point)
+      
+      # Save the crossing point
+      state[t,,a] <- crossing_point
     }
   }
   
@@ -154,7 +166,7 @@ getFinalState <- function(randomWalk.states){
 
 # Final function: Generate bivariate data + random walk trace
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-rCDDM_RandomWalk <- function(n, par, drift.Coeff=1, dt=0.0015){
+rCDDM_RandomWalk <- function(n, par, drift.Coeff=1, dt=0.001){
   trials <- n
   boundary <- par$boundary
   drift.Angle <- par$theta
@@ -177,6 +189,8 @@ rCDDM_RandomWalk <- function(n, par, drift.Coeff=1, dt=0.0015){
       mu2 <-Mu$y
     }
   }
+
+  #dt <- adaptive_dt(drift.Length, boundary)
   #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!#
   # Get full Random walk using the function in the *customFunctions.R* file
   full.randomWalk <-  cddm.randomWalk(trials=trials,mu1=mu1,mu2=mu2,
