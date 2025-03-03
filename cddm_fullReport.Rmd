@@ -1,5 +1,5 @@
 ---
-title: "A comparison between sampling algorithms for the CDDM in R"
+title: "A comparison between sampling approaches for the CDDM in R"
 author: "Adriana F. Chávez De la Peña"
 date: "`r Sys.Date()`"
 output:
@@ -12,13 +12,24 @@ output:
     highlight: tango
     fig_width: 12 
     fig_height: 8 
+  md_document:
+    variant: gfm
+    pandoc_args: ["--wrap=none"]
 ---
 
 ```{r setup, include=FALSE}
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Start Rmarkdown set up
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 knitr::opts_chunk$set(echo = TRUE)
+cat("Loading R libraries...\n")
 library(rmdformats)
+library(here)
+library(circular)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Declare higher variables
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 superCalled <- TRUE # When calling external scripts, don't load nested scripts.
 test <- FALSE       # When calling external scripts, don't run tests
 # Whether we re-run all chunks, ignoring past saved results
@@ -29,19 +40,10 @@ forceRun_Met <- TRUE    #
 forceRun_inv <- FALSE   #
 repCompTimes <- FALSE
 forceRun <- forceRun_RW | forceRun_Rej | forceRun_Met | forceRun_inv | forceAll
-# Call scripts containing auxiliary custom functions
-source("./code/cddm/dCDDM_aux.R") # CDDM likelihood function - Needed for ALL algorithms
-source("./code/cddm/dCDDM.R") # CDDM likelihood function - Needed for ALL algorithms
-source("./code/cddm/pCDDM_aux.R") # Needed for approximating the CDF under the CDDM
-source("./code/cddm/pCDDM.R") # Needed for approximating the CDF under the CDDM
-source("./code/general_functions/eCDF.R") # Needed for computing empirical CDF
-source("./code/cddm/sim_auxiliarFunctions.R")
-source("./code/cddm/sim_randomWalk.R") # Needed for Algorithm 1 and Fig.1
-source("./code/cddm/sim_Rejection.R")     # Needed for Algorithm 2
-source("./code/cddm/sim_Metropolis.R") # Needed for Algorithm 3
-source("./code/cddm/sim_invCDF.R")     # Needed for Algorithm 4
-source("./code/cddm/plottingFunctions.R") # Needed to make custom CDDM plots
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Short custom functions for plotting
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 rgb.RW <- c(255/255,128/255,0)
 rgb.Reject <- c(0.4,.9,.3)
 rgb.Metro  <- c(127/255, 0, 1)
@@ -51,121 +53,80 @@ col.Reject <- function(opacity){rgb(rgb.Reject[1],rgb.Reject[2],rgb.Reject[3],op
 col.invCDF <- function(opacity){rgb(rgb.invCDF[1],rgb.invCDF[2],rgb.invCDF[3],opacity)}
 col.Metro <- function(opacity){rgb(rgb.Metro[1],rgb.Metro[2],rgb.Metro[3],opacity)}
 x.lim <- c(0,2*pi)
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load custom function scripts
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+cat("\nLoading custom function scripts from /code/cddm...\n\n")
+source(here("code", "cddm", "sim_randomWalk.R"))        
+r_files <- list.files(path = here("code", "cddm"), 
+                      pattern = "\\.R$", 
+                      full.names = TRUE)
+for(file in r_files) {
+    source(file)
+}
+source(here("code", "general_functions", "eCDF.R"))
 ```
 
-<!-- # Introduction -->
+# Introduction
 
-<!-- The present document is included as support material for the project presented in: -->
+The present document is included as support material for the project presented in:
 
-<!-- > Chávez De la Peña, A. F. & Vandekerckhove, J. (n.a.). Simulating circular decisions using the circular drift-diffusion model: A comparison across different simulation methods. *work in progress*. -->
-
-<!-- The main goal of the project was to develop different sampling algorithms that could be used to generate data under the CDDM, and compare their performance in terms of computation time and accuracy.  -->
-
-<!-- This document is a short report intended to provide an executive  -->
+Chávez De la Peña, A. F. & Vandekerckhove, J. (n.a.). Simulating circular decisions using the circular drift-diffusion model: A comparison across different simulation methods. *work in progress*.
 
 
 
 # The Circular Drift Diffusion Model
 
-The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (Smith, 2016). Like many other accumulator models, the CDDM assumes that participants accumulate information in favor of a given response option over time, until a response criteria is met. This is characterized as a random walk that starts at the origin of a circle representing the decision space, and that moves towards its circumference. Once the circumference is reached, the radian corresponding to the point of intersection and the amount of steps it took to get there are indicative of the choice and response times observed.
+The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (Smith, 2016). The CDDM belongs to the family of evidence accumulation models (EAMs), which share the core assumption that that participants sample and accumulate information in favor of the response alternatives over time, until a response criteria is met. In the CDDM, this accumulation process is characterized as a random walk that starts at the origin of a circle representing the decision space, and that moves towards its circumference. Once the circumference is reached, the radian corresponding to the point of intersection and the amount of steps it took to get there are indicative of the choice and response times observed.
 
 The CDDM considers four parameters, most of which are illustrated in Fig 1. The parameter not shown is the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
-```{r fig-1, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
+To create Fig 1, we will define an arbitrary set of parameter values and sample size of 5000. This parameter set will be used throughout the document to illustrate the different sampling algorithms.
+
+```{r par_values}
 # Arbitrary set of parameter values
 drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
 par <- list("drift" = drift, "theta" = theta,
             "tzero" = tzero, "boundary" = boundary)
-n <- 1000 # No. samples
-
-set.seed(777)
-data_fig1 <- plot.CDDM_Fig1(n,par,return.RW = TRUE)
-```
-
-## dCDDM(*) - CDDM density function
-
-```{r intro_dCDDM}
-source("./code/cddm/dCDDM_aux.R")
-source("./code/cddm/dCDDM.R")
-
-choice <- 5; rt <- 1
-dCDDM(c(choice,rt),drift,theta,tzero,boundary)
-```
-
-## pCDDM(*) - CDDM cumulate density function
-
-```{r intro_pCDDM}
-source("./code/cddm/pCDDM_aux.R")
-source("./code/cddm/pCDDM.R")
-
-x <- pCDDM(data_fig1, drift, theta, tzero, boundary, show=TRUE)
-```
-
-## Illustrative parameter set
-
-```{r par_values, echo=FALSE}
-# Arbitrary set of parameter values
-par <- list("drift" = 3.5, 
-            "theta" = pi,
-            "tzero" = 0.2,
-            "boundary" = 2)
 n <- 5000 # No. samples
 ```
 
-```{r, echo=FALSE}
-test.Density <- keyDensityPoints(par)
-min.RT <- test.Density$min.RT
-max.RT <- test.Density$max.RT
-y.lim <- c(min.RT,max.RT)
+```{r fig-1, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
+set.seed(777)
+data_fig1 <- plot.CDDM_Fig1(trials = 1000,par,return.Data = TRUE)
 ```
 
 In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` `r n` bivariate observations using the arbitrary set of parameter values shown below:
 
-```{r par_values, eval=FALSE}
-```
+# Gold standard: Random-walk emulator
 
-
-# Algorithm 1: Random walk emulator
-
-Each pair of observations is obtained by emulating the random walk process described by the CDDM. We emulate the information accumulation process by iteratively sampling random movements on the X and Y direction using $\mu_x$ and $\mu_y$, until the 
+The first sampling algorithm we will consider is the Random Walk Emulator (RWE). This algorithm is based on the random walk process described by the CDDM. We emulate the information accumulation process by iteratively sampling random movements on the X and Y direction using $\mu_x$ and $\mu_y$, until the boundary is reached.
 
 ```{r, eval=FALSE}
-source("./code/cddm/sim_randomWalk.R")
+source(here("code", "cddm", "sim_randomWalk.R"))
 X.RW <- rCDDM_RandomWalk(n,par)
 ```
 
-```{r, echo=FALSE, eval=FALSE}
-a <- X.RW$bivariate.data
-rt <- a[,2]
-test.Density <- keyDensityPoints(par)  # Calculate key points of the density function
-min.RT <- test.Density$min.RT          # Minimum possible reaction time
-max.RT <- test.Density$max.RT          # Maximum considered reaction time
-max.Density <- test.Density$max.Density # Peak density value
-predRT <- ezcddm_MRT(par$drift, par$boundary, par$tzero)
-hist(log(rt), xlim=c(-1.5,1))
-abline(v=c(log(predRT), mean(c(log(min.RT),log(max.RT))), log(min.RT), log(max.RT)), col = c("blue","red","green","yellow"))
-
-hist(rt*10)
-hist(log(rt*10))
-```
+This algorithm sets the gold standard to compare the other sampling algorithms against. The random walk emulator provides the most accurate samples, as it is a direct implementation of the model's assumptions. However, it is also the most computationally demanding algorithm, as it requires a large number of iterations to generate a single sample.
 
 ```{r run_RW,  echo=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_RW|forceAll|!file.exists("./tmp/X.RW.RData")){
+if(forceRun_RW|forceAll|!file.exists(here("tmp", "X.RW.RData"))){
       start_time <- Sys.time()
       X.RW <- rCDDM_RandomWalk(n,par)
       end_time <- Sys.time()
       RW.time <- round(end_time-start_time,4)
-      save(X.RW, file = "./tmp/X.RW.RData")
-      save(RW.time, file = "./tmp/RW.time.RData")
+      save(X.RW, file = here("tmp", "X.RW.RData"))
+      save(RW.time, file = here("tmp", "RW.time.RData"))
 }else{
-     load("./tmp/X.RW.RData")    
-     load("./tmp/RW.time.RData")
+     load(here("tmp", "X.RW.RData"))    
+     load(here("tmp", "RW.time.RData"))
 }
 ```
 
-```{r plot_RWchoices, fig.height=5}
+```{r plot_RWchoices, fig.height=5, echo=FALSE}
 par(pty="s", mar = c(0, 0, 0, 0)) 
 plot.CDDM_choiceData(X.RW, par, choice.col.RGB = rgb.RW)
 text(0,0.5,"Choices",cex=1.2, f=2, col="gray40")
@@ -173,68 +134,158 @@ text(0,-0.5,"observed",cex=1.2, f=2, col="gray40")
 ```
 
 
-```{r, fig.height=5}
+```{r, fig.height=5, echo=FALSE}
 myRThistogram(X.RW$bivariate.data[,2], color=col.RW)
 ```
 
-```{r, fig.height=6}
+```{r, fig.height=6, echo=FALSE}
 plot.CDDM_margECDF(X.RW$bivariate.data, color=col.RW(0.3))
 ```
 
 
 **The execution of the Random Walk emulator algorithm took approximately `r RW.time` seconds.**
 
+
+# CDDM probability functions
+
+## dCDDM(*) - density function
+
+The probability density function for the Circular Drift Diffusion Model (CDDM) is given by:
+
+$$
+f(c, t | \nu, \theta, \eta, t_0) = 
+\begin{cases}
+0 & \text{if } t \leq t_0 \\
+\frac{1}{2\pi\eta^2} \exp\left(-\frac{1}{2}\left[\nu^2(t-t_0) - 2\eta\nu\cos(c-\theta)\right]\right) \sum_{i=1}^{\infty} \frac{j_{0,i}}{J_1(j_{0,i})} \exp\left(-\frac{j_{0,i}^2}{2\eta^2}(t-t_0)\right) & \text{if } t > t_0
+\end{cases}
+$$
+
+where:
+
+- $c$ is the choice angle (in radians)
+- $t$ is the response time (in seconds)
+- $\nu$ is the drift rate (strength of evidence accumulation)
+- $\theta$ is the drift direction (in radians)
+- $\eta$ is the boundary separation
+- $t_0$ is the non-decision time
+- $j_{0,i}$ is the $i$-th zero of the Bessel function $J_0$
+- $J_1$ is the Bessel function of the first kind of order 1
+
+In practice, the infinite sum is approximated using a finite number of terms (typically 50).
+
+```{r intro_dCDDM}
+source(here("code", "cddm", "dCDDM_aux.R"))
+source(here("code", "cddm", "dCDDM.R"))
+
+choice <- 5; rt <- 1
+dCDDM(c(choice,rt),drift,theta,tzero,boundary)
+```
+
+```{r, fig.height=5, echo=FALSE}
+x <- dCDDM(X.RW$bivariate.data,drift,theta,tzero,boundary)
+plot.CDDM_3D_density(bivariate.data = X.RW$bivariate.data,
+                     densities = x)
+```
+
+## pCDDM(*) - cumulate density function
+
+```{r intro_pCDDM}
+source(here("code", "cddm", "pCDDM_aux.R"))
+source(here("code", "cddm", "pCDDM.R"))
+
+x <- pCDDM(data_fig1, drift, theta, tzero, boundary, show=TRUE)
+```
+
+
+
 # Algorithm 2: Rejection sampling algorithm
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_Rejection.R")
-X.Reject <- rCDDM_Reject(n,par,plot=TRUE)
+X.Reject_Uniform <- rCDDM_Reject(n,par,type="Uniform",plot=TRUE)
+X.Reject_2DNormal <- rCDDM_Reject(n,par,type="2DNormal",plot=TRUE)
+X.Reject_exGvonM <- rCDDM_Reject(n,par,type="exGvonM",plot=TRUE)
 ```
 
-```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
+```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Reject sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved.", warning=FALSE}
 # The r-chunk above is actually just for display. This is where the samples are actually
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
-if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject.RData")){
-      start_time <- Sys.time()
-      X.Reject <- rCDDM_Reject(n,par,plot=FALSE)
-      end_time <- Sys.time()
-      Reject.time <- round(end_time-start_time, 4)
-      save(X.Reject, file = "./tmp/X.Reject.RData")
-      save(Reject.time, file = "./tmp/Reject.time.RData")
-      z <- rCDDM_Reject(n,par,plot=TRUE)
+if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject_Uniform.RData")){
+      # Rejection sampling with Uniform proposal distribution
+      start_time_RUniform <- Sys.time()
+      X.Reject_Uniform <- rCDDM_Reject(n,par,type="Uniform",plot=FALSE)
+      end_time_RUniform <- Sys.time()
+      Reject_Uniform.time <- round(end_time_RUniform-start_time_RUniform, 4)
+      save(X.Reject_Uniform, file = "./tmp/X.Reject_Uniform.RData")
+      save(Reject_Uniform.time, file = "./tmp/Reject_Uniform.time.RData")
+
+      # Rejection sampling with 2D Normal proposal distribution
+      start_time_R2DNormal <- Sys.time()
+      X.Reject_2DNormal <- rCDDM_Reject(n,par,type="2DNormal",plot=FALSE)
+      end_time_R2DNormal <- Sys.time()
+      Reject_2DNormal.time <- round(end_time_R2DNormal-start_time_R2DNormal, 4)
+      save(X.Reject_2DNormal, file = "./tmp/X.Reject_2DNormal.RData")
+      save(Reject_2DNormal.time, file = "./tmp/Reject_2DNormal.time.RData")
+
+      # Rejection sampling with ex-Gaussian proposal distribution
+      start_time_RexGvonM <- Sys.time()
+      X.Reject_exGvonM <- rCDDM_Reject(n,par,type="exGvonM",plot=FALSE)
+      end_time_RexGvonM <- Sys.time()
+      Reject_exGvonM.time <- round(end_time_RexGvonM-start_time_RexGvonM, 4)
+      save(X.Reject_exGvonM, file = "./tmp/X.Reject_exGvonM.RData")
+      save(Reject_exGvonM.time, file = "./tmp/Reject_exGvonM.time.RData")
+      par(mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0))
+      z1 <- rCDDM_Reject(n,par,type="Uniform",plot=TRUE)
+      z2 <- rCDDM_Reject(n,par,type="2DNormal",plot=TRUE)
+      z3 <- rCDDM_Reject(n,par,type="exGvonM",plot=TRUE)
 }else{
      # Load already existing output
-     load("./tmp/X.Reject.RData")
-     load("./tmp/Reject.time.RData")
+     load("./tmp/X.Reject_Uniform.RData")
+     load("./tmp/Reject_Uniform.time.RData")
+     load("./tmp/X.Reject_2DNormal.RData")
+     load("./tmp/Reject_2DNormal.time.RData")
+     load("./tmp/X.Reject_exGvonM.RData")
+     load("./tmp/Reject_exGvonM.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     z <- rCDDM_Reject(n,par,plot=TRUE)
+     par(mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0))
+     z1 <- rCDDM_Reject(n,par, type="Uniform", plot=TRUE)
+     z2 <- rCDDM_Reject(n,par, type="2DNormal", plot=TRUE)
+     z3 <- rCDDM_Reject(n,par, type="exGvonM", plot=TRUE)
 }
 ```
 
 ```{r, fig.height=5}
-par(pty="s", mar = c(0, 0, 0, 0)) 
-plot.CDDM_choiceData(X.Reject, par, choice.col.RGB = rgb.Reject)
+par(pty="s", mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0)) 
+plot.CDDM_choiceData(X.Reject_Uniform, par, choice.col.RGB = rgb.Reject)
+plot.CDDM_choiceData(X.Reject_2DNormal, par, choice.col.RGB = rgb.Reject)
+plot.CDDM_choiceData(X.Reject_exGvonM, par, choice.col.RGB = rgb.Reject)
 ```
 
 ```{r, fig.height=5}
-myRThistogram(X.Reject[,2], color=col.Reject)
+par(mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0)) 
+myRThistogram(X.Reject_Uniform[,2], color=col.Reject)
+lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
+myRThistogram(X.Reject_2DNormal[,2], color=col.Reject)
+lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
+myRThistogram(X.Reject_exGvonM[,2], color=col.Reject)
 lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
 ```
 
-
 ```{r, fig.height=6}
-plot.CDDM_margECDF(X.Reject, color=col.Reject(0.3))
+plot.CDDM_margECDF(X.Reject_Uniform, color=col.Reject(0.3))
+plot.CDDM_margECDF(X.Reject_2DNormal, color=col.Reject(0.3))
+plot.CDDM_margECDF(X.Reject_exGvonM, color=col.Reject(0.3))
 ```
 
 **The execution of the Rejection sampling algorithm took approximately `r Reject.time` seconds.**
 
 # Algorithm 3: Metropolis algorithm
 
-The following Metropolis algorithm uses the density function to generate random observations under the CDDM. Please read the comments I’ve left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates).
+The following Metropolis algorithm uses the density function to generate random observations under the CDDM. Please read the comments I've left through the code to get a better idea on how this algorithm works. In order to work, this algorithm only needs a list par that specifies the values to use for each of the four parameters of the model (in either of its parameterizations, using polar or cartesian coordinates).
 
 ```{r, eval=FALSE}
-source("./code/cddm/sim_Metropolis.R")
-X.Metro <- sample.Metropolis.cddm(n,par,plot=TRUE)
+source(here("code", "cddm", "sim_Metropolis.R"))
+X.Metro <- rCDDM_Metropolis(n,par,plot=TRUE)
 ```
 
 ```{r,  echo=FALSE, fig.cap="Fig.2 Visual representation of the Metropolis sampling algorithm. The blue lines represent the joint density function of response times and choices prescribed by the CDDM. The dots represent the pairs of candidate value generated from the bivariate space of possible RTs and choices, plotted at the height of the random uniform(0, maxDensity) value used as rejection criterion. If the rejection criterion was lower than the density function (i.e., dot falls below density curve), the sample is accepted; if the rejection value surpasses the density (i.e., dot is drawn above), the candidate is rejected. The process of generating, testing and keeping candidates is repeated until the desired sample size is achieved."}
@@ -278,7 +329,7 @@ plot.CDDM_margECDF(X.Metro, color=col.Metro(0.3))
 # Algorithm 4: Inverse CDF (grid approximation)
 
 ```{r, eval=FALSE}
-source("./code/cddm/sim_invCDF.R")
+source(here("code", "cddm", "sim_invCDF.R"))
 X.invCDF <- sample.invCDF.cddm(n, par, plot=TRUE, , color=col.invCDF)
 ```
 
@@ -328,7 +379,7 @@ plot.CDDM_margECDF(X.invCDF, color=col.invCDF(0.3))
 
 ```{r}
 # Load file containing custom eCDF function
-source("./code/general_functions/eCDF.R")
+source(here("code", "general_functions", "eCDF.R"))
 
 RW.eCDF <- myECDF(X.RW$bivariate.data)
 Reject.eCDF <- myECDF(X.Reject)
@@ -690,7 +741,7 @@ lines(density(X2.Reject[,2]), col = col.Reject(1), lwd=3)
 lines(density(X2.Metro[,2]), col = col.Metro(1), lwd=3)
 lines(density(X2.invCDF[,2]), col = col.invCDF(1), lwd=3)
 allRT <- c(X2.RW$bivariate.data[,2],X2.Reject[,2],X2.Metro[,2],X2.invCDF[,2])
-axis(1,seq(min(allRT),max(allRT),length.out=10),round(seq(min(allRT),max(allRT),length.out=10),1))
+axis(1,seq(min(allRT),max(allRT),round(seq(min(allRT),max(allRT),length.out=10))
 mtext("Response Times sampled", 1, line=2.75, f=2, cex=1.3)
 ```
 
