@@ -79,7 +79,7 @@ plot.CDDM_choiceData <- function(data,par=NA,choice.col.RGB = c(0.65,0.5,0.15)){
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Function 2: Make an illustrative Figure for the CDDM parameters
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
+plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.Data = TRUE){
   #### If not specified, load some generic parameter values
   if(sum(is.na(cddm.par))>0){
     boundary = 3
@@ -108,7 +108,7 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   #### Load relevant variables from the randomWalk output
   state  <- randomWalk$random.walk
   finalT <- randomWalk$bivariate.data[,2]
-  choices <-   getFinalState(state)
+  choices.coords <-   getFinalState(state)
   
   #######################
   ###  Make Figure 1  ###
@@ -151,14 +151,14 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   dot.color <- "#D5B31A"
   text.color <- "#9B8D0D"
   for(i in 1:show.trials){
-    points(choices[i,1],choices[i,2], type = "p", pch =16, cex=2,
+    points(choices.coords[i,1],choices.coords[i,2], type = "p", pch =16, cex=2,
            col=rgb(0.65,0.5,0.15,0.2))
   }
   ### Include a "Responses observed" label next to an arbitrary choice
   show.rw = 50
-  text(choices[show.rw,1]+1,choices[show.rw,2]-0.05,"Responses",
+  text(choices.coords[show.rw,1]+1,choices.coords[show.rw,2]-0.05,"Responses",
        cex=cex.text, col=text.color, f=f)
-  text(choices[show.rw,1]+1,choices[show.rw,2]-0.25,"observed",
+  text(choices.coords[show.rw,1]+1,choices.coords[show.rw,2]-0.25,"observed",
        cex=cex.text, col=text.color, f=f)
   ### Plot / signal the boundary parameter
   arrow.color = "#256962"
@@ -208,7 +208,7 @@ plot.CDDM_Fig1 <- function(trials=500, cddm.par=NA, return.RW = TRUE){
   ### MuX x MuY
   points(tail(draw.angle,1)[1],tail(draw.angle,1)[2], pch=16, col=color2)
   
-  if(return.RW){
+  if(return.Data){
     return(randomWalk$bivariate.data)
   }
 }
@@ -268,4 +268,60 @@ myRThistogram <- function(rt.vector, color=NA, maxY=NA){
 #  plot.CDDM(data, par, choice.col.RGB = c(0.15,.29,.80))       
 #  plot.CDDM_Fig1()
 #}
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Function: Create a 3D scatter plot of choice-RT densities
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+plot.CDDM_3D_density <- function(bivariate.data, densities=NULL, par=NULL, point.col = "blue", 
+                                point.size = 1, main = "CDDM Density") {
+  # Check if required packages are installed
+  if (!requireNamespace("scatterplot3d", quietly = TRUE)) {
+    stop("Package 'scatterplot3d' is needed for this function. Please install it.")
+  }
+  
+  if(is.null(densities)&!is.null(par)){
+     if(is.null(par$drift)){
+           Mu <- rectToPolar(par$mu1, par$mu2)
+           par$drift <- Mu$dLength
+           par$theta <- Mu$dAngle
+     }
+    densities <- dCDDM(bivariate.data, par$drift, par$theta, par$tzero, par$boundary)
+  }
+
+  # Extract choices and RTs
+  choices <- bivariate.data[, 1]  # in radians
+  rts <- bivariate.data[, 2]      # in seconds
+    
+  # Create 3D scatter plot
+  s3d <- scatterplot3d::scatterplot3d(
+    x = choices,
+    y = rts,
+    z = densities,
+    pch = 16,
+    color = point.col,
+    cex.symbols = point.size,
+    xlab = "Choice (radians)",
+    ylab = "Response Time (seconds)",
+    zlab = "Density",
+    main = main,
+    angle = 30,
+    box = TRUE,
+    grid = TRUE,
+    highlight.3d = TRUE
+  )
+  
+  if(!is.null(par)){
+          # Add a legend with parameter values
+          legend_text <- c(
+          paste("Drift =", round(par$drift, 3)),
+          paste("Theta =", round(par$theta, 3)),
+          paste("Boundary =", round(par$boundary, 3)),
+          paste("t0 =", round(par$tzero, 3))
+          )  
+          legend("topright", legend = legend_text, bty = "n")
+  }
+  
+  # Return the scatterplot3d object for potential further customization
+  invisible(s3d)
+}
 
