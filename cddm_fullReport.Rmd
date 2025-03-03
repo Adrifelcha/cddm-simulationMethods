@@ -1,5 +1,5 @@
 ---
-title: "A comparison between sampling approaches for the CDDM in R"
+title: "A comparison between different types of sampling algorithms for the CDDM in R"
 author: "Adriana F. Chávez De la Peña"
 date: "`r Sys.Date()`"
 output:
@@ -182,10 +182,13 @@ dCDDM(c(choice,rt),drift,theta,tzero,boundary)
 ```
 
 ```{r, fig.height=5, echo=FALSE}
-x <- dCDDM(X.RW$bivariate.data,drift,theta,tzero,boundary)
+x <- dCDDM(X.RW$bivariate.data, drift, theta, tzero, boundary)
+
 plot.CDDM_3D_density(bivariate.data = X.RW$bivariate.data,
-                     densities = x)
+                     densities = x,
+                     par = par)
 ```
+
 
 ## pCDDM(*) - cumulate density function
 
@@ -193,12 +196,10 @@ plot.CDDM_3D_density(bivariate.data = X.RW$bivariate.data,
 source(here("code", "cddm", "pCDDM_aux.R"))
 source(here("code", "cddm", "pCDDM.R"))
 
-x <- pCDDM(data_fig1, drift, theta, tzero, boundary, show=TRUE)
+x <- pCDDM(X.RW$bivariate.data, drift, theta, tzero, boundary, show=TRUE)
 ```
 
-
-
-# Algorithm 2: Rejection sampling algorithm
+# Algorithm 2: Rejection sampling algorithms
 
 ```{r, eval=FALSE}
 source("./code/cddm/sim_Rejection.R")
@@ -257,18 +258,29 @@ if(forceRun_Rej|forceAll|!file.exists("./tmp/X.Reject_Uniform.RData")){
 ```{r, fig.height=5}
 par(pty="s", mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0)) 
 plot.CDDM_choiceData(X.Reject_Uniform, par, choice.col.RGB = rgb.Reject)
+text(0, 0, "Uniform")
+text(0, -0.6, "proposal distribution")
 plot.CDDM_choiceData(X.Reject_2DNormal, par, choice.col.RGB = rgb.Reject)
+text(0, 0, "Bivariate Normal")
+text(0, -0.6, "proposal distribution")
 plot.CDDM_choiceData(X.Reject_exGvonM, par, choice.col.RGB = rgb.Reject)
+text(0, 0, "ex-Gaussian and vonMisses")
+text(0, -0.6, "proposal distribution")
 ```
 
 ```{r, fig.height=5}
+maxY <- max(density(X.RW$bivariate.data[,2])$y)
+
 par(mfrow=c(2,2), mar = c(0, 0, 0, 0), mai = c(0, 0, 0, 0)) 
-myRThistogram(X.Reject_Uniform[,2], color=col.Reject)
+myRThistogram(X.Reject_Uniform[,2], color=col.Reject, maxY=maxY)
 lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
-myRThistogram(X.Reject_2DNormal[,2], color=col.Reject)
+text(quantile(X.Reject_Uniform[,2], 0.85), maxY*0.75, "Uniform", col="gray20")
+myRThistogram(X.Reject_2DNormal[,2], color=col.Reject, maxY=maxY)
 lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
-myRThistogram(X.Reject_exGvonM[,2], color=col.Reject)
+text(quantile(X.Reject_2DNormal[,2], 0.85), maxY*0.75, "Bivariate Normal", col="gray20")
+myRThistogram(X.Reject_exGvonM[,2], color=col.Reject, maxY=maxY)
 lines(density(X.RW$bivariate.data[,2]), col = col.RW(1), lwd=3)
+text(quantile(X.Reject_exGvonM[,2], 0.85), maxY*0.75, "ex-Gaussian and vonMisses", col="gray20")
 ```
 
 ```{r, fig.height=6}
@@ -293,18 +305,18 @@ X.Metro <- rCDDM_Metropolis(n,par,plot=TRUE)
 # generated or loaded from previously-saved output files, as indicated in the opening chunk.
 if(forceRun_Met|forceAll|!file.exists("./tmp/X.Metro.RData")){
       start_time <- Sys.time()
-      X.Metro <- sample.Metropolis.cddm(n,par,plot=FALSE)
+      X.Metro <- rCDDM_Metropolis(n,par,plot=FALSE)
       end_time <- Sys.time()
       Metro.time <- round(end_time-start_time, 4)
       save(X.Metro, file = "./tmp/X.Metro.RData")
       save(Metro.time, file = "./tmp/Metro.time.RData")
-      z <- sample.Metropolis.cddm(n,par,plot=TRUE)
+      z <- rCDDM_Metropolis(n,par,plot=TRUE)
 }else{
      # Load already existing output
      load("./tmp/X.Metro.RData")
      load("./tmp/Metro.time.RData")
      # Run the sampling algorithm to show the illlustrative plot
-     z <- sample.Metropolis.cddm(n,par,plot=TRUE)
+     z <- rCDDM_Metropolis(n,par,plot=TRUE)
 }
 ```
 
@@ -632,8 +644,7 @@ compareTime_plot <- function(n.Samples,n.Datasets,
              paste("Rejection Sampling : Y = ", B0.Reject, " + ", B1.Reject, "n", sep=""),
              paste("Metro : Y = ", B0.Metro, " + ", B1.Metro, "n", sep=""),
              paste("invCDF : Y = ", B0.invCDF, " + ", B1.invCDF, "n", sep="")))
-}
-```
+}```
 
 ```{r, echo=FALSE, fig.height=6}
 n.Datasets <- 10
