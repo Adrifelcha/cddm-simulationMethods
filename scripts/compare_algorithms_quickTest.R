@@ -8,21 +8,7 @@
 # single argument specifying the algorithm to test.
 #########################################################################
 forceRun <- TRUE
-# method_tested is a global variable that can be set by the user
-# before running the script. Alternatively, the user can set it here.
-if(!exists("method_tested")){
-    method_tested <- "Rejection_exGvonM"
-}
-# Possible methods:
-# 1) "Metropolis"
-# 2) "RandomWalk"
-# 3) "inverseCDF"
-# 4) "Rejection_Uniform"
-# 5) "Rejection_exGvonM"
-# 6) "Rejection_2DNormal"
-cat("-----------------------------------------------------------\n")
-cat("\n\nSimulation algorithm to be tested:", method_tested, "\n\n")
-cat("-----------------------------------------------------------\n")
+
 #############################################################
 # Load libraries and custom functions
 #############################################################
@@ -43,6 +29,10 @@ source(here("code", "general_functions", "eCDF.R"))
 #############################################################
 #### S E T T I N G S ########################################
 #############################################################
+cat("-----------------------------------------------------------\n")
+cat("\n\nQuick comparison of the different sampling algorithms\n")
+cat("-----------------------------------------------------------\n")
+
 theta = pi
 drift = c(0.5, 1.25, 3)
 tzero = 0.1
@@ -50,17 +40,41 @@ boundary = 4
 
 n = 5000    
 
+cat("\n\nSample parameter set:\n")
+cat("theta = ", theta, "\n")
+cat("tzero = ", tzero, "\n")
+cat("boundary = ", boundary, "\n")
+cat(length(drift), " drift values: ", paste(drift, collapse = ", "), "\n")
+cat("-----------------------------------------------------------\n")
+
+cat("\n\nWe'll generate ", n, " samples using each algorithm.\n")
+cat("-----------------------------------------------------------\n\n\n\n")
+
 
 
 algorithm_types <- c("Metropolis", "RandomWalk", "Rejection")
 algorithms <- list("Metropolis" = c("2DNormal", "2DNormal_2"),
-                   "Rejection_exGvonM" = rejection_exGvonM_algorithm)
+                   "Rejection" = c("Rejection_exGvonM", "Rejection_Uniform", "Rejection_2DNormal"))
 
+samples <- array(dim = c(n, 2, length(unlist(algorithms))))
 
 for(a in length(algorithm_types)){
-    for(b in length(algorithms[[a]])){
-        for(c in length(drift)){
-            
+
+    name_type <- name_algorithmType(algorithm_types[a])
+    cat("-----------------------------------------------------------\n")
+    cat("\n\nCategory:", name_type, "\n\n")
+    cat("-----------------------------------------------------------\n")
+
+    if(algorithm_types[a] == "RandomWalk"){
+        for(d in length(drift)){
+            cat("Drift value:", drift[d], "\n")                        
         }
+
+    }else{
+            for(b in length(algorithms[[a]])){
+                for(c in length(drift)){
+                    
+                }
+            }
     }
 }
