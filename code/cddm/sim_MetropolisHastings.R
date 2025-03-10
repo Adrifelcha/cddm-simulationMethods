@@ -10,7 +10,6 @@
 # 3. Samples each dimension independently
 ###############################################################################
 ########################################################   by Adriana F. Chávez 
-library(circular)   # For von Mises distribution (rvonmises)
 
 rCDDM_MetropolisHastings <- function(n, par, plot=FALSE){
   # Extract model parameters

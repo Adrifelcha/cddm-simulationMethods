@@ -4,8 +4,6 @@
 #####   INVERSE PROBABILITY TRANSFORM ALGORITHM with a grid approximation
 ###############################################################################
 ########################################################   by Adriana F. Chavez 
-library(scatterplot3d) 
-
 sample.invCDF.cddm <- function(n, par, plot=FALSE, color = NA){
   # Set-up - Load important values and define important variables
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

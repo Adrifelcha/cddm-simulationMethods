@@ -9,8 +9,6 @@
 #####      3. Uniform (type="Uniform")
 ###############################################################################
 ########################################################   by Adriana F. Chávez 
-library(mvtnorm)  # For multivariate normal distribution
-library(circular)  # For von Mises distribution (rvm)
 
 rCDDM_Reject <- function(n, par, type="2DNormal", plot=FALSE, createPDF=FALSE){  
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
