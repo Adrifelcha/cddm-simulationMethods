@@ -6,8 +6,7 @@
 #####      Implementation using Ex-Gaussian and von Mises distributions
 ###############################################################################
 ########################################################   by Adriana F. Chávez 
-library(mvtnorm)  # For multivariate normal distribution
-library(circular)  # For von Mises distribution (rvm)
+
 
 rCDDM_Reject_seq <- function(n, par, plot=FALSE, createPDF=FALSE){  
     #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
