@@ -6,9 +6,6 @@
 ########################################################   by Adriana F. Ch?vez 
 #if(!exists("superCalled")){superCalled <- FALSE}
 #if(!superCalled){ source("./dCDDM.R") }
-library(mvtnorm)
-
-
 
 ###############################################################################
 # Transformation functions: ###################################################
