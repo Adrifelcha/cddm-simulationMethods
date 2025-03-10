@@ -48,9 +48,9 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
     # Completion rate (i.e. proportion of trials that did not return NA)
     completion <- mean(!is.na(result$RT))    
      # Difference between mean radian-choice and radian-theta
-    angles <- circular::circular(result$Choice, type="angles", units="radians")
-    mean_angle <- circular::mean.circular(angles)        
-    theoretical_theta <- circular::circular(atan2(params$par$mu2, params$par$mu1))
+    angles <- circular(result$Choice, type="angles", units="radians")
+    mean_angle <- mean.circular(angles)        
+    theoretical_theta <- circular(atan2(params$par$mu2, params$par$mu1))
     angular_error <- as.numeric(mean_angle - theoretical_theta)    
     # Proportion of trials with negative RTs (excluding NAs)
     prop_negative_rt <- mean(result$RT < 0, na.rm=TRUE)
@@ -63,6 +63,7 @@ single_algorithm_test <- function(params, n_trials, method_tested) {
         completion = completion,
         mean_rt = mean(result$RT, na.rm=TRUE),        
         sd_rt = sd(result$RT, na.rm=TRUE),
+        var_rt = var(result$RT, na.rm=TRUE),
         mean_angle = mean_angle,        
         var_angle = var.circular(angles),
         sd_angle = sd.circular(angles),
@@ -485,19 +486,23 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     # Create a 2x3 layout matrix where the right column is for legends
     layout_matrix <- matrix(c(1,2,5,
                             3,4,5), nrow=2, byrow=TRUE)
-    # Set relative widths of columns (first two columns wider than third)
     layout(layout_matrix, widths=c(4,4,1))
     
     # Set margins for plot panels
     par(oma=c(0,1.5,2,0), mar=c(3.5,3,3,2), mgp=c(2,0.7,0),
         cex.main=1.5, cex.lab=1.2, cex.axis=1.1)    
     
+    if(is.null(results$var_rt)) {
+        results$var_rt <- results$sd_rt^2
+    }
+
     # Calculate means and standard deviations
     error_means <- tapply(results$angular_error, results$group, mean)  # Changed from mean_angle
     choice_sds <- tapply(results$sd_angle, results$group, mean)
     choice_var <- tapply(results$var_angle, results$group, mean)
     rt_means <- tapply(results$mean_rt, results$group, mean)
     rt_sds <- tapply(results$sd_rt, results$group, mean)
+    rt_vars <- tapply(results$var_rt, results$group, mean)
     
     # Calculate theoretical MRTs and variances
     drift_lengths <- sapply(param_sets, function(ps) {
@@ -508,12 +513,9 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     theoretical_MRTs <- sapply(seq_along(param_sets), function(i) {
         ezcddm_MRT(drift_lengths[i], param_sets[[i]]$par$boundary, param_sets[[i]]$par$tzero)
     })        
-    theoretical_RT_SDs <- sapply(seq_along(param_sets), function(i) {
-        sqrt(ezcddm_VRT(drift_lengths[i], param_sets[[i]]$par$boundary))
+    theoretical_RT_Vars <- sapply(seq_along(param_sets), function(i) {
+        ezcddm_VRT(drift_lengths[i], param_sets[[i]]$par$boundary)
     })    
-    theoretical_Choice_SDs <- sapply(seq_along(param_sets), function(i) {
-        sqrt(ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary))
-    })
     theoretical_Choice_Vars <- sapply(seq_along(param_sets), function(i) {
         ezcddm_VCA(drift_lengths[i], param_sets[[i]]$par$boundary)
     })
@@ -535,21 +537,22 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
                            drift_lengths[i]))
     })
     
+    
     # Create plots list with their specific properties
     plot_metrics <- list(
         list(data=results$angular_error, means=error_means,
              ylab=expression("Mean choice - " * theta * " (radians)"), 
              main="Mean Choice",
              add_reference=TRUE, ref_value=0),
-        list(data=results$sd_angle, means=choice_sds,
-             ylab="Standard Deviation (radians)", main="Choice Variability",
-             add_reference=TRUE, ref_values=theoretical_Choice_SDs),
+        list(data=results$var_angle, means=choice_var,
+             ylab="Variance (radians²)", main="Choice Variability",
+             add_reference=TRUE, ref_values=theoretical_Choice_Vars),
         list(data=results$mean_rt, means=rt_means,
              ylab="Time (seconds)", main="Mean Response Time",
              add_reference=TRUE, ref_values=theoretical_MRTs),
-        list(data=results$sd_rt, means=rt_sds,
-             ylab="Standard Deviation (seconds)", main="RT Variability",
-             add_reference=TRUE, ref_values=theoretical_RT_SDs)
+        list(data=results$var_rt, means=rt_var,  # Changed from sd_rt to var_rt
+             ylab="Variance (seconds²)", main="RT Variability",
+             add_reference=TRUE, ref_values=theoretical_RT_Vars)
     )
     
     # Create the four plots
@@ -578,16 +581,13 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
             }
         }
         
-        # Add points and axes
         points(jitter(as.numeric(results$group), amount=0.2), plot_info$data,
                col=point_colors_transparent, pch=19)
         axis(2, las=2, cex.axis=0.9)
         axis(1, at=1:length(levels(results$group)), 
              labels=rep(param_labels, length(trial_sizes)), 
              las=2, cex.axis=0.9)             
-        # Add y-axis label
         mtext(plot_info$ylab, side=2, line=2.5, cex=0.9)        
-        # Add means as horizontal lines
         for(i in 1:length(plot_info$means)) {
             segments(i - 0.2, plot_info$means[i],
                     i + 0.2, plot_info$means[i],
@@ -599,43 +599,35 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     mtext(get_title(method_tested), 
           outer=TRUE, cex=1.5, line=0, font=2)
 
-    # Create the legend panel (position 5 in layout)
-    par(mar=c(1,1,1,1))  # Minimal margins for legend space
+    par(mar=c(1,1,1,1))
     plot(0, 0, type="n", bty="n", xaxt="n", yaxt="n", xlab="", ylab="")
     
-    # Enable plotting in outer margins for legend panel
     par(xpd=TRUE)
     
-    # Parameter sets legend at the top
     legend(-1.5, 0.5, legend=legend_labels,
            col=adjustcolor(unique(point_colors), alpha=0.5),
            pch=19, pt.cex=2, title=expression(bold("Parameter Sets")),
            cex=1.2, bty="n")    
     
-    # Trial sizes legend in the middle
     legend(-1.5, 0.3, legend=paste(trial_sizes, "trials"),
            fill=stripe_colors, title=expression(bold("Trial Sizes")),
            cex=1.2, bty="n", ncol=min(1, length(trial_sizes)))    
     
-    # Reference line legend 
     line_legend <- 0
     lines(c(-0.8, 0.6), c(line_legend, line_legend), col="red", lty=3, lwd=3.5)
     text(-0.2, line_legend-0.04, "Theoretical Value", cex=1.2, bty="n")  
-        
-    # Simulation info with only labels in bold
+    
     sim_info <- c(        
         substitute(bold("Repetitions:")),
         substitute(x, list(x = n_reps)),
-        substitute(""),  # Empty line for spacing
+        substitute(""),
         substitute(bold("Date:")),
         substitute(x, list(x = format(Sys.Date(), "%Y-%m-%d")))
     )
     
-    # Add simulation information at the bottom
     legend(-1.5, -0.15, legend = parse(text = sapply(sim_info, deparse)), 
            cex=1.2, bty="n")
     
-    # Reset plotting parameters
     par(xpd=FALSE)
 
     if(!is.na(filename)) { dev.off() }
