@@ -8,7 +8,7 @@
 ##### 2. Metropolis-Hastings algorithm for response times
 ###############################################################################
 ########################################################   by Adriana F. Chávez 
-library(circular)   # For von Mises distribution (rvonmises)
+
 
 rCDDM_Hybrid <- function(n, par, plot=FALSE){
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
