@@ -4,7 +4,6 @@
 #####                     Metropolis Sampling Algorithm
 ###############################################################################
 ########################################################   by Adriana F. Chávez
-library(mvtnorm)
 
 ###############################################################################
 # Helper function for the sampling phase (ensure that the candidate is valid)
@@ -489,6 +488,10 @@ rCDDM_Metropolis <- function(n, par, plot = FALSE, logRT = FALSE, plot_warmup = 
 }
 
 
+
+TryTEST <- FALSE
+if(TryTEST){
+
 # Arbitrary set of parameter values
 drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
 Mu <- polarToRect(drift, theta)
@@ -508,8 +511,8 @@ x <- tryCatch({
 })
 
 
-TryTEST <- FALSE
-if(TryTEST){
+
+
 start_time <- Sys.time()
 pdf(paste0(here("results", "cddm_metropolis_warmup.pdf")), width=8, height=12)
 x  <- rCDDM_Metropolis(n = 1000, par = list(mu1 = 0.5,  mu2 = 0.5, boundary = 5, tzero = 0.1), plot=TRUE, logRT = FALSE, plot_warmup = TRUE, n_chains = 5)
