@@ -485,7 +485,7 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
     
     # Create a 2x3 layout matrix where the right column is for legends
     layout_matrix <- matrix(c(1,2,5,
-                            3,4,5), nrow=2, byrow=TRUE)
+                              3,4,5), nrow=2, byrow=TRUE)
     layout(layout_matrix, widths=c(4,4,1))
     
     # Set margins for plot panels
@@ -545,13 +545,13 @@ plot_algorithm_summaries <- function(results, param_sets, trial_sizes, n_reps, m
              main="Mean Choice",
              add_reference=TRUE, ref_value=0),
         list(data=results$var_angle, means=choice_var,
-             ylab="Variance (radians²)", main="Choice Variability",
+             ylab="Variance (radians)", main="Choice Variability",
              add_reference=TRUE, ref_values=theoretical_Choice_Vars),
         list(data=results$mean_rt, means=rt_means,
              ylab="Time (seconds)", main="Mean Response Time",
              add_reference=TRUE, ref_values=theoretical_MRTs),
-        list(data=results$var_rt, means=rt_var,  # Changed from sd_rt to var_rt
-             ylab="Variance (seconds²)", main="RT Variability",
+        list(data=results$var_rt, means=rt_vars,  # Changed from sd_rt to var_rt
+             ylab="Variance (seconds)", main="RT Variability",
              add_reference=TRUE, ref_values=theoretical_RT_Vars)
     )
     
