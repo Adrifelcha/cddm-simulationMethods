@@ -11,7 +11,7 @@ forceRun <- TRUE
 # method_tested is a global variable that can be set by the user
 # before running the script. Alternatively, the user can set it here.
 if(!exists("method_tested")){
-    method_tested <- "Rejection_exGvonM"
+    method_tested <- "Rejection_sequential"
 }
 # Possible methods:
 # 1) "Metropolis"
@@ -20,25 +20,14 @@ if(!exists("method_tested")){
 # 4) "Rejection_Uniform"
 # 5) "Rejection_exGvonM"
 # 6) "Rejection_2DNormal"
+# 7) "Rejection_sequential"
 cat("-----------------------------------------------------------\n")
 cat("\n\nSimulation algorithm to be tested:", method_tested, "\n\n")
 cat("-----------------------------------------------------------\n")
 #############################################################
 # Load libraries and custom functions
 #############################################################
-cat("Loading R libraries...\n")
-library("here")
-library("circular")
-
-cat("\nLoading custom function scripts from /code/cddm...\n\n")
-source(here("code", "cddm", "sim_randomWalk.R"))        
-r_files <- list.files(path = here("code", "cddm"), 
-                      pattern = "\\.R$", 
-                      full.names = TRUE)
-for(file in r_files) {
-    source(file)
-}
-source(here("code", "general_functions", "eCDF.R"))
+source(here("scripts", "load_libraries.R"))
 
 #############################################################
 #### S E T T I N G S ########################################
@@ -63,7 +52,7 @@ cat("Setting trial sizes to test...\n")
 trial_sizes <- c(80, 150, 300, 500, 1000)
 cat("Trial sizes:", trial_sizes, "\n\n")
 # Number of replications
-n_reps <- 100
+n_reps <- 50
 cat("Setting number of replications:", n_reps, "\n\n")
 
 ######################################################################
