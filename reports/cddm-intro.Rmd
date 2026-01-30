@@ -1,0 +1,540 @@
+---
+title: "What is the Circular Drift Diffusion Model (CDDM)?"
+author: "Adriana F. Chávez De la Peña"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::robobook:
+    self_contained: true
+    thumbnails: false
+    lightbox: true
+    gallery: true
+    cards: false
+    highlight: tango
+    fig_width: 12 
+    fig_height: 8 
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(0703)
+```
+
+The Circular Drift-Diffusion Model (CDDM) is a sequential sampling decision model (a.k.a. evidence accumulation model) developed as a a two-dimensional extension of the well-known Drift-Diffusion Model  where the decision space is represented as a bounded continuum, which constitutes the main difference with respect to the usual binary-choice setting. To capture this decision process, the CDDM model uses a circle to capture the space of possible answers to be observed, with its radius representing the threshold that defines the amount of information required to commit and report a particular value, once any given point on the circumference is reached.
+
+The circular drift-diffusion model \citep[CDDM;][]{smith2016diffusion} is a sequential sampling decision model that extends the widely used drift-diffusion model \citep[DDM;][]{Ratcliff1978, RatcliffMcKoon2008} to the circular domain. In the classical DDM, it is assumed that evidence from a stimulus is repeatedly sampled until a boundary is reached, at which point the decision associated with that boundary is made. The model makes predictions about both the decisions people make and the time they take to make them. The DDM is designed for tasks with discrete decisions and is most often applied to two-choice tasks.
+
+
+Just as the classical DDM, the CDDM assumes that the system gathers information at each point in time to move from the initial starting point, which for an unbiased system refers to a point equally distant from every available decision bounds (i.e. the center of the circle), to any point on the circumference of the circle.
+
+The CDDM assumes that evidence for a decision begins at the origin of a circle and is accumulated sequentially in time until the evidence tally reaches the circumference. Evidence accumulation is represented as a two-dimensional random walk, such that the evidence state $\bm{s}_t$ at any point in time $t$ can be described using Cartesian coordinates $\bm{s}_t = \left( x_t, y_t \right)$, or the corresponding polar coordinates $m_t$ and $d_t$, where $m_t$ is the radial distance from the origin and $0 \leq d_t < 2\pi$ is the angular orientation in radians. Once the evidence accumulation reaches the circumference, the corresponding decision alternative is selected.  The result of this process on each trial is a two-dimensional outcome containing the angle of the alternative selected in radians and the associated response time. 
+
+\vspace{-0.5in}
+
+```{r, fig.width=5,fig.height=5.6, fig.align='center', echo=FALSE}
+library(plotrix) #Library to draw circles
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+draw.circle(0,0,7.5)
+draw.circle(0,0,7.5, border = "goldenrod4", lty=3, lwd=5)
+abline(h = 0, lty=2, col="gray50")
+abline(v = 0, lty=2, col="gray50")
+points(0,0, col="darkgreen", pch=16, cex=1.2)
+legend("topright", "Starting point", col="darkgreen", pch=16, cex=0.7, box.col = "white")
+legend("topleft", c("Decision bound","Treshold"), col=c("goldenrod4","red"), lty=c(3,1), cex=0.7, box.col = "white", lwd=c(2,1))
+lines(c(0,0),c(0,7.5), col="red", lty=1)
+lines(c(0,7.5),c(0,0), col="red", lty=1)
+
+```
+
+
+## Model parameters
+
+## Likelihood function
+
+## Random-walk emulation
+
+
+# 2. Single trial emulation of the decision process
+
+To get a better understanding on how the CDDM works, let us emulate the decision process that takes place within any given trial. 
+
+```{r, fig.width=5,fig.height=5.6, fig.align='center'}
+iter <- 5000       # Maximun number of steps/iterations for gathering information
+thresh <- 7.5             # 1) Threshold for making a response (Radius)
+s.init <- c(0,0)          # 2) Initial state; c(0,0) indicates no bias
+mu1.drift <- 0.3          # 3) Average step size on X 
+mu2.drift <- 0.4          # 4) Average step size on Y
+sigma.driftrate <- 0.6    # 5) Variance in the length of steps given in either X or Y
+
+state <- matrix(nrow=iter,ncol=2) #Empty matrix to be filled with coordinates (states)
+state[1,] <- s.init  #Declare initial state
+```
+
+In each moment in time, the system gathers information that moves the decision process from the initial state towards the circumference of the circle by an accumulation process similar to that described in the standard DDM, which finishes according to a stopping rule that compares the amount of information gathered at any moment versus the threshold set by the system.
+
+```{r}
+#Part 1: Acquiring/Accumulating/Updating information
+for(t in 2:iter){    #In each iteration/step...
+  d1 <- rnorm(1,mu1.drift,sigma.driftrate)  #A random step-size is sampled from a Normal distribution
+  d2 <- rnorm(1,mu2.drift,sigma.driftrate)      #...for each, the X (d1) and Y (d2) axes
+  state[t,] <- state[t-1,]+c(d1,d2)   #We update the information state
+
+#Part 2: Evaluate whether we have passed the threshold
+  pass <- sqrt(sum(state[t,]^2))  # The distance between current state and origin (0,0) is measured
+  if(pass >= thresh){ #If this distance is greater than the threshold (a.k.a. ratio), then..
+    print(paste("Finished in", t, "iterations"))  # We identify the number of iterations passed
+    break}} #The accumulation process ends
+  
+#Part 3: Make sure the decision process and the line drawn end exactly at threshold 
+if(pass> thresh){   #If the last state is further away than the threshold (i.e. out of the circle)
+  A <- state[t-1,]    #Then we take the second to last state
+  B <- state[t,]      #and this final state as reference points
+  last.step.x <- seq(A[1],B[1],length.out = 100)  #We define 100 different intermediate points
+  last.step.y <- seq(A[2],B[2],length.out = 100)      #.. on each the X and Y axes
+  for(i in 1:length(last.step.x)){    # Now, each of these middle points gets examined
+    pass2 <- sqrt(last.step.x[i]^2+last.step.y[i]^2)  # in terms of their distance from origin
+    if(round(pass2,1) == thresh){  # so that we can stop right at the threshold
+      circunf <- c(last.step.x[i],last.step.y[i]) #and locate the exact point on the circumference
+      break}} # where the decision process ends
+  state[t,] <- circunf} #and we redefine our final state
+```
+\clearpage
+
+# Plotting the single-trial random-walk process
+
+```{r, fig.width=6, fig.height=6.6, fig.align="center"}
+library(plotrix) #Library to draw circles
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE) #Create empty plot
+draw.circle(0,0,radius = thresh, border = "indianred4") #Draw circle
+points(state, type = "b", col = "goldenrod4", pch=16, cex=0.5) #Accumulation process
+points(0,thresh, col ="red", pch=16) #Make sure ratio is correct on Y
+points(thresh,0, col= "red", pch=16) #..and X axis
+abline(h = 0, lty=2, col="gray50") # Draw reference lines at y=0
+abline(v = 0, lty=2, col="gray50") #... and x=0
+text(-8.5,9.9,paste("Threshold =", thresh), cex = 0.75) #Print values used on our emulation
+text(-9,9,paste("MuX =", mu1.drift), cex = 0.75)
+text(-9,8.1,paste("MuY =", mu2.drift), cex = 0.75)
+text(-8.6,7.2,paste("Sigma2 =", sigma.driftrate), cex = 0.75)
+text(6,8.5,paste("No. iterations =", t), cex = 0.75)
+```
+
+\clearpage
+
+# 3. Multiple trials
+
+The accumulation process illustrated in our previous emulation is the result of randomly sampling different "step sizes" that determine how much we move in the X and Y axis on any given point in trial. In other words, there are multiple outcomes possible for any given combination of true values for mu1, mu2 and sigma, with some of them being more likely than others.
+
+For example, let us observe what would happen if we were to repeat the very same accumulation process 200 times:
+
+```{r, fig.width=8, fig.height=4.6, fig.align="center"}
+trials <- 200  #Number of repetitions of the accumulation process
+state <- array(NA, dim = c(iter, 2, trials))   #States are saved in a 3dimensional array
+finalT <- NA #An additional empty vector to store RT (a.k.a. total number of iterations)
+
+#This part of the code is exactly the same as before, except that:
+for(a in 1:trials){  #1) Now we have an additional "for" loop for each trial
+state[1,,a] <- s.init   #2) and States are stored in our new 3D array
+for(t in 2:iter){
+  d1 <- rnorm(1,mu1.drift,sigma.driftrate)
+  d2 <- rnorm(1,mu2.drift,sigma.driftrate)
+  state[t,,a] <- state[t-1,,a]+c(d1,d2)
+  pass <- sqrt(sum(state[t,,a]^2))
+  if(pass >= thresh){
+    finalT[a] <- t   #We store the number of total iterations required on each trial
+    break}}
+
+if(pass> thresh){
+  A <- state[t-1,,a];   B <- state[t,,a]
+  last.step.x <- seq(A[1],B[1],length.out = 100)
+  last.step.y <- seq(A[2],B[2],length.out = 100)
+  for(i in 1:length(last.step.x)){
+    pass2 <- sqrt(last.step.x[i]^2+last.step.y[i]^2)
+    if(round(pass2,1) == thresh){
+      circunf <- c(last.step.x[i],last.step.y[i])
+      break}}
+  state[t,,a] <- circunf}}
+
+par(mfrow = c(1,2))  ################ Include 2 plots
+# First we present all the random-walk processes registered for every trial
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+for(b in 1:trials){ # Add a different line per trial
+  points(state[,,b], type = "l", col=rgb(1,0,0.5,0.1))}
+points(0,thresh, col ="red", pch=16);points(thresh,0, col= "red", pch=16)
+draw.circle(0,0,radius = thresh, border = "indianred4")
+abline(h = 0, lty=2, col="gray50"); abline(v = 0, lty=2, col="gray50")
+text(-8.2,9.9,paste("Threshold =", thresh), cex = 0.5)
+text(-9,9,paste("MuX =", mu1.drift), cex = 0.5)
+text(-9,8.1,paste("MuY =", mu2.drift), cex = 0.5)
+text(-8.6,7.2,paste("Sigma2 =", sigma.driftrate), cex = 0.5)
+text(6,8.5,paste("No. trials =", trials), cex = 0.55)
+mtext("Random-walk process", 3, line=1.2, f=2)
+# Then, we focus merely on the final choices registered.
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+for(b in 1:trials){ #Take just the last state
+  points(state[finalT[b],1,b], state[finalT[b],2,b], pch =16, cex=0.9, col=rgb(1,0,0.5,0.1))} 
+points(0,thresh, col ="red", pch=16); points(thresh,0, col= "red", pch=16)
+draw.circle(0,0,radius = thresh, border = "gray60")
+abline(h = 0, lty=2, col="gray50"); abline(v = 0, lty=2, col="gray50")
+mtext("Final answers observed", 3, line=1.2, f=2)
+```
+
+\vspace{-1in}
+
+From the plots presented above, we can tell that certain regions of the circumference are reached with a higher frequency than others. In fact, there are multiple points on the circumference that weren't observed even once.
+
+## Distribution of RT (total no. of iterations) required
+
+If we plot a histogram for the Response Times registered across trials (a.k.a. the total number of iterations needed to reach the threshold), we get a positive-biased curve that aligns with what we would expect based on the literature.
+
+```{r, fig.height=3.8}
+hist(finalT, col = "darkorchid4", breaks = 10, ann=FALSE)
+mtext("No. Iterations (RT)", 1, line=2, f=2)
+mtext("Frequency", 2, line = 2.5)
+```
+
+
+# 5. Parameter interpretation and assumptions
+
+## Starting point
+
+The evidence accumulation process is captured at each point in time as a pair of x,y coordinates that are assumed to move from an initial point towards a specific location on the circumference. 
+
+For an unbiased system, the starting point is assumed to be located at the origin (0,0), since this would imply that the accumulation process needs to cover the same distance to reach the circumference of the circle at any given point from its initial state.
+
+All the methods presented in the present report were developed for unbiased systems.
+
+## Threshold ($a$)
+
+Under the CDDM, the ratio of the circle used to represent the set of choices available to the observer represents the threshold (often also referred to as the "criteria" or "boundary") that determines how much information the system needs to gather in order to produce a certain response, depending on at which point the accumulation process crosses the circumference.
+
+The threshold is assumed to be under the decision-maker's control and it is assumed to have a strong impact on the speed-accuracy trade-off settings of the task. Overall, higher criteria lead to slower but more accurate responses, as it takes more time for the system to reach the circumference.
+
+## Drift rates ($\mu_1$ and $\mu_2$)
+
+The drift rate parameters $\mu_1$ and $\mu_2$ are used to capture the mean sizes of the steps observed on the x and y axes (i.e. the rate of evidence growth) on each iteration of the information accumulation process.
+
+The drift rate parameters are assumed to depend directly on how informative the stimulus observed is (i.e. the quality of the information it contains), so that non-informative stimuli would be characterized by $\mu_1=0$ and $\mu_2=0$ (i.e a "zero-drift' process) where the final response is assumed to be produced at random.
+
+The zero-drift process is radially symmetrical (every response becomes equally likely to be  observed), whereas a nonzero-drift process wouldn't.
+
+## Diffussion coefficient ($\sigma^2$)
+
+The diffusion coefficient represent a stimulus-independent source of variation (i.e. spread of evidence) and it is assumed to be independent and identical across the horizontal and vertical growth of the evidence accumulation process.
+
+# 6. Angle response
+
+The specific x,y coordinates registered for each circumference point observed across trials don't really convey much information, as their specific values are highly dependent on the threshold used by the system. To make these coordinates interpretable and useful under the CDDM, we need to transform them into \textbf{angles}. 
+
+Let us now work a couple of functions in R that serve us for this purpose, first transforming the x,y coordinates into a degree angle, and then using this transformed value as the input for a different function, which retrieves the angle measured in radians.
+
+```{r}
+#X,Y coordinates are transformed into an angle (in degrees)
+theta.d <- function(x,y){   #This function takes the X,Y coordinates as inputs
+  theta <- atan2(y,x) * 180 / pi  #Angle with respect of y=0
+  if(theta<0){theta <- theta+360}   #Correction for whole circle (360)
+  return(theta)} #return Theta value
+#The angle (in degrees) is now express in radians.
+theta.r <- function(theta.d){  #This functiont takes angle in degrees as input
+  theta <-  theta.d * pi /180  #Transform to radians
+  return(theta)}
+```
+
+As an example, let's work with the angle corresponding to the coordinates registered in the last trial.
+
+```{r}
+x <- state[t,1,trials]   #Final state x coordinate recorded
+y <- state[t,2,trials]   #Final state y coordinate recorded
+angle <- theta.d(x,y); angle
+radians <- theta.r(angle); radians
+```
+
+\vspace{-0.6in}
+
+```{r, fig.width=5, fig.height=5.6, fig.align="center", echo=FALSE}
+angle <- angle * pi/180
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+points(x,y,type = "p", pch =16, cex=0.9,
+         col=rgb(1,0,0.5,1))
+points(0,thresh, col ="black", pch=15, cex=0.6)
+points(thresh,0, col= "black", pch=15, cex=0.6)
+points(-thresh,0, col= "black", pch=15, cex=0.6)
+points(0,-thresh, col ="black", pch=15, cex=0.6)
+draw.circle(0,0,radius = thresh, border = "gray60")
+draw.arc(0,0,thresh,angle1=0,angle2=angle, col = "goldenrod3")
+draw.radial.line(0,thresh,c(0,0),angle = angle, col=rgb(1,0,0.5,1))
+abline(h = 0, lty=2, col="gray50")
+abline(v = 0, lty=2, col="gray50")
+text(-7.3,9.9,paste("Threshold =", thresh), cex = 0.75)
+text(-7.8,8.9,paste("MuX =", mu1.drift), cex = 0.75)
+text(-7.8,7.9,paste("MuY =", mu2.drift), cex = 0.75)
+text(-7.8,6.9,paste("Sigma2 =", sigma.driftrate), cex = 0.75)
+text(6,8.5,paste("No. trials =", trials), cex = 0.75)
+legend("bottomleft", col=c(rgb(1,0,0.5,1),"goldenrod3"), legend = c("Response Angle","Arc length"), lty = c(1,2,1), cex=0.7)
+```
+
+\vspace{-0.8in}
+
+\textbf{\textit{Note when working in R:}} The arc length and the radial line shown in the previous plot were added by including the following lines after the code shown before:
+
+    draw.arc(0,0,thresh,angle1=0,angle2=angle, col = "red")
+    draw.radial.line(0,thresh,c(0,0),angle = angle, col="purple")
+
+\clearpage
+    
+# 7. Responses and Response Times (Probability functions)
+
+From our initial simulation presented in Section 2, we know that there are 5 different parameters that we need to specify in order to be able to emulate the information accumulation process that takes place on any given trial:
+
+1. Initial state (s.init)
+2. Threshold (thresh)
+3. Average step size on X (Mu.1)
+4. Average step size on Y (Mu.2)
+5. The variance on the steps size
+
+As illustrated in Sections 3 and 4, the specific values used across \textbf{these parameters have an impact in both} defining which are the most likely subsets of \textbf{responses} (i.e. the overall direction in which information is accumulated, $\theta$) \textbf{and response times} (i.e. how quickly the system can reach the circumference, $t$) to be observed. Hence, performance on any trial is captured by the random pair ($\theta$,$t$).
+
+The model establishes that the probability of observing a certain response (as defined by its angle $\theta$, measured in radians) with Response Time $t$ ($\mbox{Pr}(\mbox{Angle}=\theta \cap RT=t)$) is defined as:
+
+\vspace{-0.15in}
+
+\begin{align*}
+\mbox{Pr}(\mbox{Angle}=\theta \cap RT=t)= \Big[\mbox{exp}(\frac{a(\mu_1\cos(\theta)+\mu_2\sin(\theta))}{\sigma^2})- \frac{|\mu|^2(t-t_{ND})}{2\sigma^2}\Big] \times \Big[\frac{\sigma^2}{a^2}\sum_{k=1}^n\frac{j_{0,k}}{J_1(j_{0,k})}\mbox{exp}(-\frac{j^2_{0,k}\sigma^2(t-t_{ND})}{2a^2})\Big]
+\end{align*}
+
+\textcolor{blue}{\textit{\textbf{Important note}:} One of the main references used to create this tutorial was Kvam and Turner, (2021), which was found to be really helpful in understanding the overall dynamics of the model. However, it may be noted that there's an error in the main equation they present for this model, where they had written $\frac{a^2}{\sigma^2}$ instead of $\frac{\sigma^2}{a^2}$, as originally proposed by Smith (2016).}
+
+Under the CDDM framework, the angle corresponding to the response observed is assumed to be independent from the RT registered, and so the equation presented consists on the product of what can be think of as two different functions: a function describing the probability of observing a certain response angle (first square bracket) and a function related to the probability of observing a certain response time (second square bracket).
+
+In the probability function presented above $a$ represents the threshold, $t_{ND}$ captures the No-Decision time (i.e. elapsed time that cannot be attributed to the decision process), $\mu_1$ is the average step size on X, $\mu_2$ is the average step size on Y and $\sigma^2$ is the variance on step sizes. The function $J(\cdot)$ represents the \textbf{first-order Bessel function of the first kind}, with the elements $j_{0,k}$ representing the zeros of the zero-order Bessel function of the first kind. The sum $\sum_{k=1}^n$ allows us to iterate and evaluate the function for the first $n$ zeros. Hypothetically, this process should extend to infinite ($n = \infty$), but it has found to be very well approximated with $n\leq150$. It is also important to note that \textcolor{red}{\textbf{the angle $\theta$, is expressed in radians.}}
+
+```{r}
+## Write our probability function in R for the CDDM model:
+probFunction <- function(theta,mu1,mu2,sigma.driftrate,thresh,tnd){ 
+  #### Step 1: Let's begin with some definitions
+  mu.vector <- c(mu1,mu2)            # Define Mu vector
+  mu.mag <- sqrt(sum(mu.vector^2))   # Magnitude of Mu vector      
+
+  ### Step 2: Let's work terms related to the Probability of Response
+  pResp.frac1 <- (thresh*((mu.vector[1]*cos(theta))+(mu.vector[2]*sin(theta))))/(sigma.driftrate^2)
+  pResp.frac2 <- ((mu.mag^2)*(t-tnd))/(2*(sigma.driftrate^2))
+  pResp <- exp(pResp.frac1 - pResp.frac2) 
+
+  #### Step 3: Let's build terms related to the Probability of Response Time 
+  library(CircularDDM)  # Loading besselzero function
+  bess <- NULL  #Empty vector to store outcome of bessel function
+  for(k in 1:150){  #Iterate the sum up to n = 150
+    j <- besselzero(0,k,1)
+    pRT.frac1 <- j/besselJ(j,1)
+    pRT.frac2 <- exp(-(((j^2)*(sigma.driftrate^2)*(t-tnd))/(2*(thresh^2))))
+    b <- pRT.frac1 * pRT.frac2
+    bess[k] <- sum(b) 
+      if(k>1){if(round(bess[k],3) == round(bess[k-1],3)){break}}} #End when convergence is achieved
+  pRT.term1 <- (sigma.driftrate^2)/(thresh^2)
+  pRT.term2 <- sum(bess)
+  pRT <- pRT.term1 * pRT.term2 
+  probFunction <- pRT*pResp #Overall joint probability function
+return(probFunction)} # Retrieve probability
+```
+
+Since Response Times and Response Angles are assumed to be independent from each other for unbiased systems with no inter-trial variability in the starting point nor the values of $\mu_1$ and $\mu_2$, we can explore how this probability function works for every possible angle to be observed, keeping the response time and every other parameter constant, using the same values as in Section 4:
+
+```{r, fig.align="center", fig.height=3.3}
+tnd <- 0  # Define some No-decision time
+angles <- seq(1,360,1)  # All possible angles
+angles <- theta.r(angles) # Transform into radians
+Probs <- NULL  #Empty vector to store probabilities
+for(a in 1:length(angles)){ # For each angle defined compute the probability
+    Probs[a] <- probFunction(angles[a],mu1.drift,mu2.drift,sigma.driftrate,thresh,tnd)} 
+```
+
+\vspace{-0.85in}
+
+```{r, fig.align="center", fig.height=3.5, echo=FALSE}
+plot(Probs, type = "l", axes=FALSE, xlab="Angle", ylab="Probability")
+axis(2,seq(0,0.035,0.005),seq(0,0.035,0.005), las=2); axis(1,seq(1,360,10),seq(1,360,10))
+```
+\vspace{-0.3in}
+
+Now, for comparison, let's take a look at responses and response angles observed in our simulation..
+
+\vspace{-0.9in}
+
+```{r, fig.width=7.2, fig.height=4.2, fig.align="center", echo=FALSE}
+par(mfrow = c(1,2))
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+for(b in 1:trials){
+  points(state[finalT[b],1,b],
+         state[finalT[b],2,b],
+         type = "p", pch =16, cex=0.9,
+         col=rgb(1,0,0.5,0.1))}
+points(0,thresh, col ="red", pch=16)
+points(thresh,0, col= "red", pch=16)
+draw.circle(0,0,radius = thresh, border = "gray60")
+abline(h = 0, lty=2, col="gray50")
+abline(v = 0, lty=2, col="gray50")
+text(-7.3,9.9,paste("Threshold =", thresh), cex = 0.6)
+text(-7.8,9,paste("MuX =", mu1.drift), cex = 0.6)
+text(-7.8,8.1,paste("MuY =", mu2.drift), cex = 0.6)
+text(-7.8,7.2,paste("Sigma2 =", sigma.driftrate), cex = 0.6)
+text(6,8.5,paste("No. trials =", trials), cex = 0.6)
+
+thetas <- NULL  #Empty array to store angles
+for(b in 1:trials){  #For each trial ran
+  thetas[b] <- theta.d(state[finalT[b],1,b],state[finalT[b],2,b])} #Compute corresponding angle
+
+hist(thetas, breaks = (360/10), col="pink2", xlab="Angles (degrees)", ylab="Frequency", axes=FALSE, main="")
+axis(1,seq(1,360,10),seq(1,360,10)); axis(2,seq(1,25,5),seq(1,25,5), las=2)
+```
+
+## Expected Angle response ($\theta_\mu$)
+
+If we think of the drift parameters $\mu_1$ and $\mu_2$ as a vector $\mathbf{\mu}= (\mu_1,\mu_2)$, its direction can be used to capture the angle (i.e. the \textbf{phase angle}, $\theta_\mu$) corresponding to position on the circumference that is more likely to be reached based on the mean rate of evidence growth expected on the x ($\mu_1$) and y ($\mu_2$) axes.
+
+```{r}
+PhaseAngle <- 1/tan((mu2.drift)/(mu1.drift)); PhaseAngle
+```
+
+When the accumulating evidence hits the circumference at the point that corresponds to the phase angle of the drift (and therefore, $\theta-\theta_\mu=0$), the system is said to behave as a maximum likelihood observer, as this point is assumed to correspond to the most probable response angle.
+
+The phase angle is assumed to depend on the identity of the stimuli.
+
+\vspace{-0.7in}
+
+```{r, fig.width=4, fig.height=4.6, echo=FALSE, fig.align="center"}
+plot(-10:10,-10:10,type="n", ann = FALSE, axes = FALSE)
+for(b in 1:trials){
+  points(state[finalT[b],1,b],
+         state[finalT[b],2,b],
+         type = "p", pch =16, cex=0.9,
+         col=rgb(1,0,0.5,0.1))}
+points(0,thresh, col ="red", pch=16)
+points(thresh,0, col= "red", pch=16)
+draw.circle(0,0,radius = thresh, border = "gray60")
+abline(h = 0, lty=2, col="gray50")
+abline(v = 0, lty=2, col="gray50")
+text(-7.3,9.9,paste("Threshold =", thresh), cex = 0.6)
+text(-7.8,9,paste("MuX =", mu1.drift), cex = 0.6)
+text(-7.8,8.1,paste("MuY =", mu2.drift), cex = 0.6)
+text(-7.8,7.2,paste("Sigma2 =", sigma.driftrate), cex = 0.6)
+text(6,8.5,paste("No. trials =", trials), cex = 0.6)
+draw.radial.line(0,thresh,c(0,0),angle = PhaseAngle, col="indianred", lty=2)
+legend("bottomleft", col=c("indianred"), legend = c("Phase Angle"), lty = c(2), cex=0.7)
+```
+\vspace{-1in}
+
+## Expected RT
+
+From the density expressed in the joint probability function presented before, we can obtain the expected response time by computing the expectation after conditioning with respect to the hitting probability.
+
+\begin{align*}
+\tilde{E}[T] = \frac{aI_1(\frac{a||\mathbf{\mu}||}{\sigma^2})}{||\mathbf{\mu}|| I_0(\frac{a||\mathbf{\mu}||}{\sigma^2})}
+\end{align*}
+
+```{r}
+ExpRT <- function(thresh, mu1.drift, mu2.drift, sigma.driftrate){
+  mus <- c(mu1.drift,mu2.drift)
+  mu.mag <- sqrt(sum(mus^2))
+  library(CircularDDM)
+  Num <- thresh*besselI((thresh*mu.mag)/sigma.driftrate^2,1)
+  Denom <- mu.mag*besselI((thresh*mu.mag)/sigma.driftrate^2,0)
+  ExpRT <- Num/Denom
+  return(ExpRT)}
+
+ExpRT(thresh,mu1.drift,mu2.drift,sigma.driftrate)
+```
+
+## Response Time and Response Angle independence
+
+As established by Smith (2016), for an unbiased system that doesn't display any across-trial variability in the starting point nor in the drift and diffussion parameters, we assume that Response Times and Response Angles are independent (hence, the joint probability function presented above). These conditions are met by the simulation process presented in Sections 2, 3 and 4, where we didn't induce any kind of inter-trial variability in terms of either $\mu_1, \mu_2, \sigma^2$ nor the starting point.
+
+For proof, let us explore the correlation between the response times and response angles observed in our simulated data:
+
+\vspace{-0.8in}
+
+```{r, fig.align="center", fig.height=3.5, fig.width=4, echo=FALSE}
+plot(finalT, thetas, pch=16, xlab = "Response Times", ylab = "Angles", cex=0.7)
+```
+
+```{r}
+cor(finalT,thetas) #Correlation between RT and Response Angles
+```
+
+Let us define multiple subsets, so that we can observe the corresponding Response time histogram for each one of them:
+
+\vspace{-0.2in}
+
+
+```{r, echo=FALSE, fig.height=4.2}
+par(mfrow = c(2,4))
+hist(finalT[which(thetas>0&thetas<=45)], main="0 < angle <= 45", breaks=seq(0,2400,200), xlab="Response Time")
+hist(finalT[which(thetas>45&thetas<=90)], main="45 < angle <= 90", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>90&thetas<=135)], main="90 < angle <= 135", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>135&thetas<=180)], main="135 < angle <= 180", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>180&thetas<=225)], main="180 < angle <= 225", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>225&thetas<=270)], main="225 < angle <= 270", breaks=seq(0,2400,200), xlab="", ylab="",col="white", border="white")
+hist(finalT[which(thetas>270&thetas<=315)], main="270 < angle <= 315", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>315&thetas<=360)], main="315 < angle <= 360", breaks=seq(0,2400,200), xlab="", ylab="")
+```
+
+All of the histograms presented peak at very similar Response Times, even though the overall shape of these histograms isn't exactly the same across subsets. This is most likely due to the fact that we only observed 200 trials, so that a few of these histograms correspond to very few occasions, or none at all.
+
+With this in mind, we may want to repeat our simulation, this time using $10x$ trials:
+
+\vspace{-0.35in}
+
+```{r, fig.height=3.2, fig.align="center", echo=FALSE}
+par(mfrow = c(1,2))
+trials <- 2000  # 10x trials!
+state <- array(NA, dim = c(iter, 2, trials))   #States are saved in a 3dimensional array
+finalT <- NA #An additional empty vector to store RT (a.k.a. total number of iterations)
+
+# We begin the accumulation process once again (Iterate between trials and moments in time)
+for(a in 1:trials){  
+state[1,,a] <- s.init   
+for(t in 2:iter){
+  d1 <- rnorm(1,mu1.drift,sigma.driftrate); d2 <- rnorm(1,mu2.drift,sigma.driftrate)
+  state[t,,a] <- state[t-1,,a]+c(d1,d2)
+  pass <- sqrt(sum(state[t,,a]^2))
+  if(pass >= thresh){
+    finalT[a] <- t   #We store the number of total iterations required on each trial
+    break}}
+
+# Find exact point on circumference
+if(pass> thresh){
+  A <- state[t-1,,a]; B <- state[t,,a]
+  last.step.x <- seq(A[1],B[1],length.out = 100)
+  last.step.y <- seq(A[2],B[2],length.out = 100)
+  for(i in 1:length(last.step.x)){
+    pass2 <- sqrt(last.step.x[i]^2+last.step.y[i]^2)
+    if(round(pass2,1) == thresh){
+      circunf <- c(last.step.x[i],last.step.y[i]); break}}
+  state[t,,a] <- circunf}}
+
+#Now, we convert these final states into angles (in degrees)
+thetas <- NULL  #Empty array to store angles
+for(b in 1:trials){  #For each trial ran
+  thetas[b] <- theta.d(state[finalT[b],1,b],state[finalT[b],2,b])} #Compute corresponding angle
+```
+
+```{r, fig.align="center", fig.height=3, echo=FALSE}
+par(mfrow = c(1,2))
+hist(thetas, breaks = (360/10), col="pink2", xlab="Angles (degrees)", ylab="Frequency", 
+     axes=FALSE, main = "(2000 trials)")
+axis(1,seq(1,360,10),seq(1,360,10)); axis(2,seq(1,250,50),seq(1,250,50), las=2)
+Cor <- cor(finalT,thetas) #Correlation between RT and Response Angles
+
+plot(finalT, thetas, pch=16, xlab = "Response Times", ylab = "Angles", cex=0.7)
+```
+
+As we can see, the histogram of response angles observed on the 2,000 trials resembles even more the pattern portrayed by the pdf function previously presented. Furthermore, we confirm that there's not a correlation between response angles and RTs ($\mbox{Corr}=$ `r Cor`), which can also be appreciated if we plot again the different histograms for different angle subsets.
+
+```{r, echo=FALSE, fig.height=4.5}
+par(mfrow = c(2,4))
+hist(finalT[which(thetas>0&thetas<=45)], main="0 < angle <= 45", breaks=seq(0,2400,200), xlab="Response Time")
+hist(finalT[which(thetas>45&thetas<=90)], main="45 < angle <= 90", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>90&thetas<=135)], main="90 < angle <= 135", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>135&thetas<=180)], main="135 < angle <= 180", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>180&thetas<=225)], main="180 < angle <= 225", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>225&thetas<=270)], main="225 < angle <= 270", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>270&thetas<=315)], main="270 < angle <= 315", breaks=seq(0,2400,200), xlab="", ylab="")
+hist(finalT[which(thetas>315&thetas<=360)], main="315 < angle <= 360", breaks=seq(0,2400,200), xlab="", ylab="")
+```
