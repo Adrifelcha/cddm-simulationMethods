@@ -8,11 +8,11 @@ library("mvtnorm")
 library("scatterplot3d") 
 
 cat("\nLoading custom function scripts from /code/cddm...\n\n")
-source(here("code", "cddm", "sim_randomWalk.R"))        
-r_files <- list.files(path = here("code", "cddm"), 
+source(here("src-code", "cddm", "sim_randomWalk.R"))        
+r_files <- list.files(path = here("src-code", "cddm"), 
                       pattern = "\\.R$", 
                       full.names = TRUE)
 for(file in r_files) {
     source(file)
 }
-source(here("code", "general_functions", "eCDF.R"))
+source(here("src-code", "general_functions", "eCDF.R"))

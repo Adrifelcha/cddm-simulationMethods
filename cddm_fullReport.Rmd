@@ -1,5 +1,5 @@
 ---
-title: "A comparison between different types of sampling algorithms for the CDDM in R"
+title: "Exploring different sampling algorithms for the CDDM"
 author: "Adriana F. Chávez De la Peña"
 date: "`r Sys.Date()`"
 output:
@@ -26,6 +26,7 @@ cat("Loading R libraries...\n")
 library(rmdformats)
 library(here)
 library(circular)
+library(mvtnorm)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Declare higher variables
@@ -57,15 +58,7 @@ x.lim <- c(0,2*pi)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load custom function scripts
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-cat("\nLoading custom function scripts from /code/cddm...\n\n")
-source(here("code", "cddm", "sim_randomWalk.R"))        
-r_files <- list.files(path = here("code", "cddm"), 
-                      pattern = "\\.R$", 
-                      full.names = TRUE)
-for(file in r_files) {
-    source(file)
-}
-source(here("code", "general_functions", "eCDF.R"))
+source(here("scripts", "load_libraries.R"))
 ```
 
 # Introduction
@@ -74,30 +67,49 @@ The present document is included as support material for the project presented i
 
 Chávez De la Peña, A. F. & Vandekerckhove, J. (n.a.). Simulating circular decisions using the circular drift-diffusion model: A comparison across different simulation methods. *work in progress*.
 
-
-
 # The Circular Drift Diffusion Model
 
-The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (Smith, 2016). The CDDM belongs to the family of evidence accumulation models (EAMs), which share the core assumption that that participants sample and accumulate information in favor of the response alternatives over time, until a response criteria is met. In the CDDM, this accumulation process is characterized as a random walk that starts at the origin of a circle representing the decision space, and that moves towards its circumference. Once the circumference is reached, the radian corresponding to the point of intersection and the amount of steps it took to get there are indicative of the choice and response times observed.
+The circular drift-diffusion model (CDDM) is a stochastic sequential sampling model that describes choices and response times observed in tasks with a circular decision space (Smith, 2016). The CDDM belongs to the family of evidence accumulation models (EAMs), which share the core assumption that participants sample and accumulate information in favor of the response alternatives over time, until a response criteria is met. In the CDDM, this accumulation process is characterized as a random walk that starts at the origin of a circle representing the decision space, moving towards its circumference. Once the circumference is reached, a choice is made. The choice is then expressed as the angle in radians of the point of intersection and the response time is captured by the amount of steps it took to reach the circumference.
 
-The CDDM considers four parameters, most of which are illustrated in Fig 1. The parameter not shown is the nondecision time parameter $\tau$. The remaining parameters are the boundary radius parameter ($\eta$) that serves as a response criterion, and a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
+Much like other evidence accumulation models (especially the classical drift-diffusion model), the CDDM is defined by (1) a boundary parameter $\eta$ that serves as a response criterion, (2) a non-decision time parameter $\tau$ that captures the time consumed by secondary processes not related to the decision process (e.g., motor control or information processing), and (3) a doublet of parameters describing the overall speed and direction of the information accumulation process. These last two parameters can be expressed in cartesian coordinates (i.e., the mean displacement observed on the X and Y coordinates per unit of time $\{\mu_x, \mu_y\}$) or polar coordinates (i.e., the average speed and expected direction $\{\delta,\theta\}$).
 
-To create Fig 1, we will define an arbitrary set of parameter values and sample size of 5000. This parameter set will be used throughout the document to illustrate the different sampling algorithms.
+The following figure illustrates the CDDM in a graphical representation.
 
-```{r par_values}
+
+
+
+
+
+
+```{r fig-1, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
+need_figure <- file.exists(here("output", "sample-figures", "CDDM_fig1.png"))
+if(!need_figure){
+    # Arbitrary set of parameter values
+    drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
+    par <- list("drift" = drift, "theta" = theta,
+                "tzero" = tzero, "boundary" = boundary)
+    n <- 1000 # No. samples
+
+    png(here("output", "sample-figures", "CDDM_fig1.png"), width = 1000, height = 1000)
+    data_fig1 <- plot.CDDM_Fig1(trials = n, par, return.Data = TRUE)
+    dev.off()
+}
+
+knitr::include_graphics(here("output", "sample-figures", "CDDM_fig1.png"))
+
+n <- 5000
+```
+
+In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` 5000 bivariate observations using the arbitrary set of parameter values shown below:
+
+
+```{r par_values, echo=FALSE}
 # Arbitrary set of parameter values
 drift <- 3.7; theta <- 5.3; tzero <- 0.1; boundary <- 3
 par <- list("drift" = drift, "theta" = theta,
             "tzero" = tzero, "boundary" = boundary)
 n <- 5000 # No. samples
 ```
-
-```{r fig-1, echo=FALSE, message=FALSE, fig.align='center', fig.cap="Fig 1. Graphical illustration of the CDDM"}
-set.seed(777)
-data_fig1 <- plot.CDDM_Fig1(trials = 1000,par,return.Data = TRUE)
-```
-
-In this document, we present a comparison between different sampling algorithms that generate data under the CDDM. We will describe how each of these algorithms work and highlight how different they are in terms of the computation time they require and their accuracy. For starters, we will generate `n = ` `r n` bivariate observations using the arbitrary set of parameter values shown below:
 
 # Gold standard: Random-walk emulator
 

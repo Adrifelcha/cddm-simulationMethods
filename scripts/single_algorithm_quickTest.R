@@ -11,7 +11,7 @@ forceRun <- TRUE
 # method_tested is a global variable that can be set by the user
 # before running the script. Alternatively, the user can set it here.
 if(!exists("method_tested")){
-    method_tested <- "Rejection_sequential"
+    method_tested <- "RandomWalk"
 }
 # Possible methods:
 # 1) "Metropolis"
